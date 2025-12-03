@@ -1,12 +1,245 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
+import { TrendingUp, Award, MapPin, ArrowRight } from "lucide-react";
+import { Header } from "@/components/Header";
+import { SearchBar } from "@/components/SearchBar";
+import { GarageCard } from "@/components/GarageCard";
+import { Button } from "@/components/ui/button";
+
+const trendingCities = [
+  { name: "New York", country: "USA", garageCount: 1240, slug: "new-york" },
+  { name: "London", country: "UK", garageCount: 892, slug: "london" },
+  { name: "Berlin", country: "Germany", garageCount: 654, slug: "berlin" },
+  { name: "Paris", country: "France", garageCount: 743, slug: "paris" },
+  { name: "Toronto", country: "Canada", garageCount: 521, slug: "toronto" },
+  { name: "Los Angeles", country: "USA", garageCount: 987, slug: "los-angeles" },
+];
+
+const topGarages = [
+  {
+    id: "1",
+    name: "AutoCare Pro Center",
+    location: "Manhattan, New York",
+    rating: 4.9,
+    reviewCount: 342,
+    tags: ["Quick Service", "Professional", "Fair Pricing"],
+    imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop",
+  },
+  {
+    id: "2",
+    name: "Elite Motors Workshop",
+    location: "Westminster, London",
+    rating: 4.8,
+    reviewCount: 287,
+    tags: ["Expert Mechanics", "Luxury Cars", "Warranty"],
+    imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
+  },
+  {
+    id: "3",
+    name: "SpeedFix Auto Service",
+    location: "Mitte, Berlin",
+    rating: 4.7,
+    reviewCount: 198,
+    tags: ["Same Day", "Affordable", "Friendly Staff"],
+    imageUrl: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop",
+  },
+  {
+    id: "4",
+    name: "Premier Auto Care",
+    location: "Downtown, Toronto",
+    rating: 4.8,
+    reviewCount: 256,
+    tags: ["Certified", "All Brands", "Digital Reports"],
+    imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop",
+  },
+];
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-[var(--gradient-hero)]">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, hsl(var(--primary)) 0%, transparent 50%),
+                              radial-gradient(circle at 75% 75%, hsl(var(--accent)) 0%, transparent 50%)`,
+          }} />
+        </div>
+        
+        <div className="container mx-auto px-4 py-20 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-6 animate-fade-in">
+              <Award className="w-4 h-4" />
+              Trusted by 50,000+ car owners
+            </span>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              Find the Best
+              <span className="block text-primary">Car Service Garage</span>
+              Near You
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              Read trusted reviews and discover top-rated mechanics in your area
+            </p>
+            
+            <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+              <SearchBar />
+            </div>
+            
+            <p className="mt-6 text-primary-foreground/60 text-sm animate-fade-in" style={{ animationDelay: "0.4s" }}>
+              Popular: Oil Change • Brake Repair • Engine Diagnostics • Tire Service
+            </p>
+          </div>
+        </div>
+        
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse">
+          <div className="w-6 h-10 border-2 border-primary-foreground/30 rounded-full flex justify-center pt-2">
+            <div className="w-1.5 h-3 bg-primary-foreground/50 rounded-full" />
+          </div>
+        </div>
+      </section>
+
+      {/* Trending Cities */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <TrendingUp className="w-5 h-5" />
+                <span className="font-semibold">Trending Now</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                Popular Cities
+              </h2>
+            </div>
+            <Link to="/search">
+              <Button variant="ghost" className="gap-2 group">
+                View All
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {trendingCities.map((city, index) => (
+              <Link
+                key={city.slug}
+                to={`/search?city=${city.slug}`}
+                className="group animate-fade-in"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <div className="bg-card rounded-2xl p-5 text-center shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border group-hover:border-primary/30">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <MapPin className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">{city.name}</h3>
+                  <p className="text-sm text-muted-foreground">{city.country}</p>
+                  <p className="text-sm text-primary mt-2 font-medium">
+                    {city.garageCount.toLocaleString()} garages
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Top Rated Garages */}
+      <section className="py-20 bg-secondary/30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <Award className="w-5 h-5" />
+                <span className="font-semibold">Top Rated</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                Featured Garages
+              </h2>
+            </div>
+            <Link to="/search">
+              <Button variant="ghost" className="gap-2 group">
+                View All
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {topGarages.map((garage, index) => (
+              <div
+                key={garage.id}
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <GarageCard {...garage} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-foreground">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-background mb-4">
+            Own a Garage?
+          </h2>
+          <p className="text-xl text-background/70 mb-8 max-w-2xl mx-auto">
+            Join thousands of garages and start collecting reviews from your customers today.
+          </p>
+          <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
+            List Your Garage
+          </Button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-card border-t border-border py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Discover</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/search" className="hover:text-primary transition-colors">Browse Garages</Link></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Top Rated</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Near Me</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">For Garages</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">List Your Garage</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Dashboard</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Cookie Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-border text-center text-muted-foreground">
+            <p>© 2024 GarageReviews. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
