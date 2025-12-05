@@ -8,6 +8,7 @@ import SearchResults from "./pages/SearchResults";
 import GarageDetails from "./pages/GarageDetails";
 import WriteReview from "./pages/WriteReview";
 import SubmitReview from "./pages/SubmitReview";
+import Rewards from "./pages/Rewards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/garage/:id" element={<GarageDetails />} />
           <Route path="/garage/:id/review" element={<WriteReview />} />
           <Route path="/submit-review" element={<SubmitReview />} />
+          <Route path="/rewards" element={<Rewards />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
