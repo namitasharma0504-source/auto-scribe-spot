@@ -36,7 +36,7 @@ export function Header() {
               "text-xl font-bold transition-colors",
               isHomePage ? "text-primary-foreground" : "text-foreground"
             )}>
-              GarageReviews
+              MeriGarageReviews
             </span>
           </Link>
 

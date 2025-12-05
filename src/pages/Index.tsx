@@ -6,49 +6,49 @@ import { GarageCard } from "@/components/GarageCard";
 import { Button } from "@/components/ui/button";
 
 const trendingCities = [
-  { name: "New York", country: "USA", garageCount: 1240, slug: "new-york" },
-  { name: "London", country: "UK", garageCount: 892, slug: "london" },
-  { name: "Berlin", country: "Germany", garageCount: 654, slug: "berlin" },
-  { name: "Paris", country: "France", garageCount: 743, slug: "paris" },
-  { name: "Toronto", country: "Canada", garageCount: 521, slug: "toronto" },
-  { name: "Los Angeles", country: "USA", garageCount: 987, slug: "los-angeles" },
+  { name: "Mumbai", country: "India", garageCount: 2450, slug: "mumbai" },
+  { name: "Delhi", country: "India", garageCount: 2180, slug: "delhi" },
+  { name: "Bangalore", country: "India", garageCount: 1890, slug: "bangalore" },
+  { name: "Chennai", country: "India", garageCount: 1650, slug: "chennai" },
+  { name: "Hyderabad", country: "India", garageCount: 1420, slug: "hyderabad" },
+  { name: "Pune", country: "India", garageCount: 1280, slug: "pune" },
 ];
 
 const topGarages = [
   {
     id: "1",
-    name: "AutoCare Pro Center",
-    location: "Manhattan, New York",
+    name: "Mahindra First Choice",
+    location: "Andheri, Mumbai",
     rating: 4.9,
-    reviewCount: 342,
-    tags: ["Quick Service", "Professional", "Fair Pricing"],
+    reviewCount: 542,
+    tags: ["Multi-Brand", "Genuine Parts", "Warranty"],
     imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop",
   },
   {
     id: "2",
-    name: "Elite Motors Workshop",
-    location: "Westminster, London",
+    name: "MyTVS Service Center",
+    location: "Koramangala, Bangalore",
     rating: 4.8,
-    reviewCount: 287,
-    tags: ["Expert Mechanics", "Luxury Cars", "Warranty"],
+    reviewCount: 387,
+    tags: ["Doorstep Service", "Transparent Pricing", "Expert Mechanics"],
     imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
   },
   {
     id: "3",
-    name: "SpeedFix Auto Service",
-    location: "Mitte, Berlin",
+    name: "GoMechanic Hub",
+    location: "Connaught Place, Delhi",
     rating: 4.7,
-    reviewCount: 198,
-    tags: ["Same Day", "Affordable", "Friendly Staff"],
+    reviewCount: 298,
+    tags: ["Same Day", "Affordable", "AC Specialist"],
     imageUrl: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop",
   },
   {
     id: "4",
-    name: "Premier Auto Care",
-    location: "Downtown, Toronto",
+    name: "Pitstop Auto Care",
+    location: "Banjara Hills, Hyderabad",
     rating: 4.8,
-    reviewCount: 256,
-    tags: ["Certified", "All Brands", "Digital Reports"],
+    reviewCount: 356,
+    tags: ["Premium Service", "All Brands", "Digital Reports"],
     imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop",
   },
 ];
@@ -99,6 +99,55 @@ const Index = () => {
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse">
           <div className="w-6 h-10 border-2 border-primary-foreground/30 rounded-full flex justify-center pt-2">
             <div className="w-1.5 h-3 bg-primary-foreground/50 rounded-full" />
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Banner */}
+      <section className="py-16 bg-card border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Garages */}
+            <div className="text-center group">
+              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
+                <img 
+                  src="https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=200&h=200&fit=crop" 
+                  alt="Professional garage" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-1">5,000+</h3>
+              <p className="text-muted-foreground">Verified Garages</p>
+              <p className="text-sm text-primary mt-2">Across India</p>
+            </div>
+            
+            {/* Happy Customers */}
+            <div className="text-center group">
+              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-accent/20 group-hover:ring-accent/40 transition-all">
+                <img 
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&facepad=2" 
+                  alt="Happy customer" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-1">50,000+</h3>
+              <p className="text-muted-foreground">Happy Customers</p>
+              <p className="text-sm text-accent mt-2">Trusted Reviews</p>
+            </div>
+            
+            {/* Garage Owners */}
+            <div className="text-center group">
+              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
+                <img 
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&facepad=2" 
+                  alt="Garage owner" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-1">2,500+</h3>
+              <p className="text-muted-foreground">Garage Partners</p>
+              <p className="text-sm text-primary mt-2">Growing Network</p>
+            </div>
           </div>
         </div>
       </section>
@@ -290,7 +339,7 @@ const Index = () => {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-border text-center text-muted-foreground">
-            <p>© 2024 GarageReviews. All rights reserved.</p>
+            <p>© 2024 MeriGarageReviews. All rights reserved.</p>
           </div>
         </div>
       </footer>

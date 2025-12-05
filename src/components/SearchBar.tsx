@@ -18,14 +18,26 @@ interface SearchBarProps {
 }
 
 const countries = [
+  { value: "in", label: "India" },
   { value: "us", label: "United States" },
   { value: "uk", label: "United Kingdom" },
   { value: "de", label: "Germany" },
-  { value: "fr", label: "France" },
-  { value: "ca", label: "Canada" },
+  { value: "ae", label: "UAE" },
 ];
 
 const cities: Record<string, { value: string; label: string }[]> = {
+  in: [
+    { value: "mumbai", label: "Mumbai" },
+    { value: "delhi", label: "Delhi" },
+    { value: "bangalore", label: "Bangalore" },
+    { value: "chennai", label: "Chennai" },
+    { value: "hyderabad", label: "Hyderabad" },
+    { value: "pune", label: "Pune" },
+    { value: "kolkata", label: "Kolkata" },
+    { value: "ahmedabad", label: "Ahmedabad" },
+    { value: "jaipur", label: "Jaipur" },
+    { value: "lucknow", label: "Lucknow" },
+  ],
   us: [
     { value: "new-york", label: "New York" },
     { value: "los-angeles", label: "Los Angeles" },
@@ -41,15 +53,10 @@ const cities: Record<string, { value: string; label: string }[]> = {
     { value: "munich", label: "Munich" },
     { value: "frankfurt", label: "Frankfurt" },
   ],
-  fr: [
-    { value: "paris", label: "Paris" },
-    { value: "marseille", label: "Marseille" },
-    { value: "lyon", label: "Lyon" },
-  ],
-  ca: [
-    { value: "toronto", label: "Toronto" },
-    { value: "vancouver", label: "Vancouver" },
-    { value: "montreal", label: "Montreal" },
+  ae: [
+    { value: "dubai", label: "Dubai" },
+    { value: "abu-dhabi", label: "Abu Dhabi" },
+    { value: "sharjah", label: "Sharjah" },
   ],
 };
 
