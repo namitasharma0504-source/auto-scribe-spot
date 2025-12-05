@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Building2, Mail, Lock, User, Eye, EyeOff, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const LOGO_URL = "https://storage.googleapis.com/gpt-engineer-file-uploads/7KBskuF0S6aidF2yeUxNqGAEox73/uploads/1764918252245-Screenshot 2025-12-05 at 12.34.03 PM.png";
@@ -15,30 +15,44 @@ const LOGO_URL = "https://storage.googleapis.com/gpt-engineer-file-uploads/7KBsk
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
-export default function Auth() {
+export default function GarageAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
+    // Check if already logged in as garage owner
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Check if user is a garage owner
+        const { data: garageOwner } = await supabase
+          .from("garage_owners")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
+        
+        if (garageOwner) {
+          navigate("/garage-dashboard");
+        }
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const validateInputs = (isSignUp: boolean) => {
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      if (isSignUp && !fullName.trim()) {
+      if (isSignUp && !businessName.trim()) {
         toast({
-          title: "Name Required",
-          description: "Please enter your full name",
+          title: "Business Name Required",
+          description: "Please enter your garage/business name",
           variant: "destructive",
         });
         return false;
@@ -61,10 +75,37 @@ export default function Auth() {
     if (!validateInputs(false)) return;
 
     setIsLoading(true);
-    const { error } = await signIn(email, password);
-    setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      // Check if user is a garage owner
+      const { data: garageOwner } = await supabase
+        .from("garage_owners")
+        .select("*")
+        .eq("user_id", data.user.id)
+        .single();
+
+      if (!garageOwner) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Not a Garage Account",
+          description: "This account is not registered as a garage. Please sign up as a garage or use customer login.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Welcome Back!",
+        description: "You have successfully signed in to your garage dashboard.",
+      });
+      navigate("/garage-dashboard");
+    } catch (error: any) {
       toast({
         title: "Sign In Failed",
         description: error.message === "Invalid login credentials" 
@@ -72,12 +113,8 @@ export default function Auth() {
           : error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Welcome Back!",
-        description: "You have successfully signed in.",
-      });
-      navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,10 +123,52 @@ export default function Auth() {
     if (!validateInputs(true)) return;
 
     setIsLoading(true);
-    const { error } = await signUp(email, password, fullName);
-    setIsLoading(false);
+    try {
+      const redirectUrl = `${window.location.origin}/garage-dashboard`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            business_name: businessName,
+            is_garage_owner: true,
+          },
+        },
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      if (data.user) {
+        // Create garage owner profile
+        const { error: ownerError } = await supabase
+          .from("garage_owners")
+          .insert({
+            user_id: data.user.id,
+            business_name: businessName,
+            contact_phone: contactPhone,
+          });
+
+        if (ownerError) throw ownerError;
+
+        // Add garage_owner role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: data.user.id,
+            role: "garage_owner",
+          });
+
+        if (roleError) console.error("Role assignment error:", roleError);
+
+        toast({
+          title: "Account Created!",
+          description: "Welcome to MeriGarage! You can now set up your garage profile.",
+        });
+        navigate("/garage-dashboard");
+      }
+    } catch (error: any) {
       if (error.message.includes("already registered")) {
         toast({
           title: "Account Exists",
@@ -103,12 +182,8 @@ export default function Auth() {
           variant: "destructive",
         });
       }
-    } else {
-      toast({
-        title: "Account Created!",
-        description: "Welcome to GarageReviews! You are now signed in.",
-      });
-      navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,8 +194,8 @@ export default function Auth() {
           <div className="flex justify-center mb-4">
             <img src={LOGO_URL} alt="MeriGarage" className="w-16 h-16 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold">MeriGarage Reviews</CardTitle>
-          <CardDescription>Sign in to track your reviews and rewards</CardDescription>
+          <CardTitle className="text-2xl font-bold">Garage Portal</CardTitle>
+          <CardDescription>Manage your garage listing and reviews</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -138,7 +213,7 @@ export default function Auth() {
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="garage@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -169,7 +244,7 @@ export default function Auth() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {isLoading ? "Signing in..." : "Sign In to Dashboard"}
                 </Button>
               </form>
             </TabsContent>
@@ -177,17 +252,31 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-business">Business Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      id="signup-name"
+                      id="signup-business"
                       type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Your Garage Name"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
                       className="pl-10"
                       required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Contact Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="+91 9876543210"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      className="pl-10"
                     />
                   </div>
                 </div>
@@ -198,7 +287,7 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="garage@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -229,7 +318,7 @@ export default function Auth() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {isLoading ? "Creating account..." : "Create Garage Account"}
                 </Button>
               </form>
             </TabsContent>
