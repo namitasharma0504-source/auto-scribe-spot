@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, MapPin, Building2, ChevronDown } from "lucide-react";
+import { Search, MapPin, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,11 @@ interface SearchBarProps {
 
 const countries = [
   { value: "in", label: "India" },
-  { value: "us", label: "United States" },
-  { value: "uk", label: "United Kingdom" },
-  { value: "de", label: "Germany" },
   { value: "ae", label: "UAE" },
+  { value: "ng", label: "Nigeria" },
+  { value: "eg", label: "Egypt" },
+  { value: "qa", label: "Qatar" },
+  { value: "sd", label: "Sudan" },
 ];
 
 const cities: Record<string, { value: string; label: string }[]> = {
@@ -38,25 +39,38 @@ const cities: Record<string, { value: string; label: string }[]> = {
     { value: "jaipur", label: "Jaipur" },
     { value: "lucknow", label: "Lucknow" },
   ],
-  us: [
-    { value: "new-york", label: "New York" },
-    { value: "los-angeles", label: "Los Angeles" },
-    { value: "chicago", label: "Chicago" },
-  ],
-  uk: [
-    { value: "london", label: "London" },
-    { value: "manchester", label: "Manchester" },
-    { value: "birmingham", label: "Birmingham" },
-  ],
-  de: [
-    { value: "berlin", label: "Berlin" },
-    { value: "munich", label: "Munich" },
-    { value: "frankfurt", label: "Frankfurt" },
-  ],
   ae: [
     { value: "dubai", label: "Dubai" },
     { value: "abu-dhabi", label: "Abu Dhabi" },
     { value: "sharjah", label: "Sharjah" },
+    { value: "ajman", label: "Ajman" },
+    { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
+  ],
+  ng: [
+    { value: "lagos", label: "Lagos" },
+    { value: "abuja", label: "Abuja" },
+    { value: "port-harcourt", label: "Port Harcourt" },
+    { value: "kano", label: "Kano" },
+    { value: "ibadan", label: "Ibadan" },
+  ],
+  eg: [
+    { value: "cairo", label: "Cairo" },
+    { value: "alexandria", label: "Alexandria" },
+    { value: "giza", label: "Giza" },
+    { value: "sharm-el-sheikh", label: "Sharm El Sheikh" },
+    { value: "luxor", label: "Luxor" },
+  ],
+  qa: [
+    { value: "doha", label: "Doha" },
+    { value: "al-wakrah", label: "Al Wakrah" },
+    { value: "al-khor", label: "Al Khor" },
+    { value: "lusail", label: "Lusail" },
+  ],
+  sd: [
+    { value: "khartoum", label: "Khartoum" },
+    { value: "omdurman", label: "Omdurman" },
+    { value: "port-sudan", label: "Port Sudan" },
+    { value: "kassala", label: "Kassala" },
   ],
 };
 

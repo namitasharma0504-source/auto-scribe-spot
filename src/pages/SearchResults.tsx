@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { SlidersHorizontal, Grid3X3, List, MapPin } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
+import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { GarageCard } from "@/components/GarageCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -86,6 +87,11 @@ const SearchResults = () => {
   const city = searchParams.get("city") || "New York";
   const query = searchParams.get("q") || "";
 
+  // Filter garages based on search query
+  const filteredGarages = query
+    ? mockGarages.filter((g) => g.name.toLowerCase().includes(query.toLowerCase()))
+    : mockGarages;
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -93,10 +99,10 @@ const SearchResults = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
@@ -107,7 +113,7 @@ const SearchResults = () => {
             {query ? `"${query}" in ${city}` : `Garages in ${city}`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {mockGarages.length} garages found
+            {filteredGarages.length} garages found
           </p>
         </div>
 
@@ -218,32 +224,57 @@ const SearchResults = () => {
 
           {/* Results Grid */}
           <div className="flex-1">
-            <div className={cn(
-              "grid gap-6",
-              viewMode === "grid"
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                : "grid-cols-1"
-            )}>
-              {mockGarages.map((garage, index) => (
-                <div
-                  key={garage.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <GarageCard {...garage} />
+            {filteredGarages.length > 0 ? (
+              <div className={cn(
+                "grid gap-6",
+                viewMode === "grid"
+                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                  : "grid-cols-1"
+              )}>
+                {filteredGarages.map((garage, index) => (
+                  <div
+                    key={garage.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <GarageCard {...garage} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* No Results - Add Garage CTA */
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-secondary rounded-full flex items-center justify-center">
+                  <MapPin className="w-10 h-10 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">
+                  No garages found for "{query}"
+                </h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  We couldn't find any garages matching your search. Would you like to add this garage to our platform?
+                </p>
+                <Link to={`/list-garage?name=${encodeURIComponent(query)}`}>
+                  <Button size="lg" className="gap-2">
+                    <PlusCircle className="w-5 h-5" />
+                    Add This Garage
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* Load More */}
-            <div className="mt-12 text-center">
-              <Button variant="outline" size="lg">
-                Load More Garages
-              </Button>
-            </div>
+            {filteredGarages.length > 0 && (
+              <div className="mt-12 text-center">
+                <Button variant="outline" size="lg">
+                  Load More Garages
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

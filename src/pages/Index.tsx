@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift } from "lucide-react";
+import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
@@ -238,6 +238,108 @@ const Index = () => {
         </div>
       </section>
 
+      {/* How We Help You Choose - SEO Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              How We Help You Choose the Right Garage for Your Car
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Finding a trustworthy car service center can be challenging. MeriGarage Reviews simplifies your search by providing verified reviews, transparent ratings, and detailed information about garages near you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border text-center">
+              <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Search className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Search Garages Near You</h3>
+              <p className="text-sm text-muted-foreground">
+                Easily find car repair shops, mechanics, and service centers in your city. Search by location, services, or garage name to discover the best options nearby.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border text-center">
+              <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Star className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Read Verified Reviews</h3>
+              <p className="text-sm text-muted-foreground">
+                Make informed decisions with authentic customer reviews. Our verified review system ensures genuine feedback from real car owners who visited the garage.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border text-center">
+              <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <ThumbsUp className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Compare Ratings & Services</h3>
+              <p className="text-sm text-muted-foreground">
+                Compare multiple garages based on ratings, services offered, pricing transparency, and customer satisfaction to find the perfect match for your car's needs.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-2xl p-6 shadow-sm border border-border text-center">
+              <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <ShieldCheck className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Choose with Confidence</h3>
+              <p className="text-sm text-muted-foreground">
+                Select a garage you can trust. Our platform highlights certified mechanics, warranty offerings, and garages known for honest pricing and quality service.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-secondary/50 rounded-2xl p-8 md:p-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Why Read Reviews Before Choosing a Garage?
+                </h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">Save Time:</strong> Avoid trial and error by choosing garages with proven track records and positive customer experiences.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">Avoid Scams:</strong> Identify trustworthy mechanics and avoid garages known for overcharging or poor quality work.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Star className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">Quality Service:</strong> Find garages that consistently deliver excellent service, use genuine parts, and stand behind their work.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ThumbsUp className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">Fair Pricing:</strong> Discover garages known for transparent pricing without hidden charges or unnecessary upselling.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-card rounded-xl p-6 border border-border">
+                <h4 className="font-semibold text-foreground mb-4">Popular Services Reviewed</h4>
+                <div className="flex flex-wrap gap-2">
+                  {["Oil Change", "Brake Repair", "Engine Service", "AC Repair", "Battery Replacement", "Wheel Alignment", "Car Wash", "Denting & Painting", "Clutch Repair", "Suspension Work", "Periodic Maintenance", "Tyre Service"].map((service) => (
+                    <span key={service} className="px-3 py-1 bg-secondary rounded-full text-sm text-foreground">
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Customer CTA Section */}
       <section className="py-20 bg-card border-y border-border">
         <div className="container mx-auto px-4">
@@ -301,9 +403,11 @@ const Index = () => {
             <p className="text-xl text-background/70 mb-8 max-w-2xl mx-auto">
               Join thousands of garages and start collecting reviews from your customers today.
             </p>
-            <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
-              List Your Garage
-            </Button>
+            <Link to="/list-garage">
+              <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
+                List Your Garage
+              </Button>
+            </Link>
           </div>
         </section>
       </main>

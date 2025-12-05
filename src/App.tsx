@@ -17,6 +17,7 @@ import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import ListGarage from "./pages/ListGarage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/list-garage" element={<ListGarage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

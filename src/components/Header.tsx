@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Car, User, Gift, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, Gift, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { cn } from "@/lib/utils";
@@ -22,21 +22,12 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className={cn(
-              "p-2 rounded-xl transition-all duration-300 group-hover:scale-105",
-              isHomePage ? "bg-primary-foreground/20" : "bg-primary"
-            )}>
-              <Car className={cn(
-                "w-6 h-6",
-                isHomePage ? "text-primary-foreground" : "text-primary-foreground"
-              )} />
-            </div>
+          <Link to="/" className="flex items-center group">
             <span className={cn(
               "text-xl font-bold transition-colors",
               isHomePage ? "text-primary-foreground" : "text-foreground"
             )}>
-              MeriGarageReviews
+              MeriGarage <span className="text-primary">Reviews</span>
             </span>
           </Link>
 
