@@ -107,6 +107,13 @@ export type Database = {
             foreignKeyName: "rewards_history_review_id_fkey"
             columns: ["review_id"]
             isOneToOne: false
+            referencedRelation: "public_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_history_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
             referencedRelation: "user_reviews"
             referencedColumns: ["id"]
           },
@@ -150,7 +157,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_reviews: {
+        Row: {
+          created_at: string | null
+          garage_location: string | null
+          garage_name: string | null
+          id: string | null
+          is_verified: boolean | null
+          rating: number | null
+          review_text: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          garage_location?: string | null
+          garage_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          rating?: number | null
+          review_text?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          garage_location?: string | null
+          garage_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          rating?: number | null
+          review_text?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
