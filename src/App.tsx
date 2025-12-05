@@ -18,6 +18,8 @@ import Careers from "./pages/Careers";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ListGarage from "./pages/ListGarage";
+import GarageAuth from "./pages/GarageAuth";
+import GarageDashboard from "./pages/GarageDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/garage-auth" element={<GarageAuth />} />
+            <Route path="/garage-dashboard" element={<GarageDashboard />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<Careers />} />

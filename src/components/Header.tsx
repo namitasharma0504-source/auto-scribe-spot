@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Gift, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, Gift, LayoutDashboard, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SearchBar } from "./SearchBar";
+import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+
+const LOGO_URL = "https://storage.googleapis.com/gpt-engineer-file-uploads/7KBskuF0S6aidF2yeUxNqGAEox73/uploads/1764918252245-Screenshot 2025-12-05 at 12.34.03 PM.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,7 +24,8 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center group">
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src={LOGO_URL} alt="MeriGarage" className="w-10 h-10 object-contain" />
             <span className={cn(
               "text-xl font-bold transition-colors",
               isHomePage ? "text-primary-foreground" : "text-foreground"
@@ -32,22 +35,20 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             {!isHomePage && (
-              <div className="w-80">
-                <SearchBar variant="compact" />
-              </div>
+              <SmartSearch className="w-64" />
             )}
-            <nav className="flex items-center gap-4">
+            <nav className="flex items-center gap-3">
               <Link to="/search">
-                <Button variant="ghost" className={cn(
+                <Button variant="ghost" size="sm" className={cn(
                   isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
                 )}>
                   Browse Garages
                 </Button>
               </Link>
               <Link to="/rewards">
-                <Button variant="ghost" className={cn(
+                <Button variant="ghost" size="sm" className={cn(
                   "gap-2",
                   isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
                 )}>
@@ -55,10 +56,19 @@ export function Header() {
                   Rewards
                 </Button>
               </Link>
+              <Link to="/garage-auth">
+                <Button variant="ghost" size="sm" className={cn(
+                  "gap-2",
+                  isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
+                )}>
+                  <Building2 className="w-4 h-4" />
+                  Garage Login
+                </Button>
+              </Link>
               {!loading && (
                 user ? (
                   <Link to="/dashboard">
-                    <Button variant={isHomePage ? "secondary" : "default"} className={cn(
+                    <Button variant={isHomePage ? "secondary" : "default"} size="sm" className={cn(
                       "gap-2",
                       isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
                     )}>
@@ -68,7 +78,7 @@ export function Header() {
                   </Link>
                 ) : (
                   <Link to="/auth">
-                    <Button variant={isHomePage ? "secondary" : "outline"} className={cn(
+                    <Button variant={isHomePage ? "secondary" : "outline"} size="sm" className={cn(
                       "gap-2",
                       isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
                     )}>
@@ -98,6 +108,7 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-card rounded-xl shadow-xl mb-4 p-4 animate-scale-in">
             <nav className="flex flex-col gap-2">
+              <SmartSearch className="mb-2" />
               <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">
                   Browse Garages
@@ -107,6 +118,12 @@ export function Header() {
                 <Button variant="ghost" className="w-full justify-start gap-2">
                   <Gift className="w-4 h-4" />
                   Rewards
+                </Button>
+              </Link>
+              <Link to="/garage-auth" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start gap-2">
+                  <Building2 className="w-4 h-4" />
+                  Garage Login
                 </Button>
               </Link>
               {!loading && (
