@@ -56,7 +56,7 @@ export const HeroSlider = () => {
       ))}
       
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-foreground/85 via-foreground/75 to-foreground/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/40 to-foreground/60" />
       
       {/* Navigation Arrows */}
       <button
