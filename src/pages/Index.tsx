@@ -76,13 +76,6 @@ const Index = () => {
           
           <div className="container mx-auto px-4 py-20 relative z-10">
             <div className="text-center max-w-4xl mx-auto">
-              {/* Logo */}
-              <img 
-                src="https://storage.googleapis.com/gpt-engineer-file-uploads/7KBskuF0S6aidF2yeUxNqGAEox73/uploads/1764918252245-Screenshot 2025-12-05 at 12.34.03 PM.png" 
-                alt="MeriGarage" 
-                className="w-20 h-20 mx-auto mb-6 animate-fade-in"
-              />
-              
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-6 animate-fade-in">
                 <Award className="w-4 h-4" />
                 Trusted by 50,000+ car owners

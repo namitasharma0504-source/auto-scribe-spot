@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Gift, LayoutDashboard, Building2 } from "lucide-react";
+import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
-const LOGO_URL = "https://storage.googleapis.com/gpt-engineer-file-uploads/7KBskuF0S6aidF2yeUxNqGAEox73/uploads/1764918252245-Screenshot 2025-12-05 at 12.34.03 PM.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,12 +23,17 @@ export function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <img src={LOGO_URL} alt="MeriGarage" className="w-10 h-10 object-contain" />
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              isHomePage ? "bg-primary-foreground/20" : "bg-primary/10"
+            )}>
+              <Wrench className={cn("w-5 h-5", isHomePage ? "text-primary-foreground" : "text-primary")} />
+            </div>
             <span className={cn(
               "text-xl font-bold transition-colors",
               isHomePage ? "text-primary-foreground" : "text-foreground"
             )}>
-              MeriGarage <span className="text-primary">Reviews</span>
+              MeriGarage <span className={cn(isHomePage ? "text-primary-foreground/80" : "text-primary")}>Reviews</span>
             </span>
           </Link>
 
