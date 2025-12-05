@@ -55,14 +55,14 @@ export function SmartSearch({ className }: { className?: string }) {
 
       setIsLoading(true);
       try {
-        // Search garages - using any to avoid type errors until types regenerate
-        const { data: garages } = await (supabase as any)
+        // Search garages
+        const { data: garages } = await supabase
           .from("garages")
           .select("id, name, city, country")
           .or(`name.ilike.%${query}%,city.ilike.%${query}%`)
           .limit(5);
 
-        const garageSuggestions: Suggestion[] = (garages || []).map((g: any) => ({
+        const garageSuggestions: Suggestion[] = (garages || []).map((g) => ({
           type: "garage" as const,
           name: g.name,
           subtitle: `${g.city}, ${g.country}`,
