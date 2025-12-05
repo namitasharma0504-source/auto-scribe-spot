@@ -31,7 +31,7 @@ export default function GarageAuth() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // Check if user is a garage owner
-        const { data: garageOwner } = await supabase
+        const { data: garageOwner } = await (supabase as any)
           .from("garage_owners")
           .select("*")
           .eq("user_id", session.user.id)
@@ -84,7 +84,7 @@ export default function GarageAuth() {
       if (error) throw error;
 
       // Check if user is a garage owner
-      const { data: garageOwner } = await supabase
+      const { data: garageOwner } = await (supabase as any)
         .from("garage_owners")
         .select("*")
         .eq("user_id", data.user.id)
@@ -142,7 +142,7 @@ export default function GarageAuth() {
 
       if (data.user) {
         // Create garage owner profile
-        const { error: ownerError } = await supabase
+        const { error: ownerError } = await (supabase as any)
           .from("garage_owners")
           .insert({
             user_id: data.user.id,
@@ -153,7 +153,7 @@ export default function GarageAuth() {
         if (ownerError) throw ownerError;
 
         // Add garage_owner role
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({
             user_id: data.user.id,

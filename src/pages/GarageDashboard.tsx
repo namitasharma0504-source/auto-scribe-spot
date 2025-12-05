@@ -68,12 +68,14 @@ export default function GarageDashboard() {
         return;
       }
 
-      // Get garage owner profile
-      const { data: owner, error: ownerError } = await supabase
+      // Get garage owner profile - using rpc or raw query to avoid type issues
+      const { data: ownerData, error: ownerError } = await (supabase as any)
         .from("garage_owners")
         .select("*")
         .eq("user_id", session.user.id)
         .single();
+
+      const owner = ownerData as any;
 
       if (ownerError || !owner) {
         toast({
@@ -88,12 +90,14 @@ export default function GarageDashboard() {
       setGarageOwner(owner);
 
       // Get garage if exists
-      if (owner.garage_id) {
-        const { data: garageData } = await supabase
+      if (owner?.garage_id) {
+        const { data: garageResult } = await (supabase as any)
           .from("garages")
           .select("*")
           .eq("id", owner.garage_id)
           .single();
+
+        const garageData = garageResult as any;
 
         if (garageData) {
           setGarage(garageData);
@@ -135,7 +139,7 @@ export default function GarageDashboard() {
 
       if (garage) {
         // Update existing garage
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("garages")
           .update(garageData)
           .eq("id", garage.id);
@@ -143,7 +147,7 @@ export default function GarageDashboard() {
         if (error) throw error;
       } else {
         // Create new garage
-        const { data: newGarage, error } = await supabase
+        const { data: newGarage, error } = await (supabase as any)
           .from("garages")
           .insert(garageData)
           .select()
@@ -152,7 +156,7 @@ export default function GarageDashboard() {
         if (error) throw error;
 
         // Update garage owner with garage_id
-        await supabase
+        await (supabase as any)
           .from("garage_owners")
           .update({ garage_id: newGarage.id })
           .eq("user_id", session.user.id);
