@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="*" element={<NotFound />} />

@@ -1,9 +1,10 @@
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { Phone, Mail, MapPin } from "lucide-react";
 
 const Contact = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
       {/* Hero Section */}
@@ -19,7 +20,7 @@ const Contact = () => {
       </section>
 
       {/* Contact Information */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-background flex-grow">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 gap-8 mb-12">
@@ -72,6 +73,8 @@ const Contact = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };
