@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Car, User, Gift } from "lucide-react";
+import { Menu, X, Car, User, Gift, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const { user, loading } = useAuth();
 
   return (
     <header className={cn(
@@ -62,13 +64,29 @@ export function Header() {
                   Rewards
                 </Button>
               </Link>
-              <Button variant={isHomePage ? "secondary" : "outline"} className={cn(
-                "gap-2",
-                isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
-              )}>
-                <User className="w-4 h-4" />
-                Sign In
-              </Button>
+              {!loading && (
+                user ? (
+                  <Link to="/dashboard">
+                    <Button variant={isHomePage ? "secondary" : "default"} className={cn(
+                      "gap-2",
+                      isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                    )}>
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/auth">
+                    <Button variant={isHomePage ? "secondary" : "outline"} className={cn(
+                      "gap-2",
+                      isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                    )}>
+                      <User className="w-4 h-4" />
+                      Sign In
+                    </Button>
+                  </Link>
+                )
+              )}
             </nav>
           </div>
 
@@ -100,10 +118,23 @@ export function Header() {
                   Rewards
                 </Button>
               </Link>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <User className="w-4 h-4" />
-                Sign In
-              </Button>
+              {!loading && (
+                user ? (
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="default" className="w-full justify-start gap-2">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <User className="w-4 h-4" />
+                      Sign In
+                    </Button>
+                  </Link>
+                )
+              )}
             </nav>
           </div>
         )}

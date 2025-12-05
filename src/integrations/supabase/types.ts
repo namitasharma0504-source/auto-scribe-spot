@@ -14,7 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          total_points: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          total_points?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          total_points?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      redemptions: {
+        Row: {
+          created_at: string
+          garage_name: string | null
+          id: string
+          points_spent: number
+          reward_name: string
+          status: string | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          garage_name?: string | null
+          id?: string
+          points_spent: number
+          reward_name: string
+          status?: string | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          garage_name?: string | null
+          id?: string
+          points_spent?: number
+          reward_name?: string
+          status?: string | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rewards_history: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          reason: string
+          review_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points: number
+          reason: string
+          review_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          review_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_history_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "user_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_reviews: {
+        Row: {
+          created_at: string
+          garage_location: string | null
+          garage_name: string
+          id: string
+          is_verified: boolean | null
+          points_earned: number | null
+          rating: number
+          review_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          garage_location?: string | null
+          garage_name: string
+          id?: string
+          is_verified?: boolean | null
+          points_earned?: number | null
+          rating: number
+          review_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          garage_location?: string | null
+          garage_name?: string
+          id?: string
+          is_verified?: boolean | null
+          points_earned?: number | null
+          rating?: number
+          review_text?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
