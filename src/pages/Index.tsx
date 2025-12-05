@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
-import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, Phone, Mail, MapPin as MapPinIcon } from "lucide-react";
+import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
 import { GarageCard } from "@/components/GarageCard";
+import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 
 const trendingCities = [
@@ -60,18 +62,11 @@ const Index = () => {
       
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1920&h=1080&fit=crop" 
-            alt="Automobile garage" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/85 via-foreground/75 to-foreground/90" />
-        </div>
+        {/* Background Slider */}
+        <HeroSlider />
         
         {/* Accent overlay */}
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-20 z-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `radial-gradient(circle at 25% 25%, hsl(var(--primary)) 0%, transparent 50%),
                               radial-gradient(circle at 75% 75%, hsl(var(--accent)) 0%, transparent 50%)`,
@@ -311,64 +306,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-card border-t border-border py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            {/* Contact Info */}
-            <div className="col-span-2 md:col-span-1">
-              <h4 className="font-semibold text-foreground mb-4">Contact Us</h4>
-              <ul className="space-y-3 text-muted-foreground text-sm">
-                <li className="flex items-start gap-2">
-                  <Phone className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <a href="tel:+919582051155" className="hover:text-primary transition-colors">+91 9582051155</a>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Mail className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <a href="mailto:info@merigarage.com" className="hover:text-primary transition-colors">info@merigarage.com</a>
-                </li>
-                <li className="flex items-start gap-2">
-                  <MapPinIcon className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Delhi, India | Dubai, UAE</span>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Discover</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/search" className="hover:text-primary transition-colors">Browse Garages</Link></li>
-                <li><Link to="/search?sort=rating" className="hover:text-primary transition-colors">Top Rated</Link></li>
-                <li><Link to="/search" className="hover:text-primary transition-colors">Near Me</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">For Garages</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">List Your Garage</a></li>
-                <li><Link to="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Company</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
-                <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Legal</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-border text-center text-muted-foreground">
-            <p>© 2024 MeriGarageReviews. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

@@ -1,9 +1,10 @@
 import { Header } from "@/components/Header";
-import { Target, Eye, Wrench, Users, BarChart3, Bell } from "lucide-react";
+import { Footer } from "@/components/Footer";
+import { Target, Eye, Wrench, Users, BarChart3 } from "lucide-react";
 
 const AboutUs = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
       {/* Hero Section */}
@@ -19,7 +20,7 @@ const AboutUs = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-background flex-grow">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-card rounded-2xl p-8 md:p-12 shadow-lg border border-border mb-12">
@@ -87,6 +88,8 @@ const AboutUs = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };

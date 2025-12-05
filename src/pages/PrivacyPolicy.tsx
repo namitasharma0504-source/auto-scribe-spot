@@ -1,8 +1,9 @@
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const PrivacyPolicy = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
       {/* Hero Section */}
@@ -16,7 +17,7 @@ const PrivacyPolicy = () => {
       </section>
 
       {/* Content */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-background flex-grow">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto bg-card rounded-2xl p-8 md:p-12 shadow-lg border border-border">
             <div className="prose prose-lg max-w-none">
@@ -56,6 +57,8 @@ const PrivacyPolicy = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };
