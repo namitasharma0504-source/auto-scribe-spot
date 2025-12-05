@@ -18,7 +18,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 25 95% 53%;
+    --primary: 0 84% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
@@ -27,7 +27,7 @@
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 173 58% 39%;
+    --accent: 217 91% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -35,7 +35,7 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 25 95% 53%;
+    --ring: 0 84% 50%;
 
     --radius: 0.75rem;
 
@@ -52,7 +52,7 @@
     --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
-    --shadow-glow: 0 0 20px hsl(25 95% 53% / 0.3);
+    --shadow-glow: 0 0 20px hsl(0 84% 50% / 0.3);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -74,7 +74,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 40 33% 98%;
 
-    --primary: 25 95% 53%;
+    --primary: 0 84% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 222 30% 20%;
@@ -83,7 +83,7 @@
     --muted: 222 30% 20%;
     --muted-foreground: 220 9% 65%;
 
-    --accent: 173 58% 39%;
+    --accent: 217 91% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 30%;
@@ -91,19 +91,19 @@
 
     --border: 222 30% 20%;
     --input: 222 30% 20%;
-    --ring: 25 95% 53%;
+    --ring: 0 84% 50%;
     
     --star: 45 93% 47%;
     --star-empty: 222 30% 30%;
     
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 40 33% 98%;
-    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary: 0 84% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 30% 15%;
     --sidebar-accent-foreground: 40 33% 98%;
     --sidebar-border: 222 30% 20%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-ring: 0 84% 50%;
   }
 }
 
