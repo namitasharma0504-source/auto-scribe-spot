@@ -61,34 +61,35 @@ const Index = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Background Slider */}
-        <HeroSlider />
-        
-        {/* Accent overlay */}
-        <div className="absolute inset-0 opacity-20 z-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, hsl(var(--primary)) 0%, transparent 50%),
-                              radial-gradient(circle at 75% 75%, hsl(var(--accent)) 0%, transparent 50%)`,
-          }} />
-        </div>
-        
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-6 animate-fade-in">
-              <Award className="w-4 h-4" />
-              Trusted by 50,000+ car owners
-            </span>
-            
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              Find the Best
-              <span className="block text-primary">Car Service Garage</span>
-              Near You
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              Read trusted reviews and discover top-rated mechanics in your area
-            </p>
+      <main>
+        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden" aria-label="Search for garage reviews">
+          {/* Background Slider */}
+          <HeroSlider />
+          
+          {/* Accent overlay */}
+          <div className="absolute inset-0 opacity-20 z-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `radial-gradient(circle at 25% 25%, hsl(var(--primary)) 0%, transparent 50%),
+                                radial-gradient(circle at 75% 75%, hsl(var(--accent)) 0%, transparent 50%)`,
+            }} />
+          </div>
+          
+          <div className="container mx-auto px-4 py-20 relative z-10">
+            <div className="text-center max-w-4xl mx-auto">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-6 animate-fade-in">
+                <Award className="w-4 h-4" />
+                Trusted by 50,000+ car owners
+              </span>
+              
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                Write & Read
+                <span className="block text-primary">Garage Reviews</span>
+                in India
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                Find trusted car service centers, write a review for garage, and discover top-rated mechanics near you
+              </p>
             
             <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
               <SearchBar />
@@ -291,20 +292,21 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Garage Owner CTA Section */}
-      <section className="py-20 bg-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-background mb-4">
-            Own a Garage?
-          </h2>
-          <p className="text-xl text-background/70 mb-8 max-w-2xl mx-auto">
-            Join thousands of garages and start collecting reviews from your customers today.
-          </p>
-          <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
-            List Your Garage
-          </Button>
-        </div>
-      </section>
+        {/* Garage Owner CTA Section */}
+        <section className="py-20 bg-foreground" aria-label="List your garage">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-background mb-4">
+              Own a Garage?
+            </h2>
+            <p className="text-xl text-background/70 mb-8 max-w-2xl mx-auto">
+              Join thousands of garages and start collecting reviews from your customers today.
+            </p>
+            <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
+              List Your Garage
+            </Button>
+          </div>
+        </section>
+      </main>
 
       <Footer />
     </div>
