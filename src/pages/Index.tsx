@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock } from "lucide-react";
+import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
 import { GarageCard } from "@/components/GarageCard";
 import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const trendingCities = [
   { name: "Mumbai", country: "India", garageCount: 2450, slug: "mumbai" },
@@ -16,208 +18,39 @@ const trendingCities = [
   { name: "Pune", country: "India", garageCount: 1280, slug: "pune" },
 ];
 
-const topGarages = [
-  {
-    id: "1",
-    name: "Mahindra First Choice",
-    location: "Andheri, Mumbai",
-    address: "Andheri West, Mumbai 400053",
-    rating: 4.9,
-    reviewCount: 542,
-    tags: ["Multi-brand", "General Service", "Body Work"],
-    imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "30-45 mins",
-    quotesThisMonth: 234,
-    walkInWelcome: true,
-  },
-  {
-    id: "2",
-    name: "MyTVS Service Center",
-    location: "Koramangala, Bangalore",
-    address: "Koramangala 5th Block, Bangalore 560095",
-    rating: 4.8,
-    reviewCount: 387,
-    tags: ["Doorstep Service", "All Brands", "Diagnostics"],
-    imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: false,
-    hasDiscounts: true,
-    responseTime: "1-2 hours",
-    quotesThisMonth: 189,
-  },
-  {
-    id: "3",
-    name: "GoMechanic Hub",
-    location: "Connaught Place, Delhi",
-    address: "Connaught Place, New Delhi 110001",
-    rating: 4.7,
-    reviewCount: 298,
-    tags: ["AC Repair", "General Service", "Tyres"],
-    imageUrl: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: true,
-    hasDiscounts: false,
-    responseTime: "45 mins",
-    quotesThisMonth: 156,
-    walkInWelcome: true,
-  },
-  {
-    id: "4",
-    name: "Pitstop Auto Care",
-    location: "Banjara Hills, Hyderabad",
-    address: "Road No. 10, Banjara Hills, Hyderabad 500034",
-    rating: 4.8,
-    reviewCount: 356,
-    tags: ["Premium Cars", "EV-friendly", "Diagnostics"],
-    imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "30 mins",
-    quotesThisMonth: 278,
-  },
-  {
-    id: "5",
-    name: "Car Dekho Service",
-    location: "Anna Nagar, Chennai",
-    address: "Anna Nagar West, Chennai 600040",
-    rating: 4.6,
-    reviewCount: 234,
-    tags: ["Oil Change", "Brakes", "Suspension"],
-    imageUrl: "https://images.unsplash.com/photo-1632823471406-52b9c9a5d8be?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: false,
-    hasDiscounts: true,
-    responseTime: "1 hour",
-    quotesThisMonth: 145,
-    walkInWelcome: true,
-  },
-  {
-    id: "6",
-    name: "AutoCare Express",
-    location: "Viman Nagar, Pune",
-    address: "Viman Nagar, Pune 411014",
-    rating: 4.7,
-    reviewCount: 189,
-    tags: ["Express Service", "Detailing", "Wash"],
-    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: true,
-    hasDiscounts: false,
-    responseTime: "30 mins",
-    quotesThisMonth: 167,
-  },
-  {
-    id: "7",
-    name: "Royal Garage",
-    location: "Salt Lake, Kolkata",
-    address: "Sector V, Salt Lake, Kolkata 700091",
-    rating: 4.5,
-    reviewCount: 156,
-    tags: ["Luxury Cars", "Body Paint", "Interiors"],
-    imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: false,
-    hasDiscounts: true,
-    responseTime: "2 hours",
-    quotesThisMonth: 98,
-  },
-  {
-    id: "8",
-    name: "Quick Fix Motors",
-    location: "Satellite, Ahmedabad",
-    address: "Satellite Road, Ahmedabad 380015",
-    rating: 4.6,
-    reviewCount: 267,
-    tags: ["Quick Service", "Battery", "AC Repair"],
-    imageUrl: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "45 mins",
-    quotesThisMonth: 134,
-    walkInWelcome: true,
-  },
-  {
-    id: "9",
-    name: "Premium Auto Hub",
-    location: "Business Bay, Dubai",
-    address: "Business Bay, Dubai, UAE",
-    rating: 4.9,
-    reviewCount: 412,
-    tags: ["Premium", "All Brands", "Warranty"],
-    imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: false,
-    responseTime: "30 mins",
-    quotesThisMonth: 289,
-  },
-  {
-    id: "10",
-    name: "Lagos Auto Works",
-    location: "Victoria Island, Lagos",
-    address: "Victoria Island, Lagos, Nigeria",
-    rating: 4.5,
-    reviewCount: 178,
-    tags: ["General Service", "Tyres", "Alignment"],
-    imageUrl: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: false,
-    hasDiscounts: true,
-    responseTime: "1-2 hours",
-    quotesThisMonth: 87,
-    walkInWelcome: true,
-  },
-  {
-    id: "11",
-    name: "Cairo Motors Service",
-    location: "Maadi, Cairo",
-    address: "Maadi, Cairo, Egypt",
-    rating: 4.7,
-    reviewCount: 223,
-    tags: ["European Cars", "Diagnostics", "Electrical"],
-    imageUrl: "https://images.unsplash.com/photo-1517524008697-84bbe39c0f1c?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: false,
-    responseTime: "1 hour",
-    quotesThisMonth: 156,
-  },
-  {
-    id: "12",
-    name: "Doha Elite Garage",
-    location: "West Bay, Doha",
-    address: "West Bay, Doha, Qatar",
-    rating: 4.8,
-    reviewCount: 198,
-    tags: ["Luxury", "Performance", "Detailing"],
-    imageUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "30 mins",
-    quotesThisMonth: 167,
-    walkInWelcome: true,
-  },
-];
-
 const Index = () => {
+  const { data: featuredGarages = [], isLoading } = useQuery({
+    queryKey: ['featured-garages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('garages')
+        .select('*')
+        .order('rating', { ascending: false })
+        .limit(12);
+      
+      if (error) throw error;
+      
+      return data.map(garage => ({
+        id: garage.id,
+        name: garage.name,
+        location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
+        address: garage.address || undefined,
+        rating: garage.rating || 5,
+        reviewCount: garage.review_count || 0,
+        tags: garage.services || [],
+        imageUrl: garage.photo_url || undefined,
+        locationLink: garage.location_link || undefined,
+        isVerified: garage.is_verified || false,
+        isCertified: garage.is_certified || false,
+        isRecommended: garage.is_recommended || false,
+        hasDiscounts: garage.has_discounts || false,
+        responseTime: garage.response_time || undefined,
+        quotesThisMonth: Math.floor(Math.random() * 200) + 50,
+        walkInWelcome: garage.walk_in_welcome || false,
+      }));
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -385,17 +218,27 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {topGarages.map((garage, index) => (
-              <div
-                key={garage.id}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <GarageCard {...garage} />
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : featuredGarages.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No garages found. Add some garages to get started!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {featuredGarages.map((garage, index) => (
+                <div
+                  key={garage.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <GarageCard {...garage} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
