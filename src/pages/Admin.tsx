@@ -9,7 +9,9 @@ import {
   Star,
   Search,
   RefreshCw,
-  LogOut
+  LogOut,
+  Building2,
+  LayoutDashboard
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminReviewCard } from "@/components/admin/AdminReviewCard";
-import { UserManagement } from "@/components/admin/UserManagement";
+import { EnhancedUserManagement } from "@/components/admin/EnhancedUserManagement";
+import { GarageManagement } from "@/components/admin/GarageManagement";
+import { CustomerManagement } from "@/components/admin/CustomerManagement";
+import { AdminOverview } from "@/components/admin/AdminOverview";
 
 interface Review {
   id: string;
@@ -237,17 +242,33 @@ export default function Admin() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="reviews" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2 gap-2">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-2">
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2">
               <Star className="w-4 h-4" />
-              Review Moderation
+              Reviews
+            </TabsTrigger>
+            <TabsTrigger value="garages" className="gap-2">
+              <Building2 className="w-4 h-4" />
+              Garages
+            </TabsTrigger>
+            <TabsTrigger value="customers" className="gap-2">
+              <Users className="w-4 h-4" />
+              Customers
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
-              <Users className="w-4 h-4" />
-              User Management
+              <Shield className="w-4 h-4" />
+              Permissions
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+            <AdminOverview />
+          </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
             {/* Search and Refresh */}
@@ -361,8 +382,16 @@ export default function Admin() {
             </Tabs>
           </TabsContent>
 
+          <TabsContent value="garages">
+            <GarageManagement />
+          </TabsContent>
+
+          <TabsContent value="customers">
+            <CustomerManagement />
+          </TabsContent>
+
           <TabsContent value="users">
-            <UserManagement />
+            <EnhancedUserManagement />
           </TabsContent>
         </Tabs>
       </main>
