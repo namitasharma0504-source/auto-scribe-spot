@@ -39,6 +39,11 @@ export function SmartSearch({ className }: { className?: string }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Escape special ILIKE characters to prevent SQL injection
+  const escapeIlikePattern = (input: string): string => {
+    return input.replace(/[%_\\]/g, (char) => `\\${char}`);
+  };
+
   useEffect(() => {
     const searchGarages = async () => {
       if (query.length < 2) {
@@ -55,11 +60,14 @@ export function SmartSearch({ className }: { className?: string }) {
 
       setIsLoading(true);
       try {
+        // Escape special characters in the query
+        const escapedQuery = escapeIlikePattern(query);
+        
         // Search garages
         const { data: garages } = await supabase
           .from("garages")
           .select("id, name, city, country")
-          .or(`name.ilike.%${query}%,city.ilike.%${query}%`)
+          .or(`name.ilike.%${escapedQuery}%,city.ilike.%${escapedQuery}%`)
           .limit(5);
 
         const garageSuggestions: Suggestion[] = (garages || []).map((g) => ({

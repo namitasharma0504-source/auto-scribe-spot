@@ -216,6 +216,8 @@ export type Database = {
       user_reviews: {
         Row: {
           created_at: string
+          customer_email: string | null
+          garage_email: string | null
           garage_location: string | null
           garage_name: string
           id: string
@@ -223,10 +225,13 @@ export type Database = {
           points_earned: number | null
           rating: number
           review_text: string | null
+          status: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          customer_email?: string | null
+          garage_email?: string | null
           garage_location?: string | null
           garage_name: string
           id?: string
@@ -234,10 +239,13 @@ export type Database = {
           points_earned?: number | null
           rating: number
           review_text?: string | null
+          status?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          customer_email?: string | null
+          garage_email?: string | null
           garage_location?: string | null
           garage_name?: string
           id?: string
@@ -245,6 +253,7 @@ export type Database = {
           points_earned?: number | null
           rating?: number
           review_text?: string | null
+          status?: string | null
           user_id?: string
         }
         Relationships: []
