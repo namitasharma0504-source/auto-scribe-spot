@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   Building2, Star, MessageSquare, TrendingUp, Eye, 
   Settings, Image, Wrench, ExternalLink, BarChart3,
-  Award, Users, Calendar, ArrowUp, ArrowDown
+  Award, Users, Calendar, ArrowUp, ArrowDown, BadgeCheck,
+  Percent, ShieldCheck, Clock, Info
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -41,6 +43,7 @@ export default function GarageDashboard() {
   const [garage, setGarage] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingBadges, setIsSavingBadges] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -57,6 +60,16 @@ export default function GarageDashboard() {
     services: [] as string[],
     pricing: "",
     special_offers: "",
+  });
+
+  // Badge state
+  const [badgeData, setBadgeData] = useState({
+    is_verified: false,
+    is_certified: false,
+    is_recommended: false,
+    has_discounts: false,
+    response_time: "",
+    walk_in_welcome: true,
   });
 
   useEffect(() => {
@@ -109,6 +122,14 @@ export default function GarageDashboard() {
             services: garageData.services || [],
             pricing: garageData.pricing || "",
             special_offers: garageData.special_offers || "",
+          });
+          setBadgeData({
+            is_verified: garageData.is_verified || false,
+            is_certified: garageData.is_certified || false,
+            is_recommended: garageData.is_recommended || false,
+            has_discounts: garageData.has_discounts || false,
+            response_time: garageData.response_time || "",
+            walk_in_welcome: garageData.walk_in_welcome ?? true,
           });
         }
       }
@@ -172,6 +193,42 @@ export default function GarageDashboard() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveBadges = async () => {
+    if (!garage) {
+      toast({
+        title: "No Garage Found",
+        description: "Please save your garage profile first before managing badges.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingBadges(true);
+    try {
+      const { error } = await supabase
+        .from("garages")
+        .update(badgeData)
+        .eq("id", garage.id);
+
+      if (error) throw error;
+
+      setGarage({ ...garage, ...badgeData });
+
+      toast({
+        title: "Badges Updated!",
+        description: "Your garage badges and highlights have been saved.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingBadges(false);
     }
   };
 
@@ -269,10 +326,14 @@ export default function GarageDashboard() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="gap-2">
+              <BadgeCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">Badges</span>
             </TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -416,6 +477,146 @@ export default function GarageDashboard() {
                 <Button onClick={handleSaveProfile} disabled={isSaving} className="w-full md:w-auto">
                   {isSaving ? "Saving..." : "Save Profile"}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Badges Tab */}
+          <TabsContent value="badges">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BadgeCheck className="w-6 h-6 text-primary" />
+                  Garage Badges & Highlights
+                </CardTitle>
+                <CardDescription>
+                  Customize the badges that appear on your garage listing to attract more customers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Info Banner */}
+                <div className="flex items-start gap-3 p-4 bg-accent/10 rounded-xl border border-accent/20">
+                  <Info className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    These highlights will be displayed on your garage listing. Enable badges that accurately 
+                    represent your garage to build trust with potential customers.
+                  </p>
+                </div>
+
+                {/* Badge Toggles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Verified Garage */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                        <BadgeCheck className="w-5 h-5 text-success" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">Verified Garage</h4>
+                        <p className="text-sm text-muted-foreground">Show that your garage is verified</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={badgeData.is_verified}
+                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_verified: checked })}
+                    />
+                  </div>
+
+                  {/* Certified Mechanics */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                        <Wrench className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">Certified Mechanics</h4>
+                        <p className="text-sm text-muted-foreground">Your mechanics are certified</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={badgeData.is_certified}
+                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_certified: checked })}
+                    />
+                  </div>
+
+                  {/* Recommended */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-star/10 flex items-center justify-center">
+                        <Award className="w-5 h-5 text-star" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">Recommended</h4>
+                        <p className="text-sm text-muted-foreground">Highlight based on reviews</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={badgeData.is_recommended}
+                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_recommended: checked })}
+                    />
+                  </div>
+
+                  {/* Discounts Available */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Percent className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">Discounts Available</h4>
+                        <p className="text-sm text-muted-foreground">Show you have special offers</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={badgeData.has_discounts}
+                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, has_discounts: checked })}
+                    />
+                  </div>
+
+                  {/* Walk-ins Welcome */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5 text-success" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">Walk-ins Welcome</h4>
+                        <p className="text-sm text-muted-foreground">Accept customers without appointment</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={badgeData.walk_in_welcome}
+                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, walk_in_welcome: checked })}
+                    />
+                  </div>
+                </div>
+
+                {/* Response Time */}
+                <div className="space-y-2">
+                  <Label htmlFor="response_time" className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Average Response Time
+                  </Label>
+                  <Input
+                    id="response_time"
+                    value={badgeData.response_time}
+                    onChange={(e) => setBadgeData({ ...badgeData, response_time: e.target.value })}
+                    placeholder="e.g., 30-45 mins, 1-2 hours"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    How quickly do you typically respond to quote requests?
+                  </p>
+                </div>
+
+                <Button onClick={handleSaveBadges} disabled={isSavingBadges || !garage} className="w-full md:w-auto">
+                  {isSavingBadges ? "Saving..." : "Save Badges"}
+                </Button>
+
+                {!garage && (
+                  <p className="text-sm text-destructive">
+                    Please save your garage profile first before managing badges.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
