@@ -52,7 +52,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      navigate("/admin-login");
       return;
     }
     
@@ -62,7 +62,7 @@ export default function Admin() {
         description: "You don't have admin permissions.",
         variant: "destructive",
       });
-      navigate("/");
+      navigate("/admin-login");
     }
   }, [user, isAdmin, authLoading, adminLoading, navigate, toast]);
 

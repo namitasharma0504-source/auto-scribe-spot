@@ -70,6 +70,12 @@ export const Footer = () => {
               <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
               <li><Link to="/trust-safety" className="hover:text-primary transition-colors">Trust & Safety</Link></li>
               <li><Link to="/content-guidelines" className="hover:text-primary transition-colors">Content Guidelines</Link></li>
+              <li>
+                <Link to="/admin-login" className="hover:text-primary transition-colors flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  Admin Login
+                </Link>
+              </li>
             </ul>
           </div>
           
@@ -86,12 +92,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-muted-foreground text-sm">
               <li><Link to="/rewards" className="hover:text-primary transition-colors">Rewards Program</Link></li>
               <li><Link to="/submit-review" className="hover:text-primary transition-colors">Write a Review</Link></li>
-              <li>
-                <Link to="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
-                  <Shield className="w-3 h-3" />
-                  Admin Login
-                </Link>
-              </li>
+              <li><Link to="/auth" className="hover:text-primary transition-colors">Customer Login</Link></li>
             </ul>
           </div>
         </div>
