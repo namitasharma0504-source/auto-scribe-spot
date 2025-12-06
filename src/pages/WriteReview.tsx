@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Camera } from "lucide-react";
+import { ArrowLeft, X, Camera } from "lucide-react";
 import { Header } from "@/components/Header";
 import { StarRating } from "@/components/StarRating";
 import { ServiceTag } from "@/components/ServiceTag";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const serviceTags = [
   "Quick Service",
@@ -39,6 +40,31 @@ const WriteReview = () => {
   const [reviewText, setReviewText] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [garageName, setGarageName] = useState("");
+  const [garageLocation, setGarageLocation] = useState("");
+  const [garageEmail, setGarageEmail] = useState<string | null>(null);
+
+  // Fetch garage details
+  useEffect(() => {
+    const fetchGarage = async () => {
+      if (!id) return;
+      
+      const { data, error } = await supabase
+        .from("garages")
+        .select("name, city, country, phone")
+        .eq("id", id)
+        .maybeSingle();
+      
+      if (data) {
+        setGarageName(data.name);
+        setGarageLocation(`${data.city || ""}, ${data.country || ""}`);
+        // For now, we don't have garage email in the schema, so we'll skip it
+      }
+    };
+    
+    fetchGarage();
+  }, [id]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -60,7 +86,7 @@ const WriteReview = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (overallRating === 0) {
       toast({
         title: "Rating Required",
@@ -79,14 +105,61 @@ const WriteReview = () => {
       return;
     }
 
-    toast({
-      title: "Review Submitted!",
-      description: "Thank you for sharing your experience.",
-    });
+    setIsSubmitting(true);
 
-    setTimeout(() => {
-      navigate(`/garage/${id}`);
-    }, 1500);
+    try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to submit a review.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      // Insert review with pending status
+      const { error: insertError } = await supabase
+        .from("user_reviews")
+        .insert({
+          user_id: user.id,
+          garage_name: garageName,
+          garage_location: garageLocation,
+          rating: overallRating,
+          review_text: reviewText,
+          is_verified: false,
+          points_earned: 50,
+          status: "pending",
+          customer_email: user.email,
+          garage_email: garageEmail,
+        });
+
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+
+      toast({
+        title: "Review Submitted!",
+        description: "Your review is pending approval. You'll be notified once it's live.",
+      });
+
+      setTimeout(() => {
+        navigate(`/garage/${id}`);
+      }, 1500);
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your review. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -108,7 +181,7 @@ const WriteReview = () => {
             Write a Review
           </h1>
           <p className="text-muted-foreground">
-            Share your experience at AutoCare Pro Center
+            Share your experience at {garageName || "this garage"}
           </p>
         </div>
 
@@ -247,16 +320,17 @@ const WriteReview = () => {
           <div className="pt-4">
             <Button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               size="lg"
               className="w-full h-14 text-lg rounded-xl shadow-glow"
             >
-              Submit Review
+              {isSubmitting ? "Submitting..." : "Submit Review"}
             </Button>
             <p className="text-center text-sm text-muted-foreground mt-4">
               By submitting, you agree to our{" "}
-              <a href="#" className="text-primary hover:underline">
+              <Link to="/terms" className="text-primary hover:underline">
                 Review Guidelines
-              </a>
+              </Link>
             </p>
           </div>
         </div>
