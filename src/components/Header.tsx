@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench, Shield } from "lucide-react";
+import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdminRole } from "@/hooks/useAdminRole";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
-  const { user, loading } = useAuth();
-  const { isAdmin } = useAdminRole();
+  const { user, loading, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <header className={cn(
@@ -73,26 +75,27 @@ export function Header() {
               {!loading && (
                 user ? (
                   <>
-                    {isAdmin && (
-                      <Link to="/admin">
-                        <Button variant="ghost" size="sm" className={cn(
-                          "gap-2",
-                          isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
-                        )}>
-                          <Shield className="w-4 h-4" />
-                          Admin
-                        </Button>
-                      </Link>
-                    )}
                     <Link to="/dashboard">
-                      <Button variant={isHomePage ? "secondary" : "default"} size="sm" className={cn(
+                      <Button variant="ghost" size="sm" className={cn(
                         "gap-2",
-                        isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                        isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
                       )}>
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
                       </Button>
                     </Link>
+                    <Button 
+                      variant={isHomePage ? "secondary" : "outline"} 
+                      size="sm" 
+                      onClick={handleSignOut}
+                      className={cn(
+                        "gap-2",
+                        isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                      )}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </Button>
                   </>
                 ) : (
                   <Link to="/auth">
@@ -101,7 +104,7 @@ export function Header() {
                       isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
                     )}>
                       <User className="w-4 h-4" />
-                      Sign In
+                      Customer Login
                     </Button>
                   </Link>
                 )
@@ -147,26 +150,29 @@ export function Header() {
               {!loading && (
                 user ? (
                   <>
-                    {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start gap-2">
-                          <Shield className="w-4 h-4" />
-                          Admin Panel
-                        </Button>
-                      </Link>
-                    )}
                     <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="default" className="w-full justify-start gap-2">
+                      <Button variant="ghost" className="w-full justify-start gap-2">
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
                       </Button>
                     </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start gap-2" 
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </Button>
                   </>
                 ) : (
                   <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full justify-start gap-2">
                       <User className="w-4 h-4" />
-                      Sign In
+                      Customer Login
                     </Button>
                   </Link>
                 )
