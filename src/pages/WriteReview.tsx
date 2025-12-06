@@ -43,7 +43,6 @@ const WriteReview = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [garageName, setGarageName] = useState("");
   const [garageLocation, setGarageLocation] = useState("");
-  const [garageEmail, setGarageEmail] = useState<string | null>(null);
 
   // Fetch garage details
   useEffect(() => {
@@ -133,8 +132,6 @@ const WriteReview = () => {
           is_verified: false,
           points_earned: 50,
           status: "pending",
-          customer_email: user.email,
-          garage_email: garageEmail,
         });
 
       if (insertError) {

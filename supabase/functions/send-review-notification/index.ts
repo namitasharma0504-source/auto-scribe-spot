@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +40,46 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify JWT and admin role
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ error: "Authorization required" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the user's JWT token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error("Invalid token or user not found:", authError);
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole, error: roleError } = await supabase
+      .rpc("has_role", { _user_id: user.id, _role: "admin" });
+
+    if (roleError || !hasAdminRole) {
+      console.error("User is not an admin:", user.id, roleError);
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log("Admin verified:", user.id);
+
     const { type, reviewData } = await req.json();
 
     if (type === "customer_approval") {
@@ -88,6 +129,7 @@ serve(async (req: Request): Promise<Response> => {
           </html>
         `,
       });
+      console.log("Customer approval email sent to:", reviewData.customerEmail);
     } else if (type === "garage_notification") {
       // Email to garage owner when a new review is approved for their garage
       await sendEmail({
@@ -133,6 +175,7 @@ serve(async (req: Request): Promise<Response> => {
           </html>
         `,
       });
+      console.log("Garage notification email sent to:", reviewData.garageEmail);
     }
 
     return new Response(JSON.stringify({ success: true }), {
