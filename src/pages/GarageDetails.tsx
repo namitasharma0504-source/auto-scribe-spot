@@ -2,10 +2,15 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Share2, Heart, PenSquare } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { StarRating } from "@/components/StarRating";
 import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { ReviewCard } from "@/components/ReviewCard";
-import { ServiceTag } from "@/components/ServiceTag";
+import { GarageBadges } from "@/components/GarageBadges";
+import { GarageServiceTags } from "@/components/GarageServiceTags";
+import { GarageActivityStats } from "@/components/GarageActivityStats";
+import { GarageMapPreview } from "@/components/GarageMapPreview";
+import { GetQuoteDialog } from "@/components/GetQuoteDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -19,7 +24,7 @@ const mockGarage = {
   imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=600&fit=crop",
   rating: 4.9,
   totalReviews: 342,
-  tags: ["Quick Service", "Professional Staff", "Fair Pricing", "All Brands", "Warranty", "Certified Mechanics"],
+  tags: ["General Service", "AC Repair", "Body Work", "Tyres", "Diagnostics", "Multi-brand", "Premium Cars"],
   categories: [
     { name: "Service Quality", rating: 4.9 },
     { name: "Pricing", rating: 4.7 },
@@ -33,6 +38,18 @@ const mockGarage = {
     { stars: 2, count: 3 },
     { stars: 1, count: 2 },
   ],
+  // Badge data
+  isVerified: true,
+  isCertified: true,
+  isRecommended: true,
+  hasDiscounts: true,
+  // Activity data
+  responseTime: "30-45 mins",
+  quotesThisMonth: 125,
+  walkInWelcome: true,
+  hasVerifiedLicense: true,
+  // Map
+  locationLink: "https://maps.google.com/?q=Manhattan,New+York",
 };
 
 const mockReviews = [
@@ -88,10 +105,10 @@ const GarageDetails = () => {
   const displayedTags = showAllTags ? mockGarage.tags : mockGarage.tags.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main>
+      <main className="flex-grow">
         {/* Hero Image */}
         <div className="relative h-64 md:h-96 overflow-hidden">
           <img
@@ -105,17 +122,40 @@ const GarageDetails = () => {
               <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-2">
                 {mockGarage.name}
               </h1>
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-4 flex-wrap mb-4">
                 <StarRating rating={mockGarage.rating} showValue size="lg" />
                 <span className="text-primary-foreground/80">
                   ({mockGarage.totalReviews} reviews)
                 </span>
+              </div>
+              {/* Badges on Hero */}
+              <div className="hidden md:block">
+                <GarageBadges
+                  isVerified={mockGarage.isVerified}
+                  isCertified={mockGarage.isCertified}
+                  isRecommended={mockGarage.isRecommended}
+                  hasDiscounts={mockGarage.hasDiscounts}
+                  size="md"
+                  showTooltip={true}
+                />
               </div>
             </div>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          {/* Mobile Badges */}
+          <div className="md:hidden mb-6">
+            <GarageBadges
+              isVerified={mockGarage.isVerified}
+              isCertified={mockGarage.isCertified}
+              isRecommended={mockGarage.isRecommended}
+              hasDiscounts={mockGarage.hasDiscounts}
+              size="sm"
+              showTooltip={true}
+            />
+          </div>
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Main Content */}
             <div className="flex-1">
@@ -153,14 +193,26 @@ const GarageDetails = () => {
                 </div>
               </div>
 
+              {/* Activity Stats */}
+              <div className="bg-card rounded-2xl p-6 shadow-md border border-border mb-8">
+                <h2 className="text-xl font-semibold text-foreground mb-4">Garage Activity</h2>
+                <GarageActivityStats
+                  responseTime={mockGarage.responseTime}
+                  quotesThisMonth={mockGarage.quotesThisMonth}
+                  walkInWelcome={mockGarage.walkInWelcome}
+                  hasVerifiedLicense={mockGarage.hasVerifiedLicense}
+                  variant="full"
+                />
+              </div>
+
               {/* Service Tags */}
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Service Highlights</h2>
-                <div className="flex flex-wrap gap-2">
-                  {displayedTags.map((tag) => (
-                    <ServiceTag key={tag} label={tag} variant="positive" />
-                  ))}
-                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-4">Services & Specializations</h2>
+                <GarageServiceTags 
+                  services={displayedTags} 
+                  showAll={true} 
+                  size="md"
+                />
                 {mockGarage.tags.length > 4 && (
                   <button
                     onClick={() => setShowAllTags(!showAllTags)}
@@ -173,6 +225,17 @@ const GarageDetails = () => {
                     )}
                   </button>
                 )}
+              </div>
+
+              {/* Google Map */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
+                <GarageMapPreview
+                  locationLink={mockGarage.locationLink}
+                  address={mockGarage.address}
+                  garageName={mockGarage.name}
+                  variant="full"
+                />
               </div>
 
               {/* Rating Breakdown */}
@@ -228,8 +291,17 @@ const GarageDetails = () => {
             {/* Sidebar */}
             <aside className="lg:w-80 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
+                {/* Get Quote - Primary CTA */}
+                <GetQuoteDialog
+                  garageName={mockGarage.name}
+                  garageId={mockGarage.id}
+                  variant="primary"
+                  size="lg"
+                  className="w-full h-14 text-lg rounded-xl shadow-glow"
+                />
+
                 <Link to={`/garage/${id}/review`}>
-                  <Button size="lg" className="w-full gap-2 h-14 text-lg rounded-xl shadow-glow">
+                  <Button variant="outline" size="lg" className="w-full gap-2 h-14 text-lg rounded-xl">
                     <PenSquare className="w-5 h-5" />
                     Write a Review
                   </Button>
@@ -255,7 +327,7 @@ const GarageDetails = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Avg Response Time</span>
-                      <span className="font-medium text-foreground">2 hours</span>
+                      <span className="font-medium text-foreground">{mockGarage.responseTime}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Years in Business</span>
@@ -265,6 +337,10 @@ const GarageDetails = () => {
                       <span className="text-muted-foreground">Verified Garage</span>
                       <span className="font-medium text-success">✓ Yes</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Quotes This Month</span>
+                      <span className="font-medium text-primary">{mockGarage.quotesThisMonth}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -272,6 +348,8 @@ const GarageDetails = () => {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };
