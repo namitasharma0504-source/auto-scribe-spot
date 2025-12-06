@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const serviceTags = [
   "Quick Service",
@@ -86,6 +87,7 @@ const SubmitReview = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -115,7 +117,7 @@ const SubmitReview = () => {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!garageName.trim()) {
       toast({
         title: "Garage Name Required",
@@ -152,16 +154,63 @@ const SubmitReview = () => {
       return;
     }
 
-    const points = receiptUploaded ? 50 : 25;
-    
-    toast({
-      title: "Review Submitted!",
-      description: `Thank you for sharing your experience. You earned ${points} points!`,
-    });
+    setIsSubmitting(true);
 
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
+    try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to submit a review.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const points = receiptUploaded ? 50 : 25;
+      const cityLabel = cities[country]?.find(c => c.value === city)?.label || city;
+      const countryLabel = countries.find(c => c.value === country)?.label || country;
+
+      // Insert review with pending status
+      const { error: insertError } = await supabase
+        .from("user_reviews")
+        .insert({
+          user_id: user.id,
+          garage_name: garageName.trim(),
+          garage_location: `${cityLabel}, ${countryLabel}`,
+          rating: overallRating,
+          review_text: reviewText.trim(),
+          is_verified: receiptUploaded,
+          points_earned: points,
+          status: "pending",
+        });
+
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+
+      toast({
+        title: "Review Submitted!",
+        description: `Thank you for sharing your experience. You earned ${points} points! Your review is pending approval.`,
+      });
+
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your review. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
