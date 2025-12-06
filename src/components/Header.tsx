@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench } from "lucide-react";
+import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const { user, loading } = useAuth();
+  const { isAdmin } = useAdminRole();
 
   return (
     <header className={cn(
@@ -70,15 +72,28 @@ export function Header() {
               </Link>
               {!loading && (
                 user ? (
-                  <Link to="/dashboard">
-                    <Button variant={isHomePage ? "secondary" : "default"} size="sm" className={cn(
-                      "gap-2",
-                      isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
-                    )}>
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
+                  <>
+                    {isAdmin && (
+                      <Link to="/admin">
+                        <Button variant="ghost" size="sm" className={cn(
+                          "gap-2",
+                          isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
+                        )}>
+                          <Shield className="w-4 h-4" />
+                          Admin
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/dashboard">
+                      <Button variant={isHomePage ? "secondary" : "default"} size="sm" className={cn(
+                        "gap-2",
+                        isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                      )}>
+                        <LayoutDashboard className="w-4 h-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  </>
                 ) : (
                   <Link to="/auth">
                     <Button variant={isHomePage ? "secondary" : "outline"} size="sm" className={cn(
@@ -131,12 +146,22 @@ export function Header() {
               </Link>
               {!loading && (
                 user ? (
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="default" className="w-full justify-start gap-2">
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
+                  <>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start gap-2">
+                          <Shield className="w-4 h-4" />
+                          Admin Panel
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="default" className="w-full justify-start gap-2">
+                        <LayoutDashboard className="w-4 h-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  </>
                 ) : (
                   <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full justify-start gap-2">
