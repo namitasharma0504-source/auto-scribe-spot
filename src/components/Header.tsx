@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Gift, LayoutDashboard, Building2, Wrench, LogOut } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, Building2, Wrench, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
@@ -52,15 +52,6 @@ export function Header() {
                   isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
                 )}>
                   Browse Garages
-                </Button>
-              </Link>
-              <Link to="/rewards">
-                <Button variant="ghost" size="sm" className={cn(
-                  "gap-2",
-                  isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
-                )}>
-                  <Gift className="w-4 h-4" />
-                  Rewards
                 </Button>
               </Link>
               <Link to="/garage-auth">
@@ -133,12 +124,6 @@ export function Header() {
               <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">
                   Browse Garages
-                </Button>
-              </Link>
-              <Link to="/rewards" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <Gift className="w-4 h-4" />
-                  Rewards
                 </Button>
               </Link>
               <Link to="/garage-auth" onClick={() => setMobileMenuOpen(false)}>
