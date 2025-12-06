@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, ExternalLink } from "lucide-react";
+import { Phone, Mail, MapPin, ExternalLink, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-
-const LOGO_URL = "https://storage.googleapis.com/gpt-engineer-file-uploads/7KBskuF0S6aidF2yeUxNqGAEox73/uploads/1764918252245-Screenshot 2025-12-05 at 12.34.03 PM.png";
 
 export const Footer = () => {
   const { user } = useAuth();
@@ -14,8 +12,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={LOGO_URL} alt="MeriGarage" className="w-10 h-10 object-contain" />
-              <span className="font-bold text-foreground">MeriGarage</span>
+              <span className="font-bold text-foreground text-lg">MeriGarage</span>
             </Link>
             <ul className="space-y-3 text-muted-foreground text-sm">
               <li className="flex items-start gap-2">
@@ -45,12 +42,6 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">For Garages</h4>
             <ul className="space-y-2 text-muted-foreground text-sm">
-              <li><Link to="/list-garage" className="hover:text-primary transition-colors">List Your Garage</Link></li>
-              <li><Link to="/garage-auth" className="hover:text-primary transition-colors">Garage Login</Link></li>
-              <li><Link to="/garage-auth" className="hover:text-primary transition-colors">Garage Sign Up</Link></li>
-              {user && (
-                <li><Link to="/garage-dashboard" className="hover:text-primary transition-colors">Garage Dashboard</Link></li>
-              )}
               <li>
                 <a 
                   href="https://merigarage.com/GarageAdmin/login.php" 
@@ -62,6 +53,12 @@ export const Footer = () => {
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
+              <li><Link to="/list-garage" className="hover:text-primary transition-colors">List Your Garage</Link></li>
+              <li><Link to="/advertise" className="hover:text-primary transition-colors">Advertise With Us</Link></li>
+              <li><Link to="/garage-auth" className="hover:text-primary transition-colors">Garage Login</Link></li>
+              {user && (
+                <li><Link to="/garage-dashboard" className="hover:text-primary transition-colors">Garage Dashboard</Link></li>
+              )}
             </ul>
           </div>
           
@@ -71,6 +68,8 @@ export const Footer = () => {
               <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
+              <li><Link to="/trust-safety" className="hover:text-primary transition-colors">Trust & Safety</Link></li>
+              <li><Link to="/content-guidelines" className="hover:text-primary transition-colors">Content Guidelines</Link></li>
             </ul>
           </div>
           
@@ -85,9 +84,14 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Customer</h4>
             <ul className="space-y-2 text-muted-foreground text-sm">
-              <li><Link to="/auth" className="hover:text-primary transition-colors">Customer Sign In</Link></li>
               <li><Link to="/rewards" className="hover:text-primary transition-colors">Rewards Program</Link></li>
               <li><Link to="/submit-review" className="hover:text-primary transition-colors">Write a Review</Link></li>
+              <li>
+                <Link to="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  Admin Login
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

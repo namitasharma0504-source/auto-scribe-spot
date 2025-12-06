@@ -21,6 +21,9 @@ import TermsOfService from "./pages/TermsOfService";
 import ListGarage from "./pages/ListGarage";
 import GarageAuth from "./pages/GarageAuth";
 import GarageDashboard from "./pages/GarageDashboard";
+import TrustSafety from "./pages/TrustSafety";
+import ContentGuidelines from "./pages/ContentGuidelines";
+import Advertise from "./pages/Advertise";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +53,9 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/list-garage" element={<ListGarage />} />
+            <Route path="/trust-safety" element={<TrustSafety />} />
+            <Route path="/content-guidelines" element={<ContentGuidelines />} />
+            <Route path="/advertise" element={<Advertise />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
