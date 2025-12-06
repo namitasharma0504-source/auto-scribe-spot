@@ -32,7 +32,6 @@ interface Review {
   review_text: string | null;
   status: string | null;
   created_at: string;
-  customer_email: string | null;
   is_verified: boolean | null;
 }
 
@@ -72,7 +71,7 @@ export default function Admin() {
     try {
       const { data, error } = await supabase
         .from("user_reviews")
-        .select("id, garage_name, garage_location, rating, review_text, status, created_at, customer_email, is_verified")
+        .select("id, garage_name, garage_location, rating, review_text, status, created_at, is_verified")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -104,9 +103,6 @@ export default function Admin() {
 
   const handleApprove = async (reviewId: string) => {
     try {
-      const review = reviews.find(r => r.id === reviewId);
-      if (!review) return;
-
       const { error } = await supabase
         .from("user_reviews")
         .update({ status: "approved" })
@@ -114,25 +110,9 @@ export default function Admin() {
 
       if (error) throw error;
 
-      // Send notification emails
-      if (review.customer_email) {
-        await supabase.functions.invoke("send-review-notification", {
-          body: {
-            type: "customer_approval",
-            reviewData: {
-              customerEmail: review.customer_email,
-              garageName: review.garage_name,
-              rating: review.rating,
-              reviewText: review.review_text,
-              pointsEarned: 50,
-            },
-          },
-        });
-      }
-
       toast({
         title: "Review Approved",
-        description: "The review is now live and notification sent.",
+        description: "The review is now live.",
       });
 
       fetchReviews();
@@ -178,8 +158,7 @@ export default function Admin() {
 
   const filteredReviews = reviews.filter(review =>
     review.garage_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (review.review_text || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (review.customer_email || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (review.review_text || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pendingReviews = filteredReviews.filter(r => r.status === "pending" || !r.status);
@@ -276,7 +255,7 @@ export default function Admin() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search reviews by garage, content, or email..."
+                  placeholder="Search reviews by garage or content..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
