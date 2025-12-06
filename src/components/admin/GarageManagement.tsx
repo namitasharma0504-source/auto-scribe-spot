@@ -13,12 +13,18 @@ import {
   Star,
   MessageSquare,
   CheckCircle,
-  XCircle
+  XCircle,
+  Save,
+  X,
+  Image as ImageIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +55,11 @@ interface Garage {
   rating: number | null;
   review_count: number | null;
   is_verified: boolean | null;
+  is_certified: boolean | null;
+  is_recommended: boolean | null;
+  has_discounts: boolean | null;
+  walk_in_welcome: boolean | null;
+  response_time: string | null;
   services: string[] | null;
   location_link: string | null;
   photo_url: string | null;
@@ -63,7 +74,10 @@ export function GarageManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Garage>>({});
 
   useEffect(() => {
     fetchGarages();
@@ -88,6 +102,76 @@ export function GarageManagement() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditGarage = (garage: Garage) => {
+    setSelectedGarage(garage);
+    setEditForm({
+      name: garage.name,
+      address: garage.address,
+      city: garage.city,
+      state: garage.state,
+      country: garage.country,
+      phone: garage.phone,
+      photo_url: garage.photo_url,
+      location_link: garage.location_link,
+      services: garage.services,
+      is_verified: garage.is_verified,
+      is_certified: garage.is_certified,
+      is_recommended: garage.is_recommended,
+      has_discounts: garage.has_discounts,
+      walk_in_welcome: garage.walk_in_welcome,
+      response_time: garage.response_time,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedGarage) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("garages")
+        .update({
+          name: editForm.name,
+          address: editForm.address,
+          city: editForm.city,
+          state: editForm.state,
+          country: editForm.country,
+          phone: editForm.phone,
+          photo_url: editForm.photo_url,
+          location_link: editForm.location_link,
+          services: editForm.services,
+          is_verified: editForm.is_verified,
+          is_certified: editForm.is_certified,
+          is_recommended: editForm.is_recommended,
+          has_discounts: editForm.has_discounts,
+          walk_in_welcome: editForm.walk_in_welcome,
+          response_time: editForm.response_time,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedGarage.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Garage Updated",
+        description: "The garage details have been saved",
+      });
+
+      setIsEditOpen(false);
+      fetchGarages();
+    } catch (error: any) {
+      console.error("Error updating garage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update garage",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -202,7 +286,6 @@ export function GarageManagement() {
     reader.readAsText(file);
   };
 
-  // Helper function to parse CSV line properly (handles quoted values)
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
     let current = "";
@@ -327,6 +410,7 @@ export function GarageManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Photo</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Phone</TableHead>
@@ -339,6 +423,19 @@ export function GarageManagement() {
                 <TableBody>
                   {filteredGarages.map((garage) => (
                     <TableRow key={garage.id}>
+                      <TableCell>
+                        {garage.photo_url ? (
+                          <img 
+                            src={garage.photo_url} 
+                            alt={garage.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{garage.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -389,6 +486,13 @@ export function GarageManagement() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => handleEditGarage(garage)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="text-destructive hover:text-destructive"
                             onClick={() => handleDeleteGarage(garage.id)}
                           >
@@ -416,6 +520,15 @@ export function GarageManagement() {
           </DialogHeader>
           {selectedGarage && (
             <div className="space-y-4">
+              {selectedGarage.photo_url && (
+                <div className="relative h-48 rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedGarage.photo_url} 
+                    alt={selectedGarage.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Name</p>
@@ -481,6 +594,204 @@ export function GarageManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
               Close
+            </Button>
+            <Button onClick={() => {
+              setIsDetailsOpen(false);
+              if (selectedGarage) handleEditGarage(selectedGarage);
+            }}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Garage
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Garage Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Garage</DialogTitle>
+            <DialogDescription>
+              Update garage information and photo
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Photo Preview & URL */}
+            <div className="space-y-3">
+              <Label>Garage Photo</Label>
+              {editForm.photo_url && (
+                <div className="relative h-48 rounded-lg overflow-hidden bg-muted">
+                  <img 
+                    src={editForm.photo_url} 
+                    alt="Garage preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              <Input
+                placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                value={editForm.photo_url || ""}
+                onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value || null })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste a direct link to the garage image
+              </p>
+            </div>
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Garage Name *</Label>
+                <Input
+                  id="name"
+                  value={editForm.name || ""}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={editForm.phone || ""}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value || null })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                value={editForm.address || ""}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value || null })}
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={editForm.city || ""}
+                  onChange={(e) => setEditForm({ ...editForm, city: e.target.value || null })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={editForm.state || ""}
+                  onChange={(e) => setEditForm({ ...editForm, state: e.target.value || null })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={editForm.country || ""}
+                  onChange={(e) => setEditForm({ ...editForm, country: e.target.value || null })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location_link">Google Maps Link</Label>
+              <Input
+                id="location_link"
+                placeholder="https://maps.google.com/..."
+                value={editForm.location_link || ""}
+                onChange={(e) => setEditForm({ ...editForm, location_link: e.target.value || null })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="services">Services (comma-separated)</Label>
+              <Input
+                id="services"
+                placeholder="Oil Change, Tire Service, AC Repair"
+                value={editForm.services?.join(", ") || ""}
+                onChange={(e) => setEditForm({ 
+                  ...editForm, 
+                  services: e.target.value ? e.target.value.split(",").map(s => s.trim()) : null 
+                })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="response_time">Response Time</Label>
+              <Input
+                id="response_time"
+                placeholder="e.g., 30 mins, 1-2 hours"
+                value={editForm.response_time || ""}
+                onChange={(e) => setEditForm({ ...editForm, response_time: e.target.value || null })}
+              />
+            </div>
+
+            {/* Badges */}
+            <div className="space-y-3">
+              <Label>Badges & Status</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border">
+                  <Label htmlFor="is_verified" className="text-sm cursor-pointer">Verified Garage</Label>
+                  <Switch
+                    id="is_verified"
+                    checked={editForm.is_verified || false}
+                    onCheckedChange={(checked) => setEditForm({ ...editForm, is_verified: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border">
+                  <Label htmlFor="is_certified" className="text-sm cursor-pointer">Certified</Label>
+                  <Switch
+                    id="is_certified"
+                    checked={editForm.is_certified || false}
+                    onCheckedChange={(checked) => setEditForm({ ...editForm, is_certified: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border">
+                  <Label htmlFor="is_recommended" className="text-sm cursor-pointer">Recommended</Label>
+                  <Switch
+                    id="is_recommended"
+                    checked={editForm.is_recommended || false}
+                    onCheckedChange={(checked) => setEditForm({ ...editForm, is_recommended: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border">
+                  <Label htmlFor="has_discounts" className="text-sm cursor-pointer">Has Discounts</Label>
+                  <Switch
+                    id="has_discounts"
+                    checked={editForm.has_discounts || false}
+                    onCheckedChange={(checked) => setEditForm({ ...editForm, has_discounts: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-2 p-3 rounded-lg border">
+                  <Label htmlFor="walk_in_welcome" className="text-sm cursor-pointer">Walk-in Welcome</Label>
+                  <Switch
+                    id="walk_in_welcome"
+                    checked={editForm.walk_in_welcome || false}
+                    onCheckedChange={(checked) => setEditForm({ ...editForm, walk_in_welcome: checked })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving}>
+              {isSaving ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
