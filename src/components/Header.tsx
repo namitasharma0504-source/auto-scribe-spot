@@ -43,9 +43,10 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
-            {!isHomePage && (
-              <SmartSearch className="w-64" />
-            )}
+            <SmartSearch 
+              className="w-72" 
+              placeholder="Search garages, cities..."
+            />
             <nav className="flex items-center gap-3">
               <Link to="/search">
                 <Button variant="ghost" size="sm" className={cn(
