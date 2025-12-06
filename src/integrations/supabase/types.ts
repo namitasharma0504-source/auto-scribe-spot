@@ -58,7 +58,10 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          has_discounts: boolean | null
           id: string
+          is_certified: boolean | null
+          is_recommended: boolean | null
           is_verified: boolean | null
           location_link: string | null
           name: string
@@ -67,18 +70,23 @@ export type Database = {
           photo_url: string | null
           pricing: string | null
           rating: number | null
+          response_time: string | null
           review_count: number | null
           services: string[] | null
           special_offers: string | null
           state: string | null
           updated_at: string
+          walk_in_welcome: boolean | null
         }
         Insert: {
           address?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          has_discounts?: boolean | null
           id?: string
+          is_certified?: boolean | null
+          is_recommended?: boolean | null
           is_verified?: boolean | null
           location_link?: string | null
           name: string
@@ -87,18 +95,23 @@ export type Database = {
           photo_url?: string | null
           pricing?: string | null
           rating?: number | null
+          response_time?: string | null
           review_count?: number | null
           services?: string[] | null
           special_offers?: string | null
           state?: string | null
           updated_at?: string
+          walk_in_welcome?: boolean | null
         }
         Update: {
           address?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          has_discounts?: boolean | null
           id?: string
+          is_certified?: boolean | null
+          is_recommended?: boolean | null
           is_verified?: boolean | null
           location_link?: string | null
           name?: string
@@ -107,11 +120,13 @@ export type Database = {
           photo_url?: string | null
           pricing?: string | null
           rating?: number | null
+          response_time?: string | null
           review_count?: number | null
           services?: string[] | null
           special_offers?: string | null
           state?: string | null
           updated_at?: string
+          walk_in_welcome?: boolean | null
         }
         Relationships: []
       }
