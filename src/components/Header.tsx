@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, User, LayoutDashboard, Building2, Wrench, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SmartSearch } from "./SmartSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -43,10 +42,6 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
-            <SmartSearch 
-              className="w-72" 
-              placeholder="Search garages, cities..."
-            />
             <nav className="flex items-center gap-3">
               <Link to="/search">
                 <Button variant="ghost" size="sm" className={cn(
@@ -117,11 +112,10 @@ export function Header() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
+          {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-card rounded-xl shadow-xl mb-4 p-4 animate-scale-in">
             <nav className="flex flex-col gap-2">
-              <SmartSearch className="mb-2" />
               <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">
                   Browse Garages

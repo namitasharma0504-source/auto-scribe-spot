@@ -83,6 +83,138 @@ const topGarages = [
     responseTime: "30 mins",
     quotesThisMonth: 278,
   },
+  {
+    id: "5",
+    name: "Car Dekho Service",
+    location: "Anna Nagar, Chennai",
+    address: "Anna Nagar West, Chennai 600040",
+    rating: 4.6,
+    reviewCount: 234,
+    tags: ["Oil Change", "Brakes", "Suspension"],
+    imageUrl: "https://images.unsplash.com/photo-1632823471406-52b9c9a5d8be?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: true,
+    isRecommended: false,
+    hasDiscounts: true,
+    responseTime: "1 hour",
+    quotesThisMonth: 145,
+    walkInWelcome: true,
+  },
+  {
+    id: "6",
+    name: "AutoCare Express",
+    location: "Viman Nagar, Pune",
+    address: "Viman Nagar, Pune 411014",
+    rating: 4.7,
+    reviewCount: 189,
+    tags: ["Express Service", "Detailing", "Wash"],
+    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: false,
+    isRecommended: true,
+    hasDiscounts: false,
+    responseTime: "30 mins",
+    quotesThisMonth: 167,
+  },
+  {
+    id: "7",
+    name: "Royal Garage",
+    location: "Salt Lake, Kolkata",
+    address: "Sector V, Salt Lake, Kolkata 700091",
+    rating: 4.5,
+    reviewCount: 156,
+    tags: ["Luxury Cars", "Body Paint", "Interiors"],
+    imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: true,
+    isRecommended: false,
+    hasDiscounts: true,
+    responseTime: "2 hours",
+    quotesThisMonth: 98,
+  },
+  {
+    id: "8",
+    name: "Quick Fix Motors",
+    location: "Satellite, Ahmedabad",
+    address: "Satellite Road, Ahmedabad 380015",
+    rating: 4.6,
+    reviewCount: 267,
+    tags: ["Quick Service", "Battery", "AC Repair"],
+    imageUrl: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: false,
+    isRecommended: true,
+    hasDiscounts: true,
+    responseTime: "45 mins",
+    quotesThisMonth: 134,
+    walkInWelcome: true,
+  },
+  {
+    id: "9",
+    name: "Premium Auto Hub",
+    location: "Business Bay, Dubai",
+    address: "Business Bay, Dubai, UAE",
+    rating: 4.9,
+    reviewCount: 412,
+    tags: ["Premium", "All Brands", "Warranty"],
+    imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: true,
+    isRecommended: true,
+    hasDiscounts: false,
+    responseTime: "30 mins",
+    quotesThisMonth: 289,
+  },
+  {
+    id: "10",
+    name: "Lagos Auto Works",
+    location: "Victoria Island, Lagos",
+    address: "Victoria Island, Lagos, Nigeria",
+    rating: 4.5,
+    reviewCount: 178,
+    tags: ["General Service", "Tyres", "Alignment"],
+    imageUrl: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: false,
+    isRecommended: false,
+    hasDiscounts: true,
+    responseTime: "1-2 hours",
+    quotesThisMonth: 87,
+    walkInWelcome: true,
+  },
+  {
+    id: "11",
+    name: "Cairo Motors Service",
+    location: "Maadi, Cairo",
+    address: "Maadi, Cairo, Egypt",
+    rating: 4.7,
+    reviewCount: 223,
+    tags: ["European Cars", "Diagnostics", "Electrical"],
+    imageUrl: "https://images.unsplash.com/photo-1517524008697-84bbe39c0f1c?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: true,
+    isRecommended: true,
+    hasDiscounts: false,
+    responseTime: "1 hour",
+    quotesThisMonth: 156,
+  },
+  {
+    id: "12",
+    name: "Doha Elite Garage",
+    location: "West Bay, Doha",
+    address: "West Bay, Doha, Qatar",
+    rating: 4.8,
+    reviewCount: 198,
+    tags: ["Luxury", "Performance", "Detailing"],
+    imageUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop",
+    isVerified: true,
+    isCertified: true,
+    isRecommended: true,
+    hasDiscounts: true,
+    responseTime: "30 mins",
+    quotesThisMonth: 167,
+    walkInWelcome: true,
+  },
 ];
 
 const Index = () => {
@@ -139,7 +271,7 @@ const Index = () => {
       </section>
 
       {/* Trust Banner */}
-      <section className="py-16 bg-card border-b border-border">
+      <section className="py-12 bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Garages */}
@@ -188,7 +320,7 @@ const Index = () => {
       </section>
 
       {/* Trending Cities */}
-      <section className="py-20 bg-background">
+      <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -233,7 +365,7 @@ const Index = () => {
       </section>
 
       {/* Top Rated Garages */}
-      <section className="py-20 bg-secondary/30">
+      <section className="py-12 bg-secondary/30">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -253,7 +385,7 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {topGarages.map((garage, index) => (
               <div
                 key={garage.id}
@@ -268,7 +400,7 @@ const Index = () => {
       </section>
 
       {/* How We Help You Choose - SEO Section */}
-      <section className="py-20 bg-background">
+      <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -370,7 +502,7 @@ const Index = () => {
       </section>
 
       {/* Customer CTA Section */}
-      <section className="py-20 bg-card border-y border-border">
+      <section className="py-12 bg-card border-y border-border">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="text-center md:text-left">
@@ -424,7 +556,7 @@ const Index = () => {
       </section>
 
         {/* Garage Owner CTA Section */}
-        <section className="py-20 bg-foreground" aria-label="List your garage">
+        <section className="py-12 bg-foreground" aria-label="List your garage">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-background mb-4">
               Own a Garage?
