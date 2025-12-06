@@ -12,6 +12,7 @@ import SubmitReview from "./pages/SubmitReview";
 import Rewards from "./pages/Rewards";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/garage-auth" element={<GarageAuth />} />
             <Route path="/garage-dashboard" element={<GarageDashboard />} />
             <Route path="/about" element={<AboutUs />} />
