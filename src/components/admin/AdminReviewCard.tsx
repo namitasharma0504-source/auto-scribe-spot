@@ -1,4 +1,4 @@
-import { Star, CheckCircle, XCircle, MapPin, Calendar, BadgeCheck } from "lucide-react";
+import { Star, CheckCircle, XCircle, MapPin, Mail, Calendar, BadgeCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ interface Review {
   review_text: string | null;
   status: string | null;
   created_at: string;
+  customer_email: string | null;
   is_verified: boolean | null;
 }
 
@@ -58,12 +59,18 @@ export function AdminReviewCard({
               )}
             </div>
 
-            {/* Location & Date */}
+            {/* Location & Email */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               {review.garage_location && (
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
                   {review.garage_location}
+                </span>
+              )}
+              {review.customer_email && (
+                <span className="flex items-center gap-1">
+                  <Mail className="w-4 h-4" />
+                  {review.customer_email}
                 </span>
               )}
               <span className="flex items-center gap-1">
