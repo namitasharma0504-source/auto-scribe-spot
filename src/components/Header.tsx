@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, LayoutDashboard, Building2, Wrench, LogOut } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, Building2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import meriGarageLogo from "@/assets/merigarage-logo.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,18 +27,14 @@ export function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
-              isHomePage ? "bg-primary-foreground/20" : "bg-primary/10"
-            )}>
-              <Wrench className={cn("w-5 h-5", isHomePage ? "text-primary-foreground" : "text-primary")} />
-            </div>
-            <span className={cn(
-              "text-xl font-bold transition-colors",
-              isHomePage ? "text-primary-foreground" : "text-foreground"
-            )}>
-              MeriGarage <span className={cn(isHomePage ? "text-primary-foreground/80" : "text-primary")}>Reviews</span>
-            </span>
+            <img 
+              src={meriGarageLogo} 
+              alt="MeriGarage Reviews" 
+              className={cn(
+                "h-10 md:h-12 w-auto object-contain",
+                isHomePage && "drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+              )}
+            />
           </Link>
 
           {/* Desktop Navigation */}

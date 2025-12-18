@@ -156,6 +156,31 @@ export default function Admin() {
     }
   };
 
+  const handleEdit = async (reviewId: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from("user_reviews")
+        .update({ review_text: newText })
+        .eq("id", reviewId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Review Updated",
+        description: "The review text has been saved.",
+      });
+
+      fetchReviews();
+    } catch (error: any) {
+      console.error("Error updating review:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update review",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
@@ -326,6 +351,7 @@ export default function Admin() {
                         review={review}
                         onApprove={() => handleApprove(review.id)}
                         onReject={() => handleReject(review.id)}
+                        onEdit={handleEdit}
                         showActions
                       />
                     ))}
