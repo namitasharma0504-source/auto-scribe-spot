@@ -1022,20 +1022,13 @@ export function GarageManagement() {
               {/* Predefined Services Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {predefinedServices.map((service) => (
-                  <div 
+                  <label 
                     key={service}
                     className={`flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors ${
                       (editForm.services || []).includes(service) 
                         ? 'bg-primary/10 border-primary' 
                         : 'hover:bg-muted border-border'
                     }`}
-                    onClick={() => {
-                      const currentServices = editForm.services || [];
-                      const newServices = currentServices.includes(service)
-                        ? currentServices.filter(s => s !== service)
-                        : [...currentServices, service];
-                      setEditForm({ ...editForm, services: newServices.length > 0 ? newServices : null });
-                    }}
                   >
                     <Checkbox 
                       checked={(editForm.services || []).includes(service)}
@@ -1048,7 +1041,7 @@ export function GarageManagement() {
                       }}
                     />
                     <span className="text-xs">{service}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
               
