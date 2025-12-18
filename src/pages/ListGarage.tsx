@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle } from "lucide-react";
+import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -15,6 +17,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+// Predefined services list
+const predefinedServices = [
+  "General Service",
+  "AC Repair",
+  "Body Work",
+  "Tyres",
+  "Diagnostics",
+  "EV-friendly",
+  "Multi-brand",
+  "Premium cars",
+  "Oil Change",
+  "Brake Service",
+  "Engine Repair",
+  "Transmission",
+  "Electrical",
+  "Suspension",
+  "Wheel Alignment",
+  "Car Wash",
+  "Detailing",
+  "Battery Service",
+  "Clutch Repair",
+  "Exhaust System"
+];
 
 const countries = [
   { value: "in", label: "India" },
@@ -120,7 +147,9 @@ const states: Record<string, { value: string; label: string }[]> = {
 
 const ListGarage = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     garageName: "",
     phone: "",
@@ -129,14 +158,107 @@ const ListGarage = () => {
     state: "",
     city: "",
     locationLink: "",
-    photoUrl: "",
-    servicesOffered: "",
+    services: [] as string[],
   });
+  
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [customService, setCustomService] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (field === "country") {
       setFormData((prev) => ({ ...prev, state: "", city: "" }));
+    }
+  };
+
+  const handleServiceToggle = (service: string) => {
+    setFormData(prev => ({
+      ...prev,
+      services: prev.services.includes(service)
+        ? prev.services.filter(s => s !== service)
+        : [...prev.services, service]
+    }));
+  };
+
+  const handleAddCustomService = () => {
+    const trimmedService = customService.trim();
+    if (trimmedService && !formData.services.includes(trimmedService) && !predefinedServices.includes(trimmedService)) {
+      setFormData(prev => ({
+        ...prev,
+        services: [...prev.services, trimmedService]
+      }));
+      setCustomService("");
+      setShowCustomInput(false);
+      toast.success(`"${trimmedService}" added to services`);
+    } else if (predefinedServices.includes(trimmedService) || formData.services.includes(trimmedService)) {
+      toast.error("This service already exists");
+    }
+  };
+
+  const handleRemoveService = (service: string) => {
+    setFormData(prev => ({
+      ...prev,
+      services: prev.services.filter(s => s !== service)
+    }));
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+      
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoFile) return null;
+    
+    setIsUploading(true);
+    try {
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `garage-listings/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('garage-photos')
+        .upload(filePath, photoFile);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('garage-photos')
+        .getPublicUrl(filePath);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error("Failed to upload photo");
+      return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -148,15 +270,57 @@ const ListGarage = () => {
       return;
     }
 
+    if (formData.services.length === 0) {
+      toast.error("Please select at least one service");
+      return;
+    }
+
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast.success("Your garage has been submitted for review! We'll notify you once it's approved.");
-    setIsSubmitting(false);
-    navigate("/");
+    try {
+      // Upload photo if provided
+      let photoUrl = null;
+      if (photoFile) {
+        photoUrl = await uploadPhoto();
+      }
+      
+      // Get labels for country, state, city
+      const countryLabel = countries.find(c => c.value === formData.country)?.label || formData.country;
+      const stateLabel = states[formData.country]?.find(s => s.value === formData.state)?.label || formData.state;
+      const cityLabel = cities[formData.country]?.find(c => c.value === formData.city)?.label || formData.city;
+      
+      // Insert garage into database
+      const { error } = await supabase
+        .from('garages')
+        .insert({
+          name: formData.garageName.trim(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim(),
+          state: stateLabel,
+          city: cityLabel,
+          country: countryLabel,
+          location_link: formData.locationLink.trim() || null,
+          photo_url: photoUrl,
+          services: formData.services,
+          is_verified: false,
+          rating: 5.0,
+          review_count: 0
+        });
+      
+      if (error) throw error;
+      
+      toast.success("Your garage has been submitted for review! We'll notify you once it's approved.");
+      navigate("/");
+    } catch (error) {
+      console.error('Error submitting garage:', error);
+      toast.error("Failed to submit garage. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Custom services are those in formData.services but not in predefinedServices
+  const customServices = formData.services.filter(s => !predefinedServices.includes(s));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -305,34 +469,146 @@ const ListGarage = () => {
               />
             </div>
 
-            {/* Photo URL */}
+            {/* Photo Upload */}
             <div className="space-y-2">
-              <Label htmlFor="photoUrl" className="flex items-center gap-2">
+              <Label className="flex items-center gap-2">
                 <Camera className="w-4 h-4 text-primary" />
-                Photo of Garage (URL)
+                Garage Photo
               </Label>
-              <Input
-                id="photoUrl"
-                type="url"
-                placeholder="https://example.com/photo.jpg"
-                value={formData.photoUrl}
-                onChange={(e) => handleInputChange("photoUrl", e.target.value)}
-              />
+              <div className="border-2 border-dashed border-border rounded-xl p-4">
+                {photoPreview ? (
+                  <div className="relative">
+                    <img 
+                      src={photoPreview} 
+                      alt="Garage preview" 
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemovePhoto}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload garage photo</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </div>
             </div>
 
-            {/* Services Offered */}
-            <div className="space-y-2">
-              <Label htmlFor="servicesOffered" className="flex items-center gap-2">
+            {/* Services Selection */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-primary" />
-                Services Offered
+                Services Offered *
               </Label>
-              <Textarea
-                id="servicesOffered"
-                placeholder="E.g., Oil Change, Brake Repair, Engine Diagnostics, AC Service, Tire Alignment..."
-                value={formData.servicesOffered}
-                onChange={(e) => handleInputChange("servicesOffered", e.target.value)}
-                rows={3}
-              />
+              <p className="text-sm text-muted-foreground">Select the services your garage provides</p>
+              
+              {/* Predefined Services Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {predefinedServices.map((service) => (
+                  <div 
+                    key={service}
+                    className={`flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                      formData.services.includes(service) 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'hover:bg-muted border-border'
+                    }`}
+                    onClick={() => handleServiceToggle(service)}
+                  >
+                    <Checkbox 
+                      checked={formData.services.includes(service)}
+                      onCheckedChange={() => handleServiceToggle(service)}
+                    />
+                    <span className="text-sm">{service}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Custom Services Display */}
+              {customServices.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm text-muted-foreground mb-2">Custom services added:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {customServices.map((service) => (
+                      <Badge 
+                        key={service} 
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {service}
+                        <X 
+                          className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                          onClick={() => handleRemoveService(service)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Add Custom Service */}
+              {showCustomInput ? (
+                <div className="flex gap-2 mt-3">
+                  <Input
+                    value={customService}
+                    onChange={(e) => setCustomService(e.target.value)}
+                    placeholder="Enter custom service name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomService();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={handleAddCustomService} size="sm">
+                    Add
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setShowCustomInput(false);
+                      setCustomService("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="mt-2"
+                  onClick={() => setShowCustomInput(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add More Services
+                </Button>
+              )}
+              
+              {/* Selected count */}
+              <p className="text-sm text-muted-foreground">
+                {formData.services.length} service{formData.services.length !== 1 ? 's' : ''} selected
+              </p>
             </div>
 
             {/* Benefits */}
@@ -362,9 +638,9 @@ const ListGarage = () => {
               type="submit"
               size="lg"
               className="w-full h-14 text-lg font-semibold"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
             >
-              {isSubmitting ? "Submitting..." : "Submit Your Garage"}
+              {isSubmitting ? "Submitting..." : isUploading ? "Uploading Photo..." : "Submit Your Garage"}
             </Button>
           </form>
         </div>
