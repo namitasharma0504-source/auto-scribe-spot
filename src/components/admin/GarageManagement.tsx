@@ -16,7 +16,9 @@ import {
   XCircle,
   Save,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Plus,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,16 +68,27 @@ interface Garage {
   created_at: string;
 }
 
+interface GaragePhoto {
+  id: string;
+  garage_id: string;
+  photo_url: string;
+  display_order: number;
+  created_at: string;
+}
+
 export function GarageManagement() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [garages, setGarages] = useState<Garage[]>([]);
+  const [garagePhotos, setGaragePhotos] = useState<GaragePhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Garage>>({});
 
@@ -105,6 +118,161 @@ export function GarageManagement() {
     }
   };
 
+  const fetchGaragePhotos = async (garageId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("garage_photos")
+        .select("*")
+        .eq("garage_id", garageId)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setGaragePhotos(data || []);
+    } catch (error: any) {
+      console.error("Error fetching garage photos:", error);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !selectedGarage) return;
+
+    setIsUploadingPhoto(true);
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedGarage.id}/${Date.now()}-${i}.${fileExt}`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('garage-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('garage-photos')
+          .getPublicUrl(fileName);
+
+        // Save to database
+        const { error: dbError } = await supabase
+          .from('garage_photos')
+          .insert({
+            garage_id: selectedGarage.id,
+            photo_url: urlData.publicUrl,
+            display_order: garagePhotos.length + i
+          });
+
+        if (dbError) throw dbError;
+
+        // Update main photo_url if this is the first photo
+        if (garagePhotos.length === 0 && i === 0) {
+          await supabase
+            .from('garages')
+            .update({ photo_url: urlData.publicUrl })
+            .eq('id', selectedGarage.id);
+          
+          setEditForm(prev => ({ ...prev, photo_url: urlData.publicUrl }));
+        }
+      }
+
+      toast({
+        title: "Photos Uploaded",
+        description: `${files.length} photo(s) uploaded successfully`,
+      });
+
+      fetchGaragePhotos(selectedGarage.id);
+    } catch (error: any) {
+      console.error("Error uploading photos:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload photos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) {
+        photoInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeletePhoto = async (photo: GaragePhoto) => {
+    if (!confirm("Are you sure you want to delete this photo?")) return;
+
+    try {
+      // Extract file path from URL
+      const urlParts = photo.photo_url.split('/garage-photos/');
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        await supabase.storage.from('garage-photos').remove([filePath]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from('garage_photos')
+        .delete()
+        .eq('id', photo.id);
+
+      if (error) throw error;
+
+      // Update main photo_url if needed
+      const remainingPhotos = garagePhotos.filter(p => p.id !== photo.id);
+      if (selectedGarage && photo.photo_url === editForm.photo_url) {
+        const newMainPhoto = remainingPhotos[0]?.photo_url || null;
+        await supabase
+          .from('garages')
+          .update({ photo_url: newMainPhoto })
+          .eq('id', selectedGarage.id);
+        setEditForm(prev => ({ ...prev, photo_url: newMainPhoto }));
+      }
+
+      toast({
+        title: "Photo Deleted",
+        description: "The photo has been removed",
+      });
+
+      setGaragePhotos(remainingPhotos);
+    } catch (error: any) {
+      console.error("Error deleting photo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete photo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const setAsMainPhoto = async (photo: GaragePhoto) => {
+    if (!selectedGarage) return;
+
+    try {
+      const { error } = await supabase
+        .from('garages')
+        .update({ photo_url: photo.photo_url })
+        .eq('id', selectedGarage.id);
+
+      if (error) throw error;
+
+      setEditForm(prev => ({ ...prev, photo_url: photo.photo_url }));
+
+      toast({
+        title: "Main Photo Updated",
+        description: "This photo is now the main display photo",
+      });
+    } catch (error: any) {
+      console.error("Error setting main photo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update main photo",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditGarage = (garage: Garage) => {
     setSelectedGarage(garage);
     setEditForm({
@@ -124,6 +292,7 @@ export function GarageManagement() {
       walk_in_welcome: garage.walk_in_welcome,
       response_time: garage.response_time,
     });
+    fetchGaragePhotos(garage.id);
     setIsEditOpen(true);
   };
 
@@ -617,29 +786,88 @@ export function GarageManagement() {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Photo Preview & URL */}
+            {/* Photo Upload & Management */}
             <div className="space-y-3">
-              <Label>Garage Photo</Label>
-              {editForm.photo_url && (
-                <div className="relative h-48 rounded-lg overflow-hidden bg-muted">
-                  <img 
-                    src={editForm.photo_url} 
-                    alt="Garage preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
+              <div className="flex items-center justify-between">
+                <Label>Garage Photos (up to 4)</Label>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto || garagePhotos.length >= 4}
+                >
+                  {isUploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  {isUploadingPhoto ? "Uploading..." : "Upload Photos"}
+                </Button>
+              </div>
+              
+              {/* Photo Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {garagePhotos.map((photo) => (
+                  <div key={photo.id} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img 
+                        src={photo.photo_url} 
+                        alt="Garage photo"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col items-center justify-center gap-1">
+                      {photo.photo_url !== editForm.photo_url && (
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          className="text-xs"
+                          onClick={() => setAsMainPhoto(photo)}
+                        >
+                          Set as Main
+                        </Button>
+                      )}
+                      {photo.photo_url === editForm.photo_url && (
+                        <Badge className="bg-primary text-primary-foreground text-xs">Main Photo</Badge>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        className="text-xs"
+                        onClick={() => handleDeletePhoto(photo)}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Empty slots */}
+                {garagePhotos.length < 4 && (
+                  <div 
+                    className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    <Plus className="w-8 h-8 text-muted-foreground/50" />
+                    <span className="text-xs text-muted-foreground mt-1">Add Photo</span>
+                  </div>
+                )}
+              </div>
+              
+              {garagePhotos.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No photos uploaded yet. Click "Upload Photos" to add garage images.
+                </p>
               )}
-              <Input
-                placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
-                value={editForm.photo_url || ""}
-                onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value || null })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Paste a direct link to the garage image
-              </p>
             </div>
 
             {/* Basic Info */}
@@ -700,13 +928,29 @@ export function GarageManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location_link">Google Maps Link</Label>
+              <Label htmlFor="location_link">Google Maps Location Link</Label>
               <Input
                 id="location_link"
-                placeholder="https://maps.google.com/..."
+                placeholder="https://maps.google.com/... or https://goo.gl/maps/..."
                 value={editForm.location_link || ""}
                 onChange={(e) => setEditForm({ ...editForm, location_link: e.target.value || null })}
               />
+              <p className="text-xs text-muted-foreground">
+                Paste the Google Maps share link for the garage location. Go to Google Maps → Search for the garage → Click "Share" → Copy link.
+              </p>
+              {editForm.location_link && (
+                <div className="flex items-center gap-2 mt-2">
+                  <a 
+                    href={editForm.location_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline flex items-center gap-1"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    Test Location Link
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

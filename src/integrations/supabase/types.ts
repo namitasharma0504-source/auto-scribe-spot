@@ -52,6 +52,38 @@ export type Database = {
           },
         ]
       }
+      garage_photos: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          garage_id: string
+          id: string
+          photo_url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          garage_id: string
+          id?: string
+          photo_url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          garage_id?: string
+          id?: string
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garage_photos_garage_id_fkey"
+            columns: ["garage_id"]
+            isOneToOne: false
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garages: {
         Row: {
           address: string | null
