@@ -4,8 +4,6 @@ import { Menu, X, User, LayoutDashboard, Building2, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import meriGarageLogo from "@/assets/merigarage-logo.png";
-import meriGarageLogoWhite from "@/assets/merigarage-logo-white.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,13 +24,14 @@ export function Header() {
     )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+          {/* Brand Name */}
           <Link to="/" className="flex items-center gap-2 group">
-            <img 
-              src={isHomePage ? meriGarageLogoWhite : meriGarageLogo} 
-              alt="MeriGarage Reviews" 
-              className="h-10 md:h-12 w-auto object-contain"
-            />
+            <span className={cn(
+              "text-xl md:text-2xl font-bold",
+              isHomePage ? "text-primary-foreground" : "text-primary"
+            )}>
+              MeriGarage<span className="text-secondary">Reviews</span>
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

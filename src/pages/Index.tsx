@@ -8,7 +8,7 @@ import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import indianMechanic from "@/assets/indian-mechanic.jpg";
+import indianGarageExterior from "@/assets/indian-garage-exterior.jpg";
 import indianCustomer from "@/assets/indian-customer.jpg";
 import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
 
@@ -114,8 +114,8 @@ const Index = () => {
             <div className="text-center group">
               <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
                 <img 
-                  src={indianMechanic} 
-                  alt="Professional Indian mechanic" 
+                  src={indianGarageExterior} 
+                  alt="Auto repair garage in India" 
                   className="w-full h-full object-cover"
                 />
               </div>
