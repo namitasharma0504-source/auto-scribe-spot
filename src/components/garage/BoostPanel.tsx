@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { 
   Rocket, Sparkles, Tag, Percent, Gift, Package, Plus, 
   Facebook, Instagram, Check, X, Loader2, AlertCircle,
-  Calendar, Trash2, Megaphone, ExternalLink, Shield
+  Calendar, Trash2, Megaphone, ExternalLink, Shield,
+  Sun, Snowflake, PartyPopper, Zap, Heart, Star, Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface BoostPanelProps {
   garageId: string | null;
@@ -54,14 +61,16 @@ interface MetaCredentials {
   last_verified_at: string | null;
 }
 
-const offerTemplates = [
+// Basic offer types
+const basicTemplates = [
   { 
     type: 'percentage_off', 
     label: '% Off', 
     icon: Percent, 
     color: 'bg-red-500',
     defaultTitle: 'Get {value}% Off',
-    placeholder: '20'
+    placeholder: '20',
+    defaultDescription: 'Limited time discount on all services'
   },
   { 
     type: 'flat_discount', 
@@ -69,7 +78,8 @@ const offerTemplates = [
     icon: Tag, 
     color: 'bg-green-500',
     defaultTitle: 'Flat ₹{value} Off',
-    placeholder: '500'
+    placeholder: '500',
+    defaultDescription: 'Save big on your next service'
   },
   { 
     type: 'free_service', 
@@ -77,7 +87,8 @@ const offerTemplates = [
     icon: Gift, 
     color: 'bg-purple-500',
     defaultTitle: 'Free {value}',
-    placeholder: 'Car Wash'
+    placeholder: 'Car Wash',
+    defaultDescription: 'Complimentary service with any booking'
   },
   { 
     type: 'bundle_deal', 
@@ -85,9 +96,96 @@ const offerTemplates = [
     icon: Package, 
     color: 'bg-blue-500',
     defaultTitle: 'Bundle: {value}',
-    placeholder: 'Oil Change + Filter'
+    placeholder: 'Oil Change + Filter',
+    defaultDescription: 'Multiple services at special price'
   },
 ];
+
+// Seasonal themed templates
+const seasonalTemplates = [
+  { 
+    type: 'diwali_special', 
+    label: '🪔 Diwali Special', 
+    icon: Sparkles, 
+    color: 'bg-gradient-to-r from-orange-500 to-yellow-500',
+    defaultTitle: 'Diwali Dhamaka - {value}% Off',
+    placeholder: '25',
+    defaultDescription: 'Celebrate with sparkling savings! Get your car festival-ready',
+    emoji: '🪔'
+  },
+  { 
+    type: 'summer_cool', 
+    label: '☀️ Summer Cool', 
+    icon: Sun, 
+    color: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    defaultTitle: 'Summer AC Special - {value}',
+    placeholder: '₹999 AC Service',
+    defaultDescription: 'Beat the heat! AC checkup & gas refill at special price',
+    emoji: '☀️'
+  },
+  { 
+    type: 'winter_carnival', 
+    label: '❄️ Winter Carnival', 
+    icon: Snowflake, 
+    color: 'bg-gradient-to-r from-blue-400 to-cyan-500',
+    defaultTitle: 'Winter Care Package - {value}',
+    placeholder: '₹1499',
+    defaultDescription: 'Prepare your car for winter with complete checkup',
+    emoji: '❄️'
+  },
+  { 
+    type: 'new_year', 
+    label: '🎉 New Year', 
+    icon: PartyPopper, 
+    color: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    defaultTitle: 'New Year Special - {value}% Off',
+    placeholder: '30',
+    defaultDescription: 'Start the year with a fresh ride! Limited period offer',
+    emoji: '🎉'
+  },
+  { 
+    type: 'flash_sale', 
+    label: '⚡ Flash Sale', 
+    icon: Zap, 
+    color: 'bg-gradient-to-r from-yellow-500 to-red-500',
+    defaultTitle: 'Flash Sale - {value}% Off Today Only!',
+    placeholder: '40',
+    defaultDescription: '24-hour mega discount! Hurry, limited slots available',
+    emoji: '⚡'
+  },
+  { 
+    type: 'valentines', 
+    label: '💝 Valentine\'s', 
+    icon: Heart, 
+    color: 'bg-gradient-to-r from-pink-500 to-red-500',
+    defaultTitle: 'Love Your Car - {value}',
+    placeholder: 'Free Interior Cleaning',
+    defaultDescription: 'Show your car some love with our special spa treatment',
+    emoji: '💝'
+  },
+  { 
+    type: 'weekend_special', 
+    label: '🌟 Weekend Special', 
+    icon: Star, 
+    color: 'bg-gradient-to-r from-indigo-500 to-purple-500',
+    defaultTitle: 'Weekend Warrior - {value}% Off',
+    placeholder: '15',
+    defaultDescription: 'Exclusive weekend discounts on all services',
+    emoji: '🌟'
+  },
+  { 
+    type: 'monsoon_ready', 
+    label: '🌧️ Monsoon Ready', 
+    icon: Flame, 
+    color: 'bg-gradient-to-r from-teal-500 to-blue-500',
+    defaultTitle: 'Monsoon Care - {value}',
+    placeholder: '₹799 Checkup',
+    defaultDescription: 'Prepare for rains! Wiper, brake & tyre inspection',
+    emoji: '🌧️'
+  },
+];
+
+const allTemplates = [...basicTemplates, ...seasonalTemplates];
 
 export function BoostPanel({ garageId, garageName }: BoostPanelProps) {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -359,7 +457,7 @@ export function BoostPanel({ garageId, garageName }: BoostPanelProps) {
     }
   };
 
-  const selectedTemplate = offerTemplates.find(t => t.type === newOffer.template_type);
+  const selectedTemplate = allTemplates.find(t => t.type === newOffer.template_type);
 
   if (!garageId) {
     return (
@@ -420,28 +518,70 @@ export function BoostPanel({ garageId, garageName }: BoostPanelProps) {
               <DialogDescription>Choose a template and customize your offer</DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4 pt-4">
-              {/* Template Selection */}
+            <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto">
+              {/* Template Selection with Tabs */}
               <div className="space-y-2">
                 <Label>Offer Type</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {offerTemplates.map((template) => (
-                    <button
-                      key={template.type}
-                      onClick={() => setNewOffer({ ...newOffer, template_type: template.type })}
-                      className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                        newOffer.template_type === template.type 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg ${template.color} flex items-center justify-center`}>
-                        <template.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-sm font-medium">{template.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <Tabs defaultValue="seasonal" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="seasonal" className="gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Seasonal
+                    </TabsTrigger>
+                    <TabsTrigger value="basic" className="gap-1">
+                      <Tag className="w-3 h-3" />
+                      Basic
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="seasonal" className="mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {seasonalTemplates.map((template) => (
+                        <button
+                          key={template.type}
+                          onClick={() => setNewOffer({ 
+                            ...newOffer, 
+                            template_type: template.type,
+                            description: template.defaultDescription || ''
+                          })}
+                          className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left ${
+                            newOffer.template_type === template.type 
+                              ? 'border-primary bg-primary/10' 
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg ${template.color} flex items-center justify-center flex-shrink-0`}>
+                            <template.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-xs font-medium leading-tight">{template.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="basic" className="mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {basicTemplates.map((template) => (
+                        <button
+                          key={template.type}
+                          onClick={() => setNewOffer({ 
+                            ...newOffer, 
+                            template_type: template.type,
+                            description: template.defaultDescription || ''
+                          })}
+                          className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                            newOffer.template_type === template.type 
+                              ? 'border-primary bg-primary/10' 
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg ${template.color} flex items-center justify-center`}>
+                            <template.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-sm font-medium">{template.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
 
               {/* Offer Title */}
@@ -668,7 +808,7 @@ export function BoostPanel({ garageId, garageName }: BoostPanelProps) {
           ) : (
             <div className="space-y-3">
               {offers.map((offer) => {
-                const template = offerTemplates.find(t => t.type === offer.template_type);
+                const template = allTemplates.find(t => t.type === offer.template_type);
                 return (
                   <div 
                     key={offer.id}
