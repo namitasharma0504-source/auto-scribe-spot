@@ -42,33 +42,36 @@ const Index = () => {
         .in('garage_id', garageIds)
         .order('display_order', { ascending: true });
       
-      // Create a map of garage_id to main photo URL
-      const photoMap = new Map<string, string>();
+      // Create a map of garage_id to array of photo URLs
+      const photoMap = new Map<string, string[]>();
       photos?.forEach(photo => {
-        // Only set if not already set (first photo = main photo)
-        if (!photoMap.has(photo.garage_id)) {
-          photoMap.set(photo.garage_id, photo.photo_url);
-        }
+        const existing = photoMap.get(photo.garage_id) || [];
+        existing.push(photo.photo_url);
+        photoMap.set(photo.garage_id, existing);
       });
       
-      return garages.map(garage => ({
-        id: garage.id,
-        name: garage.name,
-        location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
-        address: garage.address || undefined,
-        rating: garage.rating || 5,
-        reviewCount: garage.review_count || 0,
-        tags: garage.services || [],
-        imageUrl: photoMap.get(garage.id) || garage.photo_url || undefined,
-        locationLink: garage.location_link || undefined,
-        isVerified: garage.is_verified || false,
-        isCertified: garage.is_certified || false,
-        isRecommended: garage.is_recommended || false,
-        hasDiscounts: garage.has_discounts || false,
-        responseTime: garage.response_time || undefined,
-        quotesThisMonth: Math.floor(Math.random() * 200) + 50,
-        walkInWelcome: garage.walk_in_welcome || false,
-      }));
+      return garages.map(garage => {
+        const garagePhotos = photoMap.get(garage.id) || [];
+        return {
+          id: garage.id,
+          name: garage.name,
+          location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
+          address: garage.address || undefined,
+          rating: garage.rating || 5,
+          reviewCount: garage.review_count || 0,
+          tags: garage.services || [],
+          imageUrl: garagePhotos[0] || garage.photo_url || undefined,
+          photos: garagePhotos.length > 0 ? garagePhotos : (garage.photo_url ? [garage.photo_url] : []),
+          locationLink: garage.location_link || undefined,
+          isVerified: garage.is_verified || false,
+          isCertified: garage.is_certified || false,
+          isRecommended: garage.is_recommended || false,
+          hasDiscounts: garage.has_discounts || false,
+          responseTime: garage.response_time || undefined,
+          quotesThisMonth: Math.floor(Math.random() * 200) + 50,
+          walkInWelcome: garage.walk_in_welcome || false,
+        };
+      });
     },
   });
 
