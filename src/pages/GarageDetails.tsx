@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Share2, Heart, PenSquare } from "lucide-react";
+import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Share2, Heart, PenSquare, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StarRating } from "@/components/StarRating";
@@ -14,96 +14,161 @@ import { GetQuoteDialog } from "@/components/GetQuoteDialog";
 import { GarageOffers } from "@/components/GarageOffers";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
-const mockGarage = {
-  id: "1",
-  name: "AutoCare Pro Center",
-  address: "123 Main Street, Manhattan, New York, NY 10001",
-  phone: "+1 (555) 123-4567",
-  website: "www.autocarepro.com",
-  hours: "Mon-Fri: 8AM-6PM, Sat: 9AM-4PM",
-  imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=600&fit=crop",
-  rating: 4.9,
-  totalReviews: 342,
-  tags: ["General Service", "AC Repair", "Body Work", "Tyres", "Diagnostics", "Multi-brand", "Premium Cars"],
-  categories: [
-    { name: "Service Quality", rating: 4.9 },
-    { name: "Pricing", rating: 4.7 },
-    { name: "Timeliness", rating: 4.8 },
-    { name: "Communication", rating: 4.9 },
-  ],
-  distribution: [
-    { stars: 5, count: 280 },
-    { stars: 4, count: 45 },
-    { stars: 3, count: 12 },
-    { stars: 2, count: 3 },
-    { stars: 1, count: 2 },
-  ],
-  // Badge data
-  isVerified: true,
-  isCertified: true,
-  isRecommended: true,
-  hasDiscounts: true,
-  // Activity data
-  responseTime: "30-45 mins",
-  quotesThisMonth: 125,
-  walkInWelcome: true,
-  hasVerifiedLicense: true,
-  // Map
-  locationLink: "https://maps.google.com/?q=Manhattan,New+York",
-};
+interface Garage {
+  id: string;
+  name: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  phone: string | null;
+  photo_url: string | null;
+  rating: number | null;
+  review_count: number | null;
+  services: string[] | null;
+  is_verified: boolean | null;
+  is_certified: boolean | null;
+  is_recommended: boolean | null;
+  has_discounts: boolean | null;
+  response_time: string | null;
+  walk_in_welcome: boolean | null;
+  location_link: string | null;
+}
 
-const mockReviews = [
-  {
-    id: "1",
-    username: "Michael R.",
-    rating: 5,
-    reviewText: "Best garage experience I've ever had! They diagnosed my car issue quickly and the repair was done the same day. The staff was incredibly professional and kept me informed throughout the process. Highly recommend!",
-    date: "November 15, 2024",
-    tags: ["Quick Service", "Professional"],
-    images: [],
-    helpfulCount: 24,
-  },
-  {
-    id: "2",
-    username: "Sarah J.",
-    rating: 5,
-    reviewText: "I've been coming here for all my car maintenance needs for the past 2 years. They're always honest about what needs to be done and what can wait. Fair pricing and excellent work.",
-    date: "November 10, 2024",
-    tags: ["Fair Pricing", "Honest"],
-    images: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop",
-    ],
-    helpfulCount: 18,
-  },
-  {
-    id: "3",
-    username: "David K.",
-    rating: 4,
-    reviewText: "Good service overall. Had to wait a bit longer than expected but the quality of work was excellent. They even washed my car before returning it!",
-    date: "November 5, 2024",
-    tags: ["Quality Work"],
-    images: [],
-    helpfulCount: 12,
-  },
-  {
-    id: "4",
-    username: "Emily T.",
-    rating: 5,
-    reviewText: "Found them through this website and couldn't be happier. They fixed an electrical issue that two other shops couldn't figure out. True experts!",
-    date: "October 28, 2024",
-    tags: ["Expert Mechanics", "Problem Solvers"],
-    images: [],
-    helpfulCount: 31,
-  },
-];
+interface GaragePhoto {
+  id: string;
+  photo_url: string;
+  display_order: number | null;
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  garage_name: string;
+}
 
 const GarageDetails = () => {
   const { id } = useParams();
   const [showAllTags, setShowAllTags] = useState(false);
   const [reviewSort, setReviewSort] = useState("recent");
+  const [garage, setGarage] = useState<Garage | null>(null);
+  const [photos, setPhotos] = useState<GaragePhoto[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const displayedTags = showAllTags ? mockGarage.tags : mockGarage.tags.slice(0, 4);
+  useEffect(() => {
+    const fetchGarageData = async () => {
+      if (!id) return;
+
+      setLoading(true);
+      try {
+        // Fetch garage details
+        const { data: garageData, error: garageError } = await supabase
+          .from('garages')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (garageError) {
+          console.error('Error fetching garage:', garageError);
+        } else {
+          setGarage(garageData);
+        }
+
+        // Fetch garage photos
+        const { data: photosData, error: photosError } = await supabase
+          .from('garage_photos')
+          .select('*')
+          .eq('garage_id', id)
+          .order('display_order', { ascending: true });
+
+        if (photosError) {
+          console.error('Error fetching photos:', photosError);
+        } else {
+          setPhotos(photosData || []);
+        }
+
+        // Fetch approved reviews for this garage
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('user_reviews')
+          .select('id, rating, review_text, created_at, garage_name')
+          .eq('garage_name', garageData?.name || '')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
+
+        if (reviewsError) {
+          console.error('Error fetching reviews:', reviewsError);
+        } else {
+          setReviews(reviewsData || []);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGarageData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!garage) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Garage Not Found</h1>
+            <p className="text-muted-foreground mb-4">The garage you're looking for doesn't exist.</p>
+            <Link to="/">
+              <Button>Back to Home</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const fullAddress = [garage.address, garage.city, garage.state, garage.country]
+    .filter(Boolean)
+    .join(', ');
+
+  const heroImage = photos.length > 0 
+    ? photos[0].photo_url 
+    : garage.photo_url || "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=600&fit=crop";
+
+  const services = garage.services || [];
+  const displayedTags = showAllTags ? services : services.slice(0, 4);
+
+  // Calculate rating distribution from reviews
+  const distribution = [5, 4, 3, 2, 1].map(stars => ({
+    stars,
+    count: reviews.filter(r => r.rating === stars).length
+  }));
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -113,29 +178,29 @@ const GarageDetails = () => {
         {/* Hero Image */}
         <div className="relative h-64 md:h-96 overflow-hidden">
           <img
-            src={mockGarage.imageUrl}
-            alt={mockGarage.name}
+            src={heroImage}
+            alt={garage.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
             <div className="container mx-auto">
               <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-2">
-                {mockGarage.name}
+                {garage.name}
               </h1>
               <div className="flex items-center gap-4 flex-wrap mb-4">
-                <StarRating rating={mockGarage.rating} showValue size="lg" />
+                <StarRating rating={garage.rating || 5} showValue size="lg" />
                 <span className="text-primary-foreground/80">
-                  ({mockGarage.totalReviews} reviews)
+                  ({garage.review_count || 0} reviews)
                 </span>
               </div>
               {/* Badges on Hero */}
               <div className="hidden md:block">
                 <GarageBadges
-                  isVerified={mockGarage.isVerified}
-                  isCertified={mockGarage.isCertified}
-                  isRecommended={mockGarage.isRecommended}
-                  hasDiscounts={mockGarage.hasDiscounts}
+                  isVerified={garage.is_verified || false}
+                  isCertified={garage.is_certified || false}
+                  isRecommended={garage.is_recommended || false}
+                  hasDiscounts={garage.has_discounts || false}
                   size="md"
                   showTooltip={true}
                 />
@@ -148,10 +213,10 @@ const GarageDetails = () => {
           {/* Mobile Badges */}
           <div className="md:hidden mb-6">
             <GarageBadges
-              isVerified={mockGarage.isVerified}
-              isCertified={mockGarage.isCertified}
-              isRecommended={mockGarage.isRecommended}
-              hasDiscounts={mockGarage.hasDiscounts}
+              isVerified={garage.is_verified || false}
+              isCertified={garage.is_certified || false}
+              isRecommended={garage.is_recommended || false}
+              hasDiscounts={garage.has_discounts || false}
               size="sm"
               showTooltip={true}
             />
@@ -167,28 +232,28 @@ const GarageDetails = () => {
                     <MapPin className="w-5 h-5 text-primary mt-0.5" />
                     <div>
                       <span className="text-sm text-muted-foreground">Address</span>
-                      <p className="text-foreground">{mockGarage.address}</p>
+                      <p className="text-foreground">{fullAddress || 'Address not available'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 text-primary mt-0.5" />
                     <div>
                       <span className="text-sm text-muted-foreground">Phone</span>
-                      <p className="text-foreground">{mockGarage.phone}</p>
+                      <p className="text-foreground">{garage.phone || 'Not available'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Globe className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <span className="text-sm text-muted-foreground">Website</span>
-                      <p className="text-foreground">{mockGarage.website}</p>
+                      <span className="text-sm text-muted-foreground">Location</span>
+                      <p className="text-foreground">{garage.city}, {garage.state}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <span className="text-sm text-muted-foreground">Hours</span>
-                      <p className="text-foreground">{mockGarage.hours}</p>
+                      <span className="text-sm text-muted-foreground">Response Time</span>
+                      <p className="text-foreground">{garage.response_time || 'Contact for availability'}</p>
                     </div>
                   </div>
                 </div>
@@ -201,55 +266,61 @@ const GarageDetails = () => {
               <div className="bg-card rounded-2xl p-6 shadow-md border border-border mb-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Garage Activity</h2>
                 <GarageActivityStats
-                  responseTime={mockGarage.responseTime}
-                  quotesThisMonth={mockGarage.quotesThisMonth}
-                  walkInWelcome={mockGarage.walkInWelcome}
-                  hasVerifiedLicense={mockGarage.hasVerifiedLicense}
+                  responseTime={garage.response_time || undefined}
+                  walkInWelcome={garage.walk_in_welcome || undefined}
+                  hasVerifiedLicense={garage.is_verified || undefined}
                   variant="full"
                 />
               </div>
 
               {/* Service Tags */}
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Services & Specializations</h2>
-                <GarageServiceTags 
-                  services={displayedTags} 
-                  showAll={true} 
-                  size="md"
-                />
-                {mockGarage.tags.length > 4 && (
-                  <button
-                    onClick={() => setShowAllTags(!showAllTags)}
-                    className="flex items-center gap-1 text-primary text-sm font-medium mt-3 hover:underline"
-                  >
-                    {showAllTags ? (
-                      <>Show Less <ChevronUp className="w-4 h-4" /></>
-                    ) : (
-                      <>Show All ({mockGarage.tags.length}) <ChevronDown className="w-4 h-4" /></>
-                    )}
-                  </button>
-                )}
-              </div>
+              {services.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Services & Specializations</h2>
+                  <GarageServiceTags 
+                    services={displayedTags} 
+                    showAll={true} 
+                    size="md"
+                  />
+                  {services.length > 4 && (
+                    <button
+                      onClick={() => setShowAllTags(!showAllTags)}
+                      className="flex items-center gap-1 text-primary text-sm font-medium mt-3 hover:underline"
+                    >
+                      {showAllTags ? (
+                        <>Show Less <ChevronUp className="w-4 h-4" /></>
+                      ) : (
+                        <>Show All ({services.length}) <ChevronDown className="w-4 h-4" /></>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Google Map */}
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
-                <GarageMapPreview
-                  locationLink={mockGarage.locationLink}
-                  address={mockGarage.address}
-                  garageName={mockGarage.name}
-                  variant="full"
-                />
-              </div>
+              {garage.location_link && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
+                  <GarageMapPreview
+                    locationLink={garage.location_link}
+                    address={fullAddress}
+                    garageName={garage.name}
+                    variant="full"
+                  />
+                </div>
+              )}
 
               {/* Rating Breakdown */}
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Ratings & Reviews</h2>
                 <RatingBreakdown
-                  overall={mockGarage.rating}
-                  totalReviews={mockGarage.totalReviews}
-                  categories={mockGarage.categories}
-                  distribution={mockGarage.distribution}
+                  overall={garage.rating || 5}
+                  totalReviews={reviews.length}
+                  categories={[
+                    { name: "Service Quality", rating: garage.rating || 5 },
+                    { name: "Value for Money", rating: garage.rating || 5 },
+                  ]}
+                  distribution={distribution}
                 />
               </div>
 
@@ -257,7 +328,7 @@ const GarageDetails = () => {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">
-                    Customer Reviews ({mockReviews.length})
+                    Customer Reviews ({reviews.length})
                   </h2>
                   <Select value={reviewSort} onValueChange={setReviewSort}>
                     <SelectTrigger className="w-40">
@@ -265,30 +336,46 @@ const GarageDetails = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="recent">Most Recent</SelectItem>
-                      <SelectItem value="helpful">Most Helpful</SelectItem>
                       <SelectItem value="highest">Highest Rated</SelectItem>
                       <SelectItem value="lowest">Lowest Rated</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div className="space-y-4">
-                  {mockReviews.map((review, index) => (
-                    <div
-                      key={review.id}
-                      className="animate-fade-in"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <ReviewCard {...review} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8 text-center">
-                  <Button variant="outline" size="lg">
-                    Load More Reviews
-                  </Button>
-                </div>
+                {reviews.length === 0 ? (
+                  <div className="text-center py-8 bg-card rounded-2xl border border-border">
+                    <p className="text-muted-foreground mb-4">No reviews yet. Be the first to review!</p>
+                    <Link to={`/garage/${id}/review`}>
+                      <Button>Write a Review</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {[...reviews]
+                      .sort((a, b) => {
+                        if (reviewSort === 'highest') return b.rating - a.rating;
+                        if (reviewSort === 'lowest') return a.rating - b.rating;
+                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                      })
+                      .map((review, index) => (
+                        <div
+                          key={review.id}
+                          className="animate-fade-in"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                        <ReviewCard 
+                            username="Verified Customer"
+                            rating={review.rating}
+                            reviewText={review.review_text || ''}
+                            date={formatDate(review.created_at)}
+                            tags={[]}
+                            images={[]}
+                            helpfulCount={0}
+                          />
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -297,8 +384,8 @@ const GarageDetails = () => {
               <div className="sticky top-24 space-y-4">
                 {/* Get Quote - Primary CTA */}
                 <GetQuoteDialog
-                  garageName={mockGarage.name}
-                  garageId={mockGarage.id}
+                  garageName={garage.name}
+                  garageId={garage.id}
                   variant="primary"
                   size="lg"
                   className="w-full h-14 text-lg rounded-xl shadow-glow"
@@ -326,27 +413,42 @@ const GarageDetails = () => {
                   <h3 className="font-semibold text-foreground mb-4">Quick Stats</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Response Rate</span>
-                      <span className="font-medium text-foreground">98%</span>
+                      <span className="text-muted-foreground">Response Time</span>
+                      <span className="font-medium text-foreground">{garage.response_time || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Avg Response Time</span>
-                      <span className="font-medium text-foreground">{mockGarage.responseTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Years in Business</span>
-                      <span className="font-medium text-foreground">12 years</span>
+                      <span className="text-muted-foreground">Walk-in Welcome</span>
+                      <span className="font-medium text-foreground">{garage.walk_in_welcome ? 'Yes' : 'No'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Verified Garage</span>
-                      <span className="font-medium text-success">✓ Yes</span>
+                      <span className={`font-medium ${garage.is_verified ? 'text-success' : 'text-muted-foreground'}`}>
+                        {garage.is_verified ? '✓ Yes' : 'No'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Quotes This Month</span>
-                      <span className="font-medium text-primary">{mockGarage.quotesThisMonth}</span>
+                      <span className="text-muted-foreground">Total Reviews</span>
+                      <span className="font-medium text-primary">{reviews.length}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Photo Gallery */}
+                {photos.length > 1 && (
+                  <div className="bg-card rounded-2xl p-6 shadow-md border border-border">
+                    <h3 className="font-semibold text-foreground mb-4">Photos</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {photos.slice(0, 4).map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.photo_url}
+                          alt="Garage"
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </aside>
           </div>
