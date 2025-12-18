@@ -25,15 +25,33 @@ const Index = () => {
   const { data: featuredGarages = [], isLoading } = useQuery({
     queryKey: ['featured-garages'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch garages with their photos from garage_photos table
+      const { data: garages, error: garagesError } = await supabase
         .from('garages')
         .select('*')
         .order('rating', { ascending: false })
         .limit(12);
       
-      if (error) throw error;
+      if (garagesError) throw garagesError;
       
-      return data.map(garage => ({
+      // Fetch photos for all garages
+      const garageIds = garages.map(g => g.id);
+      const { data: photos } = await supabase
+        .from('garage_photos')
+        .select('garage_id, photo_url, display_order')
+        .in('garage_id', garageIds)
+        .order('display_order', { ascending: true });
+      
+      // Create a map of garage_id to main photo URL
+      const photoMap = new Map<string, string>();
+      photos?.forEach(photo => {
+        // Only set if not already set (first photo = main photo)
+        if (!photoMap.has(photo.garage_id)) {
+          photoMap.set(photo.garage_id, photo.photo_url);
+        }
+      });
+      
+      return garages.map(garage => ({
         id: garage.id,
         name: garage.name,
         location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
@@ -41,7 +59,7 @@ const Index = () => {
         rating: garage.rating || 5,
         reviewCount: garage.review_count || 0,
         tags: garage.services || [],
-        imageUrl: garage.photo_url || undefined,
+        imageUrl: photoMap.get(garage.id) || garage.photo_url || undefined,
         locationLink: garage.location_link || undefined,
         isVerified: garage.is_verified || false,
         isCertified: garage.is_certified || false,
