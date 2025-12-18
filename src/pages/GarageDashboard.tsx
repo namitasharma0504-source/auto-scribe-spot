@@ -4,7 +4,7 @@ import {
   Building2, Star, MessageSquare, TrendingUp, Eye, 
   Settings, Image, Wrench, ExternalLink, BarChart3,
   Award, Users, Calendar, ArrowUp, ArrowDown, BadgeCheck,
-  Percent, ShieldCheck, Clock, Info
+  Percent, ShieldCheck, Clock, Info, Rocket, Sparkles
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { BoostPanel } from "@/components/garage/BoostPanel";
 
 // Sample analytics data
 const viewsData = [
@@ -326,7 +327,7 @@ export default function GarageDashboard() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+          <TabsList className="grid w-full grid-cols-7 max-w-4xl">
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -334,6 +335,14 @@ export default function GarageDashboard() {
             <TabsTrigger value="badges" className="gap-2">
               <BadgeCheck className="w-4 h-4" />
               <span className="hidden sm:inline">Badges</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="boost" 
+              className="gap-2 relative bg-gradient-to-r from-primary/20 to-accent/20 data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-primary-foreground border border-primary/30 animate-pulse hover:animate-none"
+            >
+              <Rocket className="w-4 h-4" />
+              <span className="hidden sm:inline">Boost</span>
+              <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-star" />
             </TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -619,6 +628,11 @@ export default function GarageDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Boost Tab */}
+          <TabsContent value="boost">
+            <BoostPanel garageId={garage?.id || null} garageName={garage?.name || garageOwner?.business_name || ''} />
           </TabsContent>
 
           {/* Reviews Tab */}
