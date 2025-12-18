@@ -11,6 +11,7 @@ import { GarageServiceTags } from "@/components/GarageServiceTags";
 import { GarageActivityStats } from "@/components/GarageActivityStats";
 import { GarageMapPreview } from "@/components/GarageMapPreview";
 import { GetQuoteDialog } from "@/components/GetQuoteDialog";
+import { GarageOffers } from "@/components/GarageOffers";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -192,6 +193,9 @@ const GarageDetails = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Special Offers */}
+              {id && <GarageOffers garageId={id} />}
 
               {/* Activity Stats */}
               <div className="bg-card rounded-2xl p-6 shadow-md border border-border mb-8">
