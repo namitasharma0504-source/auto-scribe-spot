@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle } from "lucide-react";
+import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GarageCard } from "@/components/GarageCard";
@@ -8,107 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-
-const mockGarages = [
-  {
-    id: "1",
-    name: "AutoCare Pro Center",
-    location: "Manhattan, New York",
-    address: "123 Main Street, Manhattan, NY 10001",
-    rating: 4.9,
-    reviewCount: 342,
-    tags: ["General Service", "AC Repair", "Multi-brand"],
-    imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "30-45 mins",
-    quotesThisMonth: 125,
-    walkInWelcome: true,
-  },
-  {
-    id: "2",
-    name: "Elite Motors Workshop",
-    location: "Brooklyn, New York",
-    address: "456 Park Avenue, Brooklyn, NY 11201",
-    rating: 4.8,
-    reviewCount: 287,
-    tags: ["Premium Cars", "Diagnostics", "Body Work"],
-    imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: false,
-    hasDiscounts: true,
-    responseTime: "1-2 hours",
-    quotesThisMonth: 89,
-  },
-  {
-    id: "3",
-    name: "SpeedFix Auto Service",
-    location: "Queens, New York",
-    address: "789 Queens Blvd, Queens, NY 11101",
-    rating: 4.7,
-    reviewCount: 198,
-    tags: ["Tyres", "General Service", "All Brands"],
-    imageUrl: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: true,
-    hasDiscounts: false,
-    responseTime: "45-60 mins",
-    quotesThisMonth: 67,
-    walkInWelcome: true,
-  },
-  {
-    id: "4",
-    name: "Premier Auto Care",
-    location: "Bronx, New York",
-    address: "321 Grand Concourse, Bronx, NY 10451",
-    rating: 4.8,
-    reviewCount: 256,
-    tags: ["EV-friendly", "Diagnostics", "All Brands"],
-    imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: true,
-    hasDiscounts: true,
-    responseTime: "30 mins",
-    quotesThisMonth: 156,
-  },
-  {
-    id: "5",
-    name: "City Garage Masters",
-    location: "Staten Island, New York",
-    address: "555 Victory Blvd, Staten Island, NY 10301",
-    rating: 4.6,
-    reviewCount: 167,
-    tags: ["24/7 Service", "AC Repair", "General Service"],
-    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: false,
-    isRecommended: false,
-    hasDiscounts: true,
-    quotesThisMonth: 45,
-    walkInWelcome: true,
-  },
-  {
-    id: "6",
-    name: "Precision Auto Works",
-    location: "Harlem, New York",
-    address: "888 Malcolm X Blvd, Harlem, NY 10027",
-    rating: 4.5,
-    reviewCount: 143,
-    tags: ["German Cars", "Diagnostics", "Premium Cars"],
-    imageUrl: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=600&h=400&fit=crop",
-    isVerified: true,
-    isCertified: true,
-    isRecommended: false,
-    hasDiscounts: false,
-    responseTime: "1 hour",
-    quotesThisMonth: 38,
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const filterTags = [
   "Quick Service",
@@ -128,19 +29,89 @@ const SearchResults = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const city = searchParams.get("city") || "New York";
+  const city = searchParams.get("city") || "";
   const query = searchParams.get("q") || "";
 
-  // Filter garages based on search query
-  const filteredGarages = query
-    ? mockGarages.filter((g) => g.name.toLowerCase().includes(query.toLowerCase()))
-    : mockGarages;
+  // Fetch garages from database
+  const { data: garages = [], isLoading } = useQuery({
+    queryKey: ['search-garages', city, query, sortBy],
+    queryFn: async () => {
+      let queryBuilder = supabase
+        .from('garages')
+        .select('*');
+      
+      // Filter by city if provided
+      if (city) {
+        queryBuilder = queryBuilder.ilike('city', `%${city}%`);
+      }
+      
+      // Filter by search query (name)
+      if (query) {
+        queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+      }
+      
+      // Apply sorting
+      if (sortBy === 'rating') {
+        queryBuilder = queryBuilder.order('rating', { ascending: false });
+      } else if (sortBy === 'reviews') {
+        queryBuilder = queryBuilder.order('review_count', { ascending: false });
+      } else if (sortBy === 'name') {
+        queryBuilder = queryBuilder.order('name', { ascending: true });
+      }
+      
+      const { data: garagesData, error } = await queryBuilder;
+      
+      if (error) throw error;
+      if (!garagesData || garagesData.length === 0) return [];
+      
+      // Fetch photos for all garages
+      const garageIds = garagesData.map(g => g.id);
+      const { data: photos } = await supabase
+        .from('garage_photos')
+        .select('garage_id, photo_url, display_order')
+        .in('garage_id', garageIds)
+        .order('display_order', { ascending: true });
+      
+      // Create a map of garage_id to array of photo URLs
+      const photoMap = new Map<string, string[]>();
+      photos?.forEach(photo => {
+        const existing = photoMap.get(photo.garage_id) || [];
+        existing.push(photo.photo_url);
+        photoMap.set(photo.garage_id, existing);
+      });
+      
+      return garagesData.map(garage => {
+        const garagePhotos = photoMap.get(garage.id) || [];
+        return {
+          id: garage.id,
+          name: garage.name,
+          location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
+          address: garage.address || undefined,
+          rating: garage.rating || 5,
+          reviewCount: garage.review_count || 0,
+          tags: garage.services || [],
+          imageUrl: garagePhotos[0] || garage.photo_url || undefined,
+          photos: garagePhotos.length > 0 ? garagePhotos : (garage.photo_url ? [garage.photo_url] : []),
+          locationLink: garage.location_link || undefined,
+          isVerified: garage.is_verified || false,
+          isCertified: garage.is_certified || false,
+          isRecommended: garage.is_recommended || false,
+          hasDiscounts: garage.has_discounts || false,
+          responseTime: garage.response_time || undefined,
+          quotesThisMonth: Math.floor(Math.random() * 200) + 50,
+          walkInWelcome: garage.walk_in_welcome || false,
+        };
+      });
+    },
+  });
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
+
+  const displayLocation = city || "All Locations";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -154,10 +125,10 @@ const SearchResults = () => {
             <span>Showing results in</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            {query ? `"${query}" in ${city}` : `Garages in ${city}`}
+            {query ? `"${query}" in ${displayLocation}` : `Garages in ${displayLocation}`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {filteredGarages.length} garages found
+            {isLoading ? "Searching..." : `${garages.length} garages found`}
           </p>
         </div>
 
@@ -268,14 +239,18 @@ const SearchResults = () => {
 
           {/* Results Grid */}
           <div className="flex-1">
-            {filteredGarages.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : garages.length > 0 ? (
               <div className={cn(
                 "grid gap-6",
                 viewMode === "grid"
                   ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                   : "grid-cols-1"
               )}>
-                {filteredGarages.map((garage, index) => (
+                {garages.map((garage, index) => (
                   <div
                     key={garage.id}
                     className="animate-fade-in"
@@ -292,12 +267,12 @@ const SearchResults = () => {
                   <MapPin className="w-10 h-10 text-muted-foreground" />
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">
-                  No garages found for "{query}"
+                  No garages found {query ? `for "${query}"` : "in this location"}
                 </h3>
                 <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                   We couldn't find any garages matching your search. Would you like to add this garage to our platform?
                 </p>
-                <Link to={`/list-garage?name=${encodeURIComponent(query)}`}>
+                <Link to={`/list-garage${query ? `?name=${encodeURIComponent(query)}` : ''}`}>
                   <Button size="lg" className="gap-2">
                     <PlusCircle className="w-5 h-5" />
                     Add This Garage
@@ -307,7 +282,7 @@ const SearchResults = () => {
             )}
 
             {/* Load More */}
-            {filteredGarages.length > 0 && (
+            {garages.length > 0 && (
               <div className="mt-12 text-center">
                 <Button variant="outline" size="lg">
                   Load More Garages
