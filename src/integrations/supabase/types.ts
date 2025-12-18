@@ -14,6 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
+      garage_meta_credentials: {
+        Row: {
+          created_at: string
+          garage_id: string
+          id: string
+          is_verified: boolean | null
+          last_verified_at: string | null
+          meta_access_token: string | null
+          meta_ad_account_id: string | null
+          meta_app_id: string | null
+          meta_app_secret: string | null
+          meta_page_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          garage_id: string
+          id?: string
+          is_verified?: boolean | null
+          last_verified_at?: string | null
+          meta_access_token?: string | null
+          meta_ad_account_id?: string | null
+          meta_app_id?: string | null
+          meta_app_secret?: string | null
+          meta_page_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          garage_id?: string
+          id?: string
+          is_verified?: boolean | null
+          last_verified_at?: string | null
+          meta_access_token?: string | null
+          meta_ad_account_id?: string | null
+          meta_app_id?: string | null
+          meta_app_secret?: string | null
+          meta_page_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garage_meta_credentials_garage_id_fkey"
+            columns: ["garage_id"]
+            isOneToOne: true
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garage_offers: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_value: string | null
+          garage_id: string
+          id: string
+          is_active: boolean | null
+          is_promoted_to_meta: boolean | null
+          meta_ad_id: string | null
+          template_type: string
+          title: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_value?: string | null
+          garage_id: string
+          id?: string
+          is_active?: boolean | null
+          is_promoted_to_meta?: boolean | null
+          meta_ad_id?: string | null
+          template_type: string
+          title: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_value?: string | null
+          garage_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_promoted_to_meta?: boolean | null
+          meta_ad_id?: string | null
+          template_type?: string
+          title?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garage_offers_garage_id_fkey"
+            columns: ["garage_id"]
+            isOneToOne: false
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garage_owners: {
         Row: {
           business_name: string | null

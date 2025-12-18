@@ -1,1 +1,10 @@
 project_id = "wefmeevbimayoyqlduea"
+
+[functions.send-review-notification]
+verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.meta-ads]
+verify_jwt = true
