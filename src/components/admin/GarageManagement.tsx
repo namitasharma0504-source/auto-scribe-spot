@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,30 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// Predefined services list
+const predefinedServices = [
+  "General Service",
+  "AC Repair",
+  "Body Work",
+  "Tyres",
+  "Diagnostics",
+  "EV-friendly",
+  "Multi-brand",
+  "Premium cars",
+  "Oil Change",
+  "Brake Service",
+  "Engine Repair",
+  "Transmission",
+  "Electrical",
+  "Suspension",
+  "Wheel Alignment",
+  "Car Wash",
+  "Detailing",
+  "Battery Service",
+  "Clutch Repair",
+  "Exhaust System"
+];
 
 interface Garage {
   id: string;
@@ -91,6 +116,8 @@ export function GarageManagement() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Garage>>({});
+  const [customService, setCustomService] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   useEffect(() => {
     fetchGarages();
@@ -292,6 +319,8 @@ export function GarageManagement() {
       walk_in_welcome: garage.walk_in_welcome,
       response_time: garage.response_time,
     });
+    setCustomService("");
+    setShowCustomInput(false);
     fetchGaragePhotos(garage.id);
     setIsEditOpen(true);
   };
@@ -953,17 +982,142 @@ export function GarageManagement() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="services">Services (comma-separated)</Label>
-              <Input
-                id="services"
-                placeholder="Oil Change, Tire Service, AC Repair"
-                value={editForm.services?.join(", ") || ""}
-                onChange={(e) => setEditForm({ 
-                  ...editForm, 
-                  services: e.target.value ? e.target.value.split(",").map(s => s.trim()) : null 
-                })}
-              />
+            {/* Services Selection */}
+            <div className="space-y-3">
+              <Label>Services Offered</Label>
+              <p className="text-sm text-muted-foreground">Select the services this garage provides</p>
+              
+              {/* Predefined Services Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {predefinedServices.map((service) => (
+                  <div 
+                    key={service}
+                    className={`flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                      (editForm.services || []).includes(service) 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'hover:bg-muted border-border'
+                    }`}
+                    onClick={() => {
+                      const currentServices = editForm.services || [];
+                      const newServices = currentServices.includes(service)
+                        ? currentServices.filter(s => s !== service)
+                        : [...currentServices, service];
+                      setEditForm({ ...editForm, services: newServices.length > 0 ? newServices : null });
+                    }}
+                  >
+                    <Checkbox 
+                      checked={(editForm.services || []).includes(service)}
+                      onCheckedChange={() => {
+                        const currentServices = editForm.services || [];
+                        const newServices = currentServices.includes(service)
+                          ? currentServices.filter(s => s !== service)
+                          : [...currentServices, service];
+                        setEditForm({ ...editForm, services: newServices.length > 0 ? newServices : null });
+                      }}
+                    />
+                    <span className="text-xs">{service}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Custom Services Display */}
+              {(() => {
+                const customServices = (editForm.services || []).filter(s => !predefinedServices.includes(s));
+                return customServices.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-sm text-muted-foreground mb-2">Custom services:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {customServices.map((service) => (
+                        <Badge 
+                          key={service} 
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {service}
+                          <X 
+                            className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                            onClick={() => {
+                              const newServices = (editForm.services || []).filter(s => s !== service);
+                              setEditForm({ ...editForm, services: newServices.length > 0 ? newServices : null });
+                            }}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              
+              {/* Add Custom Service */}
+              {showCustomInput ? (
+                <div className="flex gap-2 mt-3">
+                  <Input
+                    value={customService}
+                    onChange={(e) => setCustomService(e.target.value)}
+                    placeholder="Enter custom service name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const trimmedService = customService.trim();
+                        if (trimmedService && !(editForm.services || []).includes(trimmedService)) {
+                          setEditForm({ 
+                            ...editForm, 
+                            services: [...(editForm.services || []), trimmedService] 
+                          });
+                          setCustomService("");
+                          setShowCustomInput(false);
+                          toast({ title: "Service Added", description: `"${trimmedService}" added` });
+                        }
+                      }
+                    }}
+                  />
+                  <Button 
+                    type="button" 
+                    size="sm"
+                    onClick={() => {
+                      const trimmedService = customService.trim();
+                      if (trimmedService && !(editForm.services || []).includes(trimmedService)) {
+                        setEditForm({ 
+                          ...editForm, 
+                          services: [...(editForm.services || []), trimmedService] 
+                        });
+                        setCustomService("");
+                        setShowCustomInput(false);
+                        toast({ title: "Service Added", description: `"${trimmedService}" added` });
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setShowCustomInput(false);
+                      setCustomService("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setShowCustomInput(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Service
+                </Button>
+              )}
+              
+              {/* Selected count */}
+              <p className="text-sm text-muted-foreground">
+                {(editForm.services || []).length} service{(editForm.services || []).length !== 1 ? 's' : ''} selected
+              </p>
             </div>
 
             <div className="space-y-2">
