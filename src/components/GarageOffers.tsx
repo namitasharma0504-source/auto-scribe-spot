@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Tag, Percent, Gift, Package, Calendar, Sparkles } from "lucide-react";
+import { Tag, Percent, Gift, Package, Calendar, Sparkles, Sun, Snowflake, PartyPopper, Zap, Heart, Star, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,6 +21,14 @@ const templateConfig: Record<string, { icon: typeof Tag; color: string; bgColor:
   flat_discount: { icon: Tag, color: 'text-green-600', bgColor: 'bg-green-500' },
   free_service: { icon: Gift, color: 'text-purple-600', bgColor: 'bg-purple-500' },
   bundle_deal: { icon: Package, color: 'text-blue-600', bgColor: 'bg-blue-500' },
+  diwali_special: { icon: Sparkles, color: 'text-orange-600', bgColor: 'bg-gradient-to-r from-orange-500 to-yellow-500' },
+  summer_cool: { icon: Sun, color: 'text-yellow-600', bgColor: 'bg-gradient-to-r from-yellow-400 to-orange-500' },
+  winter_carnival: { icon: Snowflake, color: 'text-cyan-600', bgColor: 'bg-gradient-to-r from-blue-400 to-cyan-500' },
+  new_year: { icon: PartyPopper, color: 'text-purple-600', bgColor: 'bg-gradient-to-r from-purple-500 to-pink-500' },
+  flash_sale: { icon: Zap, color: 'text-yellow-600', bgColor: 'bg-gradient-to-r from-yellow-500 to-red-500' },
+  valentines: { icon: Heart, color: 'text-pink-600', bgColor: 'bg-gradient-to-r from-pink-500 to-red-500' },
+  weekend_special: { icon: Star, color: 'text-indigo-600', bgColor: 'bg-gradient-to-r from-indigo-500 to-purple-500' },
+  monsoon_ready: { icon: Flame, color: 'text-teal-600', bgColor: 'bg-gradient-to-r from-teal-500 to-blue-500' },
 };
 
 export function GarageOffers({ garageId }: GarageOffersProps) {
