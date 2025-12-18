@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import meriGarageLogo from "@/assets/merigarage-logo.png";
+import meriGarageLogoWhite from "@/assets/merigarage-logo-white.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,12 +29,9 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img 
-              src={meriGarageLogo} 
+              src={isHomePage ? meriGarageLogoWhite : meriGarageLogo} 
               alt="MeriGarage Reviews" 
-              className={cn(
-                "h-10 md:h-12 w-auto object-contain",
-                isHomePage && "drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-              )}
+              className="h-10 md:h-12 w-auto object-contain"
             />
           </Link>
 

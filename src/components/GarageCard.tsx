@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MapPin, MessageSquare, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StarRating } from "./StarRating";
@@ -39,19 +40,22 @@ export function GarageCard({
   quotesThisMonth,
   walkInWelcome,
 }: GarageCardProps) {
+  const [imageError, setImageError] = useState(false);
+  
   return (
     <Card className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
       <Link to={`/garage/${id}`}>
         <div className="relative h-48 overflow-hidden bg-muted">
-          {imageUrl ? (
+          {imageUrl && !imageError ? (
             <img
               src={imageUrl}
               alt={name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-              <span className="text-4xl font-bold text-muted-foreground/30">
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <span className="text-5xl font-bold text-primary/40">
                 {name.charAt(0)}
               </span>
             </div>
