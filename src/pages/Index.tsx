@@ -8,6 +8,9 @@ import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import indianMechanic from "@/assets/indian-mechanic.jpg";
+import indianCustomer from "@/assets/indian-customer.jpg";
+import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
 
 const trendingCities = [
   { name: "Mumbai", country: "India", garageCount: 2450, slug: "mumbai" },
@@ -111,8 +114,8 @@ const Index = () => {
             <div className="text-center group">
               <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
                 <img 
-                  src="https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=200&h=200&fit=crop" 
-                  alt="Professional garage" 
+                  src={indianMechanic} 
+                  alt="Professional Indian mechanic" 
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -125,8 +128,8 @@ const Index = () => {
             <div className="text-center group">
               <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-accent/20 group-hover:ring-accent/40 transition-all">
                 <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&facepad=2" 
-                  alt="Happy customer" 
+                  src={indianCustomer} 
+                  alt="Happy Indian customer" 
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -139,8 +142,8 @@ const Index = () => {
             <div className="text-center group">
               <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
                 <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&facepad=2" 
-                  alt="Garage owner" 
+                  src={indianGarageOwner} 
+                  alt="Indian garage owner" 
                   className="w-full h-full object-cover"
                 />
               </div>
