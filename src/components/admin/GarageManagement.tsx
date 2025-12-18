@@ -426,15 +426,43 @@ export function GarageManagement() {
         const lines = text.split("\n").filter(line => line.trim());
         const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
 
-        const garages: any[] = [];
+        // Fetch existing garages to check for duplicates
+        const { data: existingGarages, error: fetchError } = await supabase
+          .from("garages")
+          .select("name, phone");
+        
+        if (fetchError) throw fetchError;
+
+        // Create a Set of existing name+phone combinations for quick lookup
+        const existingKeys = new Set(
+          (existingGarages || []).map(g => `${(g.name || '').toLowerCase().trim()}|${(g.phone || '').toLowerCase().trim()}`)
+        );
+
+        const garagesToInsert: any[] = [];
+        let skippedCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
           if (values.length < 2) continue;
 
+          const name = values[0]?.trim() || "";
+          const phone = values[1]?.trim() || null;
+
+          if (!name) continue;
+
+          // Check for duplicate by name + phone
+          const key = `${name.toLowerCase()}|${(phone || '').toLowerCase()}`;
+          if (existingKeys.has(key)) {
+            skippedCount++;
+            continue;
+          }
+
+          // Add to set to avoid duplicates within the CSV itself
+          existingKeys.add(key);
+
           const garage: any = {
-            name: values[0]?.trim() || "",
-            phone: values[1]?.trim() || null,
+            name,
+            phone,
             address: values[2]?.trim() || null,
             state: values[3]?.trim() || null,
             city: values[4]?.trim() || null,
@@ -447,22 +475,26 @@ export function GarageManagement() {
             is_verified: false,
           };
 
-          if (garage.name) {
-            garages.push(garage);
-          }
+          garagesToInsert.push(garage);
         }
 
-        if (garages.length === 0) {
-          throw new Error("No valid garages found in the file");
+        if (garagesToInsert.length === 0) {
+          toast({
+            title: "No New Garages",
+            description: skippedCount > 0 
+              ? `All ${skippedCount} garages already exist in the database`
+              : "No valid garages found in the file",
+          });
+          return;
         }
 
-        const { error } = await supabase.from("garages").insert(garages);
+        const { error } = await supabase.from("garages").insert(garagesToInsert);
 
         if (error) throw error;
 
         toast({
           title: "Import Successful",
-          description: `${garages.length} garages have been imported`,
+          description: `${garagesToInsert.length} new garages imported${skippedCount > 0 ? `, ${skippedCount} duplicates skipped` : ''}`,
         });
 
         fetchGarages();
