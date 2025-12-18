@@ -1,7 +1,9 @@
-import { Star, CheckCircle, XCircle, MapPin, Calendar, BadgeCheck } from "lucide-react";
+import { useState } from "react";
+import { Star, CheckCircle, XCircle, MapPin, Calendar, BadgeCheck, Edit2, Save, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 
 interface Review {
@@ -19,6 +21,7 @@ interface AdminReviewCardProps {
   review: Review;
   onApprove: () => void;
   onReject: () => void;
+  onEdit?: (reviewId: string, newText: string) => void;
   showActions?: boolean;
   showApproveOnly?: boolean;
 }
@@ -27,9 +30,13 @@ export function AdminReviewCard({
   review,
   onApprove,
   onReject,
+  onEdit,
   showActions = true,
   showApproveOnly = false,
 }: AdminReviewCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(review.review_text || "");
+
   const statusColors = {
     pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
     approved: "bg-green-500/10 text-green-600 border-green-500/30",
@@ -37,6 +44,18 @@ export function AdminReviewCard({
   };
 
   const status = review.status || "pending";
+
+  const handleSaveEdit = () => {
+    if (onEdit) {
+      onEdit(review.id, editedText);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedText(review.review_text || "");
+    setIsEditing(false);
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -87,17 +106,49 @@ export function AdminReviewCard({
               <span className="ml-2 text-sm font-medium">{review.rating}/5</span>
             </div>
 
-            {/* Review Text */}
-            {review.review_text && (
-              <p className="text-foreground bg-muted/50 p-4 rounded-lg">
-                "{review.review_text}"
-              </p>
+            {/* Review Text - Editable */}
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="min-h-[100px]"
+                  placeholder="Edit review text..."
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} className="gap-1">
+                    <Save className="w-3 h-3" />
+                    Save
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleCancelEdit} className="gap-1">
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              review.review_text && (
+                <p className="text-foreground bg-muted/50 p-4 rounded-lg">
+                  "{review.review_text}"
+                </p>
+              )
             )}
           </div>
 
           {/* Action Buttons */}
           {showActions && (
             <div className="flex lg:flex-col gap-2">
+              {/* Edit Button */}
+              {!isEditing && onEdit && status === "pending" && (
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+                </Button>
+              )}
               {(!showApproveOnly || status === "rejected") && (
                 <Button
                   onClick={onApprove}
