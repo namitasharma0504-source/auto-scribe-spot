@@ -524,21 +524,20 @@ const ListGarage = () => {
               {/* Predefined Services Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {predefinedServices.map((service) => (
-                  <div 
+                  <label 
                     key={service}
                     className={`flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors ${
                       formData.services.includes(service) 
                         ? 'bg-primary/10 border-primary' 
                         : 'hover:bg-muted border-border'
                     }`}
-                    onClick={() => handleServiceToggle(service)}
                   >
                     <Checkbox 
                       checked={formData.services.includes(service)}
                       onCheckedChange={() => handleServiceToggle(service)}
                     />
                     <span className="text-sm">{service}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
               
