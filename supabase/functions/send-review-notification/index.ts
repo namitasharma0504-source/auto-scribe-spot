@@ -7,6 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS/HTML injection in emails
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 interface EmailRequest {
   to: string;
   subject: string;
@@ -107,12 +118,12 @@ serve(async (req: Request): Promise<Response> => {
               </div>
               <div class="content">
                 <p>Dear Customer,</p>
-                <p>Great news! Your review for <strong>${reviewData.garageName}</strong> has been approved and is now live on MeriGarageReviews.</p>
+                <p>Great news! Your review for <strong>${escapeHtml(reviewData.garageName)}</strong> has been approved and is now live on MeriGarageReviews.</p>
                 
                 <div class="review-box">
-                  <p><strong>Garage:</strong> ${reviewData.garageName}</p>
-                  <p><strong>Rating:</strong> ${"⭐".repeat(reviewData.rating)}</p>
-                  <p><strong>Your Review:</strong> ${reviewData.reviewText || "No text provided"}</p>
+                  <p><strong>Garage:</strong> ${escapeHtml(reviewData.garageName)}</p>
+                  <p><strong>Rating:</strong> ${"⭐".repeat(Math.min(Math.max(Number(reviewData.rating) || 0, 0), 5))}</p>
+                  <p><strong>Your Review:</strong> ${escapeHtml(reviewData.reviewText) || "No text provided"}</p>
                 </div>
                 
                 <p>Thank you for helping others make informed decisions about their garage visits!</p>
@@ -134,7 +145,7 @@ serve(async (req: Request): Promise<Response> => {
       // Email to garage owner when a new review is approved for their garage
       await sendEmail({
         to: reviewData.garageEmail,
-        subject: `New Review for ${reviewData.garageName} - MeriGarageReviews`,
+        subject: `New Review for ${escapeHtml(reviewData.garageName)} - MeriGarageReviews`,
         htmlBody: `
           <!DOCTYPE html>
           <html>
@@ -154,12 +165,12 @@ serve(async (req: Request): Promise<Response> => {
                 <h1>📝 New Customer Review</h1>
               </div>
               <div class="content">
-                <p>Dear ${reviewData.garageName} Team,</p>
+                <p>Dear ${escapeHtml(reviewData.garageName)} Team,</p>
                 <p>A new customer review has been posted for your garage on MeriGarageReviews!</p>
                 
                 <div class="review-box">
-                  <p><strong>Rating:</strong> ${"⭐".repeat(reviewData.rating)}</p>
-                  <p><strong>Review:</strong> ${reviewData.reviewText || "No text provided"}</p>
+                  <p><strong>Rating:</strong> ${"⭐".repeat(Math.min(Math.max(Number(reviewData.rating) || 0, 0), 5))}</p>
+                  <p><strong>Review:</strong> ${escapeHtml(reviewData.reviewText) || "No text provided"}</p>
                 </div>
                 
                 <p>Keep up the great work! Positive reviews help attract more customers to your business.</p>
