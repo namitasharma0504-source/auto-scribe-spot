@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 
 // Predefined services list
 const predefinedServices = [
@@ -52,72 +53,16 @@ const countries = [
   { value: "sd", label: "Sudan" },
 ];
 
-const cities: Record<string, { value: string; label: string }[]> = {
-  in: [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "chennai", label: "Chennai" },
-    { value: "hyderabad", label: "Hyderabad" },
-    { value: "pune", label: "Pune" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "jaipur", label: "Jaipur" },
-    { value: "lucknow", label: "Lucknow" },
-  ],
+// Other countries' states (simplified)
+const otherCountryStates: Record<string, { value: string; label: string }[]> = {
   ae: [
     { value: "dubai", label: "Dubai" },
     { value: "abu-dhabi", label: "Abu Dhabi" },
     { value: "sharjah", label: "Sharjah" },
     { value: "ajman", label: "Ajman" },
     { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
-  ],
-  ng: [
-    { value: "lagos", label: "Lagos" },
-    { value: "abuja", label: "Abuja" },
-    { value: "port-harcourt", label: "Port Harcourt" },
-    { value: "kano", label: "Kano" },
-    { value: "ibadan", label: "Ibadan" },
-  ],
-  eg: [
-    { value: "cairo", label: "Cairo" },
-    { value: "alexandria", label: "Alexandria" },
-    { value: "giza", label: "Giza" },
-    { value: "sharm-el-sheikh", label: "Sharm El Sheikh" },
-    { value: "luxor", label: "Luxor" },
-  ],
-  qa: [
-    { value: "doha", label: "Doha" },
-    { value: "al-wakrah", label: "Al Wakrah" },
-    { value: "al-khor", label: "Al Khor" },
-    { value: "lusail", label: "Lusail" },
-  ],
-  sd: [
-    { value: "khartoum", label: "Khartoum" },
-    { value: "omdurman", label: "Omdurman" },
-    { value: "port-sudan", label: "Port Sudan" },
-    { value: "kassala", label: "Kassala" },
-  ],
-};
-
-const states: Record<string, { value: string; label: string }[]> = {
-  in: [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "telangana", label: "Telangana" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "west-bengal", label: "West Bengal" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  ],
-  ae: [
-    { value: "dubai", label: "Dubai" },
-    { value: "abu-dhabi", label: "Abu Dhabi" },
-    { value: "sharjah", label: "Sharjah" },
-    { value: "ajman", label: "Ajman" },
-    { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
+    { value: "fujairah", label: "Fujairah" },
+    { value: "umm-al-quwain", label: "Umm Al Quwain" },
   ],
   ng: [
     { value: "lagos", label: "Lagos" },
@@ -125,6 +70,8 @@ const states: Record<string, { value: string; label: string }[]> = {
     { value: "rivers", label: "Rivers" },
     { value: "kano", label: "Kano" },
     { value: "oyo", label: "Oyo" },
+    { value: "kaduna", label: "Kaduna" },
+    { value: "delta", label: "Delta" },
   ],
   eg: [
     { value: "cairo", label: "Cairo" },
@@ -132,16 +79,19 @@ const states: Record<string, { value: string; label: string }[]> = {
     { value: "giza", label: "Giza" },
     { value: "south-sinai", label: "South Sinai" },
     { value: "luxor", label: "Luxor" },
+    { value: "aswan", label: "Aswan" },
   ],
   qa: [
     { value: "doha", label: "Doha" },
     { value: "al-wakrah", label: "Al Wakrah" },
     { value: "al-khor", label: "Al Khor" },
+    { value: "al-rayyan", label: "Al Rayyan" },
   ],
   sd: [
     { value: "khartoum", label: "Khartoum" },
     { value: "red-sea", label: "Red Sea" },
     { value: "kassala", label: "Kassala" },
+    { value: "gezira", label: "Gezira" },
   ],
 };
 
@@ -157,6 +107,7 @@ const ListGarage = () => {
     country: "",
     state: "",
     city: "",
+    customCity: "",
     locationLink: "",
     services: [] as string[],
   });
@@ -165,11 +116,33 @@ const ListGarage = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [customService, setCustomService] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [useCustomCity, setUseCustomCity] = useState(false);
+
+  // Get states based on country
+  const getStatesForCountry = (countryCode: string) => {
+    if (countryCode === "in") {
+      return indiaStates;
+    }
+    return otherCountryStates[countryCode] || [];
+  };
+
+  // Get districts/cities based on state (only for India)
+  const getDistrictsForState = (countryCode: string, stateValue: string) => {
+    if (countryCode === "in" && stateValue) {
+      return indiaDistricts[stateValue] || [];
+    }
+    return [];
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (field === "country") {
-      setFormData((prev) => ({ ...prev, state: "", city: "" }));
+      setFormData((prev) => ({ ...prev, state: "", city: "", customCity: "" }));
+      setUseCustomCity(false);
+    }
+    if (field === "state") {
+      setFormData((prev) => ({ ...prev, city: "", customCity: "" }));
+      setUseCustomCity(false);
     }
   };
 
@@ -265,7 +238,9 @@ const ListGarage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.garageName || !formData.phone || !formData.address || !formData.country || !formData.city) {
+    const finalCity = useCustomCity ? formData.customCity : formData.city;
+    
+    if (!formData.garageName || !formData.phone || !formData.address || !formData.country || !finalCity) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -278,18 +253,21 @@ const ListGarage = () => {
     setIsSubmitting(true);
     
     try {
-      // Upload photo if provided
       let photoUrl = null;
       if (photoFile) {
         photoUrl = await uploadPhoto();
       }
       
-      // Get labels for country, state, city
       const countryLabel = countries.find(c => c.value === formData.country)?.label || formData.country;
-      const stateLabel = states[formData.country]?.find(s => s.value === formData.state)?.label || formData.state;
-      const cityLabel = cities[formData.country]?.find(c => c.value === formData.city)?.label || formData.city;
+      const statesForCountry = getStatesForCountry(formData.country);
+      const stateLabel = statesForCountry.find(s => s.value === formData.state)?.label || formData.state;
       
-      // Insert garage into database
+      let cityLabel = finalCity;
+      if (!useCustomCity && formData.country === "in") {
+        const districts = getDistrictsForState(formData.country, formData.state);
+        cityLabel = districts.find(c => c.value === formData.city)?.label || formData.city;
+      }
+      
       const { error } = await supabase
         .from('garages')
         .insert({
@@ -319,8 +297,9 @@ const ListGarage = () => {
     }
   };
 
-  // Custom services are those in formData.services but not in predefinedServices
   const customServices = formData.services.filter(s => !predefinedServices.includes(s));
+  const availableStates = getStatesForCountry(formData.country);
+  const availableDistricts = getDistrictsForState(formData.country, formData.state);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -394,58 +373,15 @@ const ListGarage = () => {
               />
             </div>
 
-            {/* Country & State */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Country *</Label>
-                <Select value={formData.country} onValueChange={(v) => handleInputChange("country", v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>State</Label>
-                <Select 
-                  value={formData.state} 
-                  onValueChange={(v) => handleInputChange("state", v)}
-                  disabled={!formData.country}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.country && states[formData.country]?.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* City */}
+            {/* Country */}
             <div className="space-y-2">
-              <Label>City *</Label>
-              <Select 
-                value={formData.city} 
-                onValueChange={(v) => handleInputChange("city", v)}
-                disabled={!formData.country}
-              >
+              <Label>Country *</Label>
+              <Select value={formData.country} onValueChange={(v) => handleInputChange("country", v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select city" />
+                  <SelectValue placeholder="Select country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {formData.country && cities[formData.country]?.map((c) => (
+                  {countries.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
                       {c.label}
                     </SelectItem>
@@ -453,6 +389,85 @@ const ListGarage = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* State */}
+            {formData.country && (
+              <div className="space-y-2">
+                <Label>State / Region *</Label>
+                <Select 
+                  value={formData.state} 
+                  onValueChange={(v) => handleInputChange("state", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {availableStates.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* District/City - Only for India with districts */}
+            {formData.country === "in" && formData.state && availableDistricts.length > 0 && !useCustomCity && (
+              <div className="space-y-2">
+                <Label>District *</Label>
+                <Select 
+                  value={formData.city} 
+                  onValueChange={(v) => handleInputChange("city", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select district" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {availableDistricts.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="px-0 h-auto text-sm"
+                  onClick={() => setUseCustomCity(true)}
+                >
+                  Can't find your city/village? Enter manually
+                </Button>
+              </div>
+            )}
+
+            {/* Custom City/Village Input */}
+            {(useCustomCity || (formData.country && formData.country !== "in") || (formData.country === "in" && formData.state && availableDistricts.length === 0)) && (
+              <div className="space-y-2">
+                <Label htmlFor="customCity">City / Village / Town *</Label>
+                <Input
+                  id="customCity"
+                  placeholder="Enter your city, village, or town name"
+                  value={formData.customCity}
+                  onChange={(e) => handleInputChange("customCity", e.target.value)}
+                  required
+                />
+                {useCustomCity && formData.country === "in" && (
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="px-0 h-auto text-sm"
+                    onClick={() => {
+                      setUseCustomCity(false);
+                      setFormData(prev => ({ ...prev, customCity: "" }));
+                    }}
+                  >
+                    Select from district list instead
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Google Maps Link */}
             <div className="space-y-2">
@@ -463,10 +478,13 @@ const ListGarage = () => {
               <Input
                 id="locationLink"
                 type="url"
-                placeholder="https://maps.google.com/..."
+                placeholder="https://maps.google.com/... or https://goo.gl/maps/..."
                 value={formData.locationLink}
                 onChange={(e) => handleInputChange("locationLink", e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Paste your Google Maps share link to help customers find you easily
+              </p>
             </div>
 
             {/* Photo Upload */}
@@ -521,7 +539,6 @@ const ListGarage = () => {
               </Label>
               <p className="text-sm text-muted-foreground">Select the services your garage provides</p>
               
-              {/* Predefined Services Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {predefinedServices.map((service) => (
                   <label 
@@ -541,7 +558,6 @@ const ListGarage = () => {
                 ))}
               </div>
               
-              {/* Custom Services Display */}
               {customServices.length > 0 && (
                 <div className="mt-3">
                   <p className="text-sm text-muted-foreground mb-2">Custom services added:</p>
@@ -563,7 +579,6 @@ const ListGarage = () => {
                 </div>
               )}
               
-              {/* Add Custom Service */}
               {showCustomInput ? (
                 <div className="flex gap-2 mt-3">
                   <Input
@@ -604,7 +619,6 @@ const ListGarage = () => {
                 </Button>
               )}
               
-              {/* Selected count */}
               <p className="text-sm text-muted-foreground">
                 {formData.services.length} service{formData.services.length !== 1 ? 's' : ''} selected
               </p>
