@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2 } from "lucide-react";
+import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,18 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
+import { cn } from "@/lib/utils";
+
+// Validation error type
+interface FormErrors {
+  garageName?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  services?: string;
+}
 
 // Predefined services list
 const predefinedServices = [
@@ -118,6 +130,24 @@ const ListGarage = () => {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [isParsingMapsLink, setIsParsingMapsLink] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Clear error when field is edited
+  const clearError = (field: keyof FormErrors) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  // Mark field as touched on blur
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
 
   // Parse Google Maps link and auto-fill form
   const parseGoogleMapsLink = async (url: string) => {
@@ -195,13 +225,18 @@ const ListGarage = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    clearError(field as keyof FormErrors);
+    
     if (field === "country") {
       setFormData((prev) => ({ ...prev, state: "", city: "", customCity: "" }));
       setUseCustomCity(false);
+      clearError("state");
+      clearError("city");
     }
     if (field === "state") {
       setFormData((prev) => ({ ...prev, city: "", customCity: "" }));
       setUseCustomCity(false);
+      clearError("city");
     }
   };
 
@@ -212,6 +247,7 @@ const ListGarage = () => {
         ? prev.services.filter(s => s !== service)
         : [...prev.services, service]
     }));
+    clearError("services");
   };
 
   const handleAddCustomService = () => {
@@ -294,20 +330,75 @@ const ListGarage = () => {
     }
   };
 
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    const finalCity = useCustomCity ? formData.customCity : formData.city;
+    
+    if (!formData.garageName.trim()) {
+      newErrors.garageName = "Please enter your garage name";
+    } else if (formData.garageName.trim().length < 2) {
+      newErrors.garageName = "Garage name must be at least 2 characters";
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Please enter your phone number";
+    } else if (!/^[\d\s\-+()]{8,15}$/.test(formData.phone.trim())) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+    
+    if (!formData.address.trim()) {
+      newErrors.address = "Please enter your garage address";
+    } else if (formData.address.trim().length < 10) {
+      newErrors.address = "Please enter a more detailed address";
+    }
+    
+    if (!formData.country) {
+      newErrors.country = "Please select a country";
+    }
+    
+    if (formData.country && !formData.state) {
+      newErrors.state = "Please select a state/region";
+    }
+    
+    if (!finalCity) {
+      newErrors.city = "Please select or enter a city/district";
+    }
+    
+    if (formData.services.length === 0) {
+      newErrors.services = "Please select at least one service you offer";
+    }
+    
+    setErrors(newErrors);
+    
+    // Mark all fields as touched
+    setTouched({
+      garageName: true,
+      phone: true,
+      address: true,
+      country: true,
+      state: true,
+      city: true,
+      services: true,
+    });
+    
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const finalCity = useCustomCity ? formData.customCity : formData.city;
+    if (!validateForm()) {
+      // Scroll to first error
+      const firstErrorField = document.querySelector('[data-error="true"]');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      toast.error("Please fix the errors below to continue");
+      return;
+    }
     
-    if (!formData.garageName || !formData.phone || !formData.address || !formData.country || !finalCity) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (formData.services.length === 0) {
-      toast.error("Please select at least one service");
-      return;
-    }
+    const finalCity = useCustomCity ? formData.customCity : formData.city;
 
     setIsSubmitting(true);
     
@@ -387,9 +478,9 @@ const ListGarage = () => {
 
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border space-y-6">
             {/* Garage Name */}
-            <div className="space-y-2">
-              <Label htmlFor="garageName" className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-primary" />
+            <div className="space-y-2" data-error={!!errors.garageName}>
+              <Label htmlFor="garageName" className={cn("flex items-center gap-2", errors.garageName && "text-destructive")}>
+                <Building2 className={cn("w-4 h-4", errors.garageName ? "text-destructive" : "text-primary")} />
                 Garage Name *
               </Label>
               <Input
@@ -397,46 +488,67 @@ const ListGarage = () => {
                 placeholder="Enter your garage name"
                 value={formData.garageName}
                 onChange={(e) => handleInputChange("garageName", e.target.value)}
-                required
+                onBlur={() => handleBlur("garageName")}
+                className={cn(errors.garageName && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.garageName && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.garageName}
+                </p>
+              )}
             </div>
 
             {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-primary" />
+            <div className="space-y-2" data-error={!!errors.phone}>
+              <Label htmlFor="phone" className={cn("flex items-center gap-2", errors.phone && "text-destructive")}>
+                <Phone className={cn("w-4 h-4", errors.phone ? "text-destructive" : "text-primary")} />
                 Phone Number *
               </Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="Enter phone number"
+                placeholder="Enter phone number (e.g., +91 98765 43210)"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                required
+                onBlur={() => handleBlur("phone")}
+                className={cn(errors.phone && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.phone}
+                </p>
+              )}
             </div>
 
             {/* Address */}
-            <div className="space-y-2">
-              <Label htmlFor="address" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
+            <div className="space-y-2" data-error={!!errors.address}>
+              <Label htmlFor="address" className={cn("flex items-center gap-2", errors.address && "text-destructive")}>
+                <MapPin className={cn("w-4 h-4", errors.address ? "text-destructive" : "text-primary")} />
                 Address *
               </Label>
               <Textarea
                 id="address"
-                placeholder="Enter complete address"
+                placeholder="Enter complete address with landmarks"
                 value={formData.address}
                 onChange={(e) => handleInputChange("address", e.target.value)}
-                required
+                onBlur={() => handleBlur("address")}
+                className={cn(errors.address && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.address && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.address}
+                </p>
+              )}
             </div>
 
             {/* Country */}
-            <div className="space-y-2">
-              <Label>Country *</Label>
+            <div className="space-y-2" data-error={!!errors.country}>
+              <Label className={cn(errors.country && "text-destructive")}>Country *</Label>
               <Select value={formData.country} onValueChange={(v) => handleInputChange("country", v)}>
-                <SelectTrigger>
+                <SelectTrigger className={cn(errors.country && "border-destructive focus:ring-destructive")}>
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -447,17 +559,23 @@ const ListGarage = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.country && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.country}
+                </p>
+              )}
             </div>
 
             {/* State */}
             {formData.country && (
-              <div className="space-y-2">
-                <Label>State / Region *</Label>
+              <div className="space-y-2" data-error={!!errors.state}>
+                <Label className={cn(errors.state && "text-destructive")}>State / Region *</Label>
                 <Select 
                   value={formData.state} 
                   onValueChange={(v) => handleInputChange("state", v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={cn(errors.state && "border-destructive focus:ring-destructive")}>
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -468,18 +586,24 @@ const ListGarage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.state && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.state}
+                  </p>
+                )}
               </div>
             )}
 
             {/* District/City - Only for India with districts */}
             {formData.country === "in" && formData.state && availableDistricts.length > 0 && !useCustomCity && (
-              <div className="space-y-2">
-                <Label>District *</Label>
+              <div className="space-y-2" data-error={!!errors.city}>
+                <Label className={cn(errors.city && "text-destructive")}>District *</Label>
                 <Select 
                   value={formData.city} 
                   onValueChange={(v) => handleInputChange("city", v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={cn(errors.city && "border-destructive focus:ring-destructive")}>
                     <SelectValue placeholder="Select district" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -490,6 +614,12 @@ const ListGarage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.city && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.city}
+                  </p>
+                )}
                 <Button 
                   type="button" 
                   variant="link" 
@@ -503,15 +633,22 @@ const ListGarage = () => {
 
             {/* Custom City/Village Input */}
             {(useCustomCity || (formData.country && formData.country !== "in") || (formData.country === "in" && formData.state && availableDistricts.length === 0)) && (
-              <div className="space-y-2">
-                <Label htmlFor="customCity">City / Village / Town *</Label>
+              <div className="space-y-2" data-error={!!errors.city}>
+                <Label htmlFor="customCity" className={cn(errors.city && "text-destructive")}>City / Village / Town *</Label>
                 <Input
                   id="customCity"
                   placeholder="Enter your city, village, or town name"
                   value={formData.customCity}
                   onChange={(e) => handleInputChange("customCity", e.target.value)}
-                  required
+                  onBlur={() => handleBlur("city")}
+                  className={cn(errors.city && "border-destructive focus-visible:ring-destructive")}
                 />
+                {errors.city && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.city}
+                  </p>
+                )}
                 {useCustomCity && formData.country === "in" && (
                   <Button 
                     type="button" 
@@ -596,14 +733,24 @@ const ListGarage = () => {
             </div>
 
             {/* Services Selection */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-primary" />
+            <div className="space-y-3" data-error={!!errors.services}>
+              <Label className={cn("flex items-center gap-2", errors.services && "text-destructive")}>
+                <Wrench className={cn("w-4 h-4", errors.services ? "text-destructive" : "text-primary")} />
                 Services Offered *
               </Label>
               <p className="text-sm text-muted-foreground">Select the services your garage provides</p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {errors.services && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.services}
+                </p>
+              )}
+              
+              <div className={cn(
+                "grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-lg border",
+                errors.services ? "border-destructive bg-destructive/5" : "border-transparent"
+              )}>
                 {predefinedServices.map((service) => (
                   <label 
                     key={service}
