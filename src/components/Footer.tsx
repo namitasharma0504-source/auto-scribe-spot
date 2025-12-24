@@ -97,7 +97,7 @@ export const Footer = () => {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-border text-center text-muted-foreground">
-          <p>© 2024 MeriGarageReviews. All rights reserved.</p>
+          <p>© 2025 MeriGarageReviews. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -101,8 +101,8 @@ const Index = () => {
               </span>
               
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                Write & Read
-                <span className="block text-primary">Garage Reviews</span>
+                Rate My Garage
+                <span className="block text-primary">Find Trusted Mechanics</span>
               </h1>
               
               <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
