@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { GarageSearchInput } from "@/components/GarageSearchInput";
+import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 
 const serviceTags = [
   "Quick Service",
@@ -34,7 +35,7 @@ const categoryRatings = [
 ];
 
 const countries = [
-  { value: "in", label: "India" },
+  { value: "india", label: "India" },
   { value: "ae", label: "United Arab Emirates" },
   { value: "us", label: "United States" },
   { value: "uk", label: "United Kingdom" },
@@ -43,19 +44,7 @@ const countries = [
   { value: "ca", label: "Canada" },
 ];
 
-const cities: Record<string, { value: string; label: string }[]> = {
-  in: [
-    { value: "bengaluru", label: "Bengaluru" },
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "chennai", label: "Chennai" },
-    { value: "hyderabad", label: "Hyderabad" },
-    { value: "pune", label: "Pune" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "gurgaon", label: "Gurgaon" },
-    { value: "noida", label: "Noida" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-  ],
+const otherCountryCities: Record<string, { value: string; label: string }[]> = {
   ae: [
     { value: "dubai", label: "Dubai" },
     { value: "abu-dhabi", label: "Abu Dhabi" },
@@ -95,7 +84,9 @@ const SubmitReview = () => {
   // Garage details
   const [garageName, setGarageName] = useState("");
   const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [customCity, setCustomCity] = useState("");
   const [address, setAddress] = useState("");
   const [visitDate, setVisitDate] = useState("");
   const [serviceType, setServiceType] = useState("");
@@ -108,6 +99,11 @@ const SubmitReview = () => {
   const [images, setImages] = useState<string[]>([]);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isIndia = country === "india";
+  const availableStates = isIndia ? indiaStates : [];
+  const availableDistricts = isIndia && state ? (indiaDistricts[state] || []) : [];
+  const availableCities = !isIndia && country ? (otherCountryCities[country] || []) : [];
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -147,10 +143,16 @@ const SubmitReview = () => {
       return;
     }
 
-    if (!country || !city) {
+    const locationValid = isIndia 
+      ? (country && state && (city || customCity.trim()))
+      : (country && (city || customCity.trim()));
+    
+    if (!locationValid) {
       toast({
         title: "Location Required",
-        description: "Please select the country and city of the garage.",
+        description: isIndia 
+          ? "Please select the country, state, and district/city of the garage."
+          : "Please select the country and city of the garage.",
         variant: "destructive",
       });
       return;
@@ -191,8 +193,19 @@ const SubmitReview = () => {
       }
 
       const points = receiptUploaded ? 50 : 25;
-      const cityLabel = cities[country]?.find(c => c.value === city)?.label || city;
       const countryLabel = countries.find(c => c.value === country)?.label || country;
+      
+      let locationString = "";
+      if (isIndia) {
+        const stateLabel = indiaStates.find(s => s.value === state)?.label || state;
+        const districtLabel = indiaDistricts[state]?.find(d => d.value === city)?.label || city;
+        const cityName = customCity.trim() || districtLabel;
+        locationString = `${cityName}, ${stateLabel}, ${countryLabel}`;
+      } else {
+        const cityLabel = otherCountryCities[country]?.find(c => c.value === city)?.label || city;
+        const cityName = customCity.trim() || cityLabel;
+        locationString = `${cityName}, ${countryLabel}`;
+      }
 
       // Insert review with pending status
       const { error: insertError } = await supabase
@@ -200,7 +213,7 @@ const SubmitReview = () => {
         .insert({
           user_id: user.id,
           garage_name: garageName.trim(),
-          garage_location: `${cityLabel}, ${countryLabel}`,
+          garage_location: locationString,
           rating: overallRating,
           review_text: reviewText.trim(),
           is_verified: receiptUploaded,
@@ -296,13 +309,34 @@ const SubmitReview = () => {
                       );
                       if (countryMatch) {
                         setCountry(countryMatch.value);
-                        // Try to match city
-                        if (garage.city && cities[countryMatch.value]) {
-                          const cityMatch = cities[countryMatch.value].find(
+                        
+                        // For India, try to match state and city
+                        if (countryMatch.value === "india" && garage.state) {
+                          const stateMatch = indiaStates.find(
+                            (s) => s.label.toLowerCase() === garage.state?.toLowerCase()
+                          );
+                          if (stateMatch) {
+                            setState(stateMatch.value);
+                            if (garage.city && indiaDistricts[stateMatch.value]) {
+                              const districtMatch = indiaDistricts[stateMatch.value].find(
+                                (d) => d.label.toLowerCase() === garage.city?.toLowerCase()
+                              );
+                              if (districtMatch) {
+                                setCity(districtMatch.value);
+                              } else {
+                                setCustomCity(garage.city);
+                              }
+                            }
+                          }
+                        } else if (countryMatch.value !== "india" && garage.city && otherCountryCities[countryMatch.value]) {
+                          // For other countries
+                          const cityMatch = otherCountryCities[countryMatch.value].find(
                             (c) => c.label.toLowerCase() === garage.city?.toLowerCase()
                           );
                           if (cityMatch) {
                             setCity(cityMatch.value);
+                          } else {
+                            setCustomCity(garage.city);
                           }
                         }
                       }
@@ -323,7 +357,7 @@ const SubmitReview = () => {
                   <label className="text-sm font-medium text-foreground mb-2 block">
                     Country *
                   </label>
-                  <Select value={country} onValueChange={(v) => { setCountry(v); setCity(""); }}>
+                  <Select value={country} onValueChange={(v) => { setCountry(v); setState(""); setCity(""); setCustomCity(""); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
@@ -337,24 +371,93 @@ const SubmitReview = () => {
                   </Select>
                 </div>
                 
+                {isIndia ? (
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      State *
+                    </label>
+                    <Select value={state} onValueChange={(v) => { setState(v); setCity(""); setCustomCity(""); }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {availableStates.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      City *
+                    </label>
+                    <Select value={city} onValueChange={setCity} disabled={!country}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCities.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {isIndia && state && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      District *
+                    </label>
+                    <Select value={city} onValueChange={(v) => { setCity(v); setCustomCity(""); }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select district" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {availableDistricts.map((d) => (
+                          <SelectItem key={d.value} value={d.value}>
+                            {d.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      City/Village/Town (Optional)
+                    </label>
+                    <Input
+                      placeholder="Enter if not in district list"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter specific city/village name if different from district
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!isIndia && country && (
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    City *
+                    City/Town (if not listed above)
                   </label>
-                  <Select value={city} onValueChange={setCity} disabled={!country}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {country && cities[country]?.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    placeholder="Enter city/town name"
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                  />
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
