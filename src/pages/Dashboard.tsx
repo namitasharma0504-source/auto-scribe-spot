@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   Star, Gift, CheckCircle, Clock, MapPin, Calendar,
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Review {
   id: string;
@@ -47,21 +48,14 @@ interface Profile {
   total_points: number;
 }
 
-export default function Dashboard() {
-  const { user, loading, signOut } = useAuth();
+function DashboardContent() {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rewardsHistory, setRewardsHistory] = useState<RewardHistory[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const signingOutRef = useRef(false);
-
-  useEffect(() => {
-    if (!loading && !user && !signingOutRef.current) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -92,12 +86,11 @@ export default function Dashboard() {
   };
 
   const handleSignOut = async () => {
-    signingOutRef.current = true;
-    navigate("/", { replace: true });
     await signOut();
+    navigate("/", { replace: true });
   };
 
-  if (loading || dataLoading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -370,5 +363,13 @@ export default function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute redirectTo="/auth">
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }
