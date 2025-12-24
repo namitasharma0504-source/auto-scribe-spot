@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   Star, Gift, CheckCircle, Clock, MapPin, Calendar,
@@ -55,9 +55,10 @@ export default function Dashboard() {
   const [rewardsHistory, setRewardsHistory] = useState<RewardHistory[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const signingOutRef = useRef(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !signingOutRef.current) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
@@ -91,8 +92,9 @@ export default function Dashboard() {
   };
 
   const handleSignOut = async () => {
+    signingOutRef.current = true;
+    navigate("/", { replace: true });
     await signOut();
-    navigate("/");
   };
 
   if (loading || dataLoading) {
