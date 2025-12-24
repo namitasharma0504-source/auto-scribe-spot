@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, User, LayoutDashboard, Building2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,29 @@ import logoMain from "@/assets/merigarage-logo-main.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const { user, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-border">
+    <header className={cn(
+      "sticky top-0 z-50 bg-white border-b border-border transition-all duration-300",
+      scrolled ? "shadow-md" : "shadow-sm"
+    )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-12 md:h-14">
           {/* Brand Logo */}
