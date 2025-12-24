@@ -44,8 +44,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 
 // Predefined services list
 const predefinedServices = [
@@ -963,28 +971,95 @@ export function GarageManagement() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={editForm.city || ""}
-                  onChange={(e) => setEditForm({ ...editForm, city: e.target.value || null })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={editForm.state || ""}
-                  onChange={(e) => setEditForm({ ...editForm, state: e.target.value || null })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={editForm.country || ""}
-                  onChange={(e) => setEditForm({ ...editForm, country: e.target.value || null })}
-                />
+                <Select
+                  value={editForm.country || "India"}
+                  onValueChange={(v) => setEditForm({ ...editForm, country: v, state: null, city: null })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="India">India</SelectItem>
+                    <SelectItem value="UAE">UAE</SelectItem>
+                    <SelectItem value="Nigeria">Nigeria</SelectItem>
+                    <SelectItem value="Egypt">Egypt</SelectItem>
+                    <SelectItem value="Qatar">Qatar</SelectItem>
+                    <SelectItem value="Sudan">Sudan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State *</Label>
+                {editForm.country === "India" ? (
+                  <Select
+                    value={editForm.state || ""}
+                    onValueChange={(v) => {
+                      const stateLabel = indiaStates.find(s => s.value === v)?.label || v;
+                      setEditForm({ ...editForm, state: stateLabel, city: null });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {indiaStates.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="state"
+                    value={editForm.state || ""}
+                    onChange={(e) => setEditForm({ ...editForm, state: e.target.value || null })}
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="district">District (Optional)</Label>
+                {editForm.country === "India" && editForm.state ? (
+                  <Select
+                    value={
+                      (() => {
+                        const stateKey = indiaStates.find(s => s.label === editForm.state)?.value || "";
+                        const districts = indiaDistricts[stateKey] || [];
+                        const districtMatch = districts.find(d => d.label === editForm.city);
+                        return districtMatch?.value || "";
+                      })()
+                    }
+                    onValueChange={(v) => {
+                      const stateKey = indiaStates.find(s => s.label === editForm.state)?.value || "";
+                      const districts = indiaDistricts[stateKey] || [];
+                      const districtLabel = districts.find(d => d.value === v)?.label || v;
+                      setEditForm({ ...editForm, city: districtLabel });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select district" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {(() => {
+                        const stateKey = indiaStates.find(s => s.label === editForm.state)?.value || "";
+                        const districts = indiaDistricts[stateKey] || [];
+                        return districts.map((d) => (
+                          <SelectItem key={d.value} value={d.value}>
+                            {d.label}
+                          </SelectItem>
+                        ));
+                      })()}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="city"
+                    placeholder="Enter city name (optional)"
+                    value={editForm.city || ""}
+                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value || null })}
+                  />
+                )}
               </div>
             </div>
 

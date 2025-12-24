@@ -19,7 +19,6 @@ interface FormErrors {
   garageName?: string;
   country?: string;
   state?: string;
-  city?: string;
   overallRating?: string;
   reviewText?: string;
 }
@@ -140,12 +139,7 @@ const SubmitReview = () => {
       newErrors.state = "Please select a state";
     }
 
-    const hasCity = city || customCity.trim();
-    if (isIndia && state && !hasCity) {
-      newErrors.city = "Please select a district or enter a city name";
-    } else if (!isIndia && country && !hasCity) {
-      newErrors.city = "Please select or enter a city";
-    }
+    // City is now optional - no validation required
 
     if (overallRating === 0) {
       newErrors.overallRating = "Please select an overall rating";
@@ -343,7 +337,6 @@ const SubmitReview = () => {
                     clearError('garageName');
                     clearError('country');
                     clearError('state');
-                    clearError('city');
                     // Auto-fill location when a garage is selected
                     if (garage.country) {
                       const countryMatch = countries.find(
@@ -407,7 +400,7 @@ const SubmitReview = () => {
                   <label className="text-sm font-medium text-foreground mb-2 block">
                     Country <span className="text-destructive">*</span>
                   </label>
-                  <Select value={country} onValueChange={(v) => { setCountry(v); setState(""); setCity(""); setCustomCity(""); clearError('country'); clearError('state'); clearError('city'); }}>
+                  <Select value={country} onValueChange={(v) => { setCountry(v); setState(""); setCity(""); setCustomCity(""); clearError('country'); clearError('state'); }}>
                     <SelectTrigger className={cn(errors.country && "border-destructive ring-destructive/20 ring-2")}>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
@@ -432,7 +425,7 @@ const SubmitReview = () => {
                     <label className="text-sm font-medium text-foreground mb-2 block">
                       State <span className="text-destructive">*</span>
                     </label>
-                    <Select value={state} onValueChange={(v) => { setState(v); setCity(""); setCustomCity(""); clearError('state'); clearError('city'); }}>
+                    <Select value={state} onValueChange={(v) => { setState(v); setCity(""); setCustomCity(""); clearError('state'); }}>
                       <SelectTrigger className={cn(errors.state && "border-destructive ring-destructive/20 ring-2")}>
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
@@ -454,10 +447,10 @@ const SubmitReview = () => {
                 ) : (
                   <div id="field-city">
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      City <span className="text-destructive">*</span>
+                      City (Optional)
                     </label>
-                    <Select value={city} onValueChange={(v) => { setCity(v); clearError('city'); }} disabled={!country}>
-                      <SelectTrigger className={cn(errors.city && "border-destructive ring-destructive/20 ring-2")}>
+                    <Select value={city} onValueChange={(v) => { setCity(v); }} disabled={!country}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select city" />
                       </SelectTrigger>
                       <SelectContent>
@@ -468,12 +461,6 @@ const SubmitReview = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.city && (
-                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.city}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -482,10 +469,10 @@ const SubmitReview = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div id="field-city">
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      District <span className="text-destructive">*</span>
+                      District (Optional)
                     </label>
-                    <Select value={city} onValueChange={(v) => { setCity(v); setCustomCity(""); clearError('city'); }}>
-                      <SelectTrigger className={cn(errors.city && "border-destructive ring-destructive/20 ring-2")}>
+                    <Select value={city} onValueChange={(v) => { setCity(v); setCustomCity(""); }}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select district" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -496,12 +483,6 @@ const SubmitReview = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.city && (
-                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.city}
-                      </p>
-                    )}
                   </div>
                   
                   <div>
@@ -511,7 +492,7 @@ const SubmitReview = () => {
                     <Input
                       placeholder="Enter if not in district list"
                       value={customCity}
-                      onChange={(e) => { setCustomCity(e.target.value); if (e.target.value.trim()) clearError('city'); }}
+                      onChange={(e) => { setCustomCity(e.target.value); }}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Enter specific city/village name if different from district
@@ -528,7 +509,7 @@ const SubmitReview = () => {
                   <Input
                     placeholder="Enter city/town name"
                     value={customCity}
-                    onChange={(e) => { setCustomCity(e.target.value); if (e.target.value.trim()) clearError('city'); }}
+                    onChange={(e) => { setCustomCity(e.target.value); }}
                   />
                 </div>
               )}
