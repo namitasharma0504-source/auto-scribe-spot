@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Camera, Search, MapPin, Building2, Gift, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Camera, MapPin, Building2, Gift, CheckCircle2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { StarRating } from "@/components/StarRating";
 import { ServiceTag } from "@/components/ServiceTag";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { GarageSearchInput } from "@/components/GarageSearchInput";
 
 const serviceTags = [
   "Quick Service",
@@ -33,6 +34,8 @@ const categoryRatings = [
 ];
 
 const countries = [
+  { value: "in", label: "India" },
+  { value: "ae", label: "United Arab Emirates" },
   { value: "us", label: "United States" },
   { value: "uk", label: "United Kingdom" },
   { value: "de", label: "Germany" },
@@ -41,6 +44,23 @@ const countries = [
 ];
 
 const cities: Record<string, { value: string; label: string }[]> = {
+  in: [
+    { value: "bengaluru", label: "Bengaluru" },
+    { value: "mumbai", label: "Mumbai" },
+    { value: "delhi", label: "Delhi" },
+    { value: "chennai", label: "Chennai" },
+    { value: "hyderabad", label: "Hyderabad" },
+    { value: "pune", label: "Pune" },
+    { value: "kolkata", label: "Kolkata" },
+    { value: "gurgaon", label: "Gurgaon" },
+    { value: "noida", label: "Noida" },
+    { value: "ahmedabad", label: "Ahmedabad" },
+  ],
+  ae: [
+    { value: "dubai", label: "Dubai" },
+    { value: "abu-dhabi", label: "Abu Dhabi" },
+    { value: "sharjah", label: "Sharjah" },
+  ],
   us: [
     { value: "new-york", label: "New York" },
     { value: "los-angeles", label: "Los Angeles" },
@@ -265,11 +285,37 @@ const SubmitReview = () => {
                 <label className="text-sm font-medium text-foreground mb-2 block">
                   Garage Name *
                 </label>
-                <Input
-                  placeholder="Enter the garage name"
+                <GarageSearchInput
                   value={garageName}
-                  onChange={(e) => setGarageName(e.target.value)}
+                  onChange={setGarageName}
+                  onGarageSelect={(garage) => {
+                    // Auto-fill location when a garage is selected
+                    if (garage.country) {
+                      const countryMatch = countries.find(
+                        (c) => c.label.toLowerCase() === garage.country?.toLowerCase()
+                      );
+                      if (countryMatch) {
+                        setCountry(countryMatch.value);
+                        // Try to match city
+                        if (garage.city && cities[countryMatch.value]) {
+                          const cityMatch = cities[countryMatch.value].find(
+                            (c) => c.label.toLowerCase() === garage.city?.toLowerCase()
+                          );
+                          if (cityMatch) {
+                            setCity(cityMatch.value);
+                          }
+                        }
+                      }
+                    }
+                    if (garage.address) {
+                      setAddress(garage.address);
+                    }
+                  }}
+                  placeholder="Search for a garage..."
                 />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Start typing to search existing garages or enter a new name
+                </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
