@@ -28,7 +28,6 @@ interface FormErrors {
   address?: string;
   country?: string;
   state?: string;
-  city?: string;
   services?: string;
 }
 
@@ -225,18 +224,18 @@ const ListGarage = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    clearError(field as keyof FormErrors);
+    if (field !== "city" && field !== "customCity") {
+      clearError(field as keyof FormErrors);
+    }
     
     if (field === "country") {
       setFormData((prev) => ({ ...prev, state: "", city: "", customCity: "" }));
       setUseCustomCity(false);
       clearError("state");
-      clearError("city");
     }
     if (field === "state") {
       setFormData((prev) => ({ ...prev, city: "", customCity: "" }));
       setUseCustomCity(false);
-      clearError("city");
     }
   };
 
@@ -361,9 +360,7 @@ const ListGarage = () => {
       newErrors.state = "Please select a state/region";
     }
     
-    if (!finalCity) {
-      newErrors.city = "Please select or enter a city/district";
-    }
+    // City is now optional - no validation required
     
     if (formData.services.length === 0) {
       newErrors.services = "Please select at least one service you offer";
@@ -378,7 +375,6 @@ const ListGarage = () => {
       address: true,
       country: true,
       state: true,
-      city: true,
       services: true,
     });
     
@@ -597,13 +593,13 @@ const ListGarage = () => {
 
             {/* District/City - Only for India with districts */}
             {formData.country === "in" && formData.state && availableDistricts.length > 0 && !useCustomCity && (
-              <div className="space-y-2" data-error={!!errors.city}>
-                <Label className={cn(errors.city && "text-destructive")}>District *</Label>
+              <div className="space-y-2">
+                <Label>District (Optional)</Label>
                 <Select 
                   value={formData.city} 
                   onValueChange={(v) => handleInputChange("city", v)}
                 >
-                  <SelectTrigger className={cn(errors.city && "border-destructive focus:ring-destructive")}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select district" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -614,12 +610,6 @@ const ListGarage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.city && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.city}
-                  </p>
-                )}
                 <Button 
                   type="button" 
                   variant="link" 
@@ -633,22 +623,14 @@ const ListGarage = () => {
 
             {/* Custom City/Village Input */}
             {(useCustomCity || (formData.country && formData.country !== "in") || (formData.country === "in" && formData.state && availableDistricts.length === 0)) && (
-              <div className="space-y-2" data-error={!!errors.city}>
-                <Label htmlFor="customCity" className={cn(errors.city && "text-destructive")}>City / Village / Town *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="customCity">City / Village / Town (Optional)</Label>
                 <Input
                   id="customCity"
                   placeholder="Enter your city, village, or town name"
                   value={formData.customCity}
                   onChange={(e) => handleInputChange("customCity", e.target.value)}
-                  onBlur={() => handleBlur("city")}
-                  className={cn(errors.city && "border-destructive focus-visible:ring-destructive")}
                 />
-                {errors.city && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.city}
-                  </p>
-                )}
                 {useCustomCity && formData.country === "in" && (
                   <Button 
                     type="button" 
