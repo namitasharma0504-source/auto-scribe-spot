@@ -22,10 +22,17 @@ export function Header() {
         <div className="flex items-center justify-between h-12 md:h-14">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center">
+            {/* Mobile: Show cropped gear portion only */}
             <img 
               src={logoMain} 
               alt="MeriGarageReviews" 
-              className="h-8 md:h-10 w-auto"
+              className="h-8 w-8 object-cover object-left md:hidden"
+            />
+            {/* Desktop: Show full logo */}
+            <img 
+              src={logoMain} 
+              alt="MeriGarageReviews" 
+              className="hidden md:block h-10 w-auto"
             />
           </Link>
 
