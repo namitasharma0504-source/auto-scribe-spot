@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus } from "lucide-react";
+import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -117,6 +117,65 @@ const ListGarage = () => {
   const [customService, setCustomService] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [useCustomCity, setUseCustomCity] = useState(false);
+  const [isParsingMapsLink, setIsParsingMapsLink] = useState(false);
+
+  // Parse Google Maps link and auto-fill form
+  const parseGoogleMapsLink = async (url: string) => {
+    if (!url) return;
+    
+    // Check if it looks like a Google Maps link
+    const isGoogleMapsLink = 
+      url.includes('google.com/maps') || 
+      url.includes('goo.gl/maps') || 
+      url.includes('maps.app.goo.gl') ||
+      url.includes('share.google');
+    
+    if (!isGoogleMapsLink) return;
+    
+    setIsParsingMapsLink(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-google-maps', {
+        body: { url }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.data) {
+        const parsed = data.data;
+        
+        // Auto-fill name if empty and we got a name
+        if (parsed.name && !formData.garageName) {
+          setFormData(prev => ({ ...prev, garageName: parsed.name }));
+          toast.success("Garage name auto-filled from Maps link");
+        }
+        
+        // Store the full resolved URL
+        if (parsed.fullUrl) {
+          setFormData(prev => ({ ...prev, locationLink: parsed.fullUrl }));
+        }
+        
+        // Set country to India by default (since this is the primary market)
+        if (!formData.country) {
+          setFormData(prev => ({ ...prev, country: "in" }));
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing Google Maps link:', error);
+      // Don't show error to user - just silently fail
+    } finally {
+      setIsParsingMapsLink(false);
+    }
+  };
+
+  const handleLocationLinkChange = (value: string) => {
+    setFormData(prev => ({ ...prev, locationLink: value }));
+    
+    // Debounce the parsing
+    if (value.length > 10) {
+      parseGoogleMapsLink(value);
+    }
+  };
 
   // Get states based on country
   const getStatesForCountry = (countryCode: string) => {
@@ -474,16 +533,21 @@ const ListGarage = () => {
               <Label htmlFor="locationLink" className="flex items-center gap-2">
                 <LinkIcon className="w-4 h-4 text-primary" />
                 Google Maps Link
+                {isParsingMapsLink && (
+                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                )}
               </Label>
-              <Input
-                id="locationLink"
-                type="url"
-                placeholder="https://maps.google.com/... or https://goo.gl/maps/..."
-                value={formData.locationLink}
-                onChange={(e) => handleInputChange("locationLink", e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  id="locationLink"
+                  type="url"
+                  placeholder="Paste Google Maps share link (e.g., https://share.google/...)"
+                  value={formData.locationLink}
+                  onChange={(e) => handleLocationLinkChange(e.target.value)}
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
-                Paste your Google Maps share link to help customers find you easily
+                Paste your Google Maps share link - we'll auto-fill the garage name if available
               </p>
             </div>
 
