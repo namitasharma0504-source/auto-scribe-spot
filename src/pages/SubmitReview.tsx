@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Camera, MapPin, Building2, Gift, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Camera, MapPin, Building2, Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { StarRating } from "@/components/StarRating";
 import { ServiceTag } from "@/components/ServiceTag";
@@ -13,7 +13,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { GarageSearchInput } from "@/components/GarageSearchInput";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
+import { cn } from "@/lib/utils";
 
+interface FormErrors {
+  garageName?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  overallRating?: string;
+  reviewText?: string;
+}
 const serviceTags = [
   "Quick Service",
   "Professional Staff",
@@ -99,11 +108,69 @@ const SubmitReview = () => {
   const [images, setImages] = useState<string[]>([]);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const isIndia = country === "india";
   const availableStates = isIndia ? indiaStates : [];
   const availableDistricts = isIndia && state ? (indiaDistricts[state] || []) : [];
   const availableCities = !isIndia && country ? (otherCountryCities[country] || []) : [];
+
+  const clearError = (field: keyof FormErrors) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!garageName.trim()) {
+      newErrors.garageName = "Please enter the garage name";
+    }
+
+    if (!country) {
+      newErrors.country = "Please select a country";
+    }
+
+    if (isIndia && !state) {
+      newErrors.state = "Please select a state";
+    }
+
+    const hasCity = city || customCity.trim();
+    if (isIndia && state && !hasCity) {
+      newErrors.city = "Please select a district or enter a city name";
+    } else if (!isIndia && country && !hasCity) {
+      newErrors.city = "Please select or enter a city";
+    }
+
+    if (overallRating === 0) {
+      newErrors.overallRating = "Please select an overall rating";
+    }
+
+    if (!reviewText.trim()) {
+      newErrors.reviewText = "Please write your review";
+    } else if (reviewText.trim().length < 20) {
+      newErrors.reviewText = "Review must be at least 20 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const scrollToFirstError = () => {
+    const errorFields = ['garageName', 'country', 'state', 'city', 'overallRating', 'reviewText'];
+    for (const field of errorFields) {
+      const element = document.getElementById(`field-${field}`);
+      if (element && errors[field as keyof FormErrors]) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        break;
+      }
+    }
+  };
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -134,45 +201,13 @@ const SubmitReview = () => {
   };
 
   const handleSubmit = async () => {
-    if (!garageName.trim()) {
+    if (!validateForm()) {
       toast({
-        title: "Garage Name Required",
-        description: "Please enter the name of the garage you visited.",
+        title: "Please fix the errors",
+        description: "Some required fields are missing or invalid.",
         variant: "destructive",
       });
-      return;
-    }
-
-    const locationValid = isIndia 
-      ? (country && state && (city || customCity.trim()))
-      : (country && (city || customCity.trim()));
-    
-    if (!locationValid) {
-      toast({
-        title: "Location Required",
-        description: isIndia 
-          ? "Please select the country, state, and district/city of the garage."
-          : "Please select the country and city of the garage.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (overallRating === 0) {
-      toast({
-        title: "Rating Required",
-        description: "Please select an overall rating before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (reviewText.trim().length < 20) {
-      toast({
-        title: "Review Too Short",
-        description: "Please write at least 20 characters in your review.",
-        variant: "destructive",
-      });
+      setTimeout(scrollToFirstError, 100);
       return;
     }
 
@@ -294,14 +329,21 @@ const SubmitReview = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div id="field-garageName">
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Garage Name *
+                  Garage Name <span className="text-destructive">*</span>
                 </label>
                 <GarageSearchInput
                   value={garageName}
-                  onChange={setGarageName}
+                  onChange={(val) => {
+                    setGarageName(val);
+                    clearError('garageName');
+                  }}
                   onGarageSelect={(garage) => {
+                    clearError('garageName');
+                    clearError('country');
+                    clearError('state');
+                    clearError('city');
                     // Auto-fill location when a garage is selected
                     if (garage.country) {
                       const countryMatch = countries.find(
@@ -346,19 +388,27 @@ const SubmitReview = () => {
                     }
                   }}
                   placeholder="Search for a garage..."
+                  className={cn(errors.garageName && "border-destructive ring-destructive/20 ring-2")}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Start typing to search existing garages or enter a new name
-                </p>
+                {errors.garageName ? (
+                  <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.garageName}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Start typing to search existing garages or enter a new name
+                  </p>
+                )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div id="field-country">
                   <label className="text-sm font-medium text-foreground mb-2 block">
-                    Country *
+                    Country <span className="text-destructive">*</span>
                   </label>
-                  <Select value={country} onValueChange={(v) => { setCountry(v); setState(""); setCity(""); setCustomCity(""); }}>
-                    <SelectTrigger>
+                  <Select value={country} onValueChange={(v) => { setCountry(v); setState(""); setCity(""); setCustomCity(""); clearError('country'); clearError('state'); clearError('city'); }}>
+                    <SelectTrigger className={cn(errors.country && "border-destructive ring-destructive/20 ring-2")}>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -369,15 +419,21 @@ const SubmitReview = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.country && (
+                    <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.country}
+                    </p>
+                  )}
                 </div>
                 
                 {isIndia ? (
-                  <div>
+                  <div id="field-state">
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      State *
+                      State <span className="text-destructive">*</span>
                     </label>
-                    <Select value={state} onValueChange={(v) => { setState(v); setCity(""); setCustomCity(""); }}>
-                      <SelectTrigger>
+                    <Select value={state} onValueChange={(v) => { setState(v); setCity(""); setCustomCity(""); clearError('state'); clearError('city'); }}>
+                      <SelectTrigger className={cn(errors.state && "border-destructive ring-destructive/20 ring-2")}>
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -388,14 +444,20 @@ const SubmitReview = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.state && (
+                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.state}
+                      </p>
+                    )}
                   </div>
                 ) : (
-                  <div>
+                  <div id="field-city">
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      City *
+                      City <span className="text-destructive">*</span>
                     </label>
-                    <Select value={city} onValueChange={setCity} disabled={!country}>
-                      <SelectTrigger>
+                    <Select value={city} onValueChange={(v) => { setCity(v); clearError('city'); }} disabled={!country}>
+                      <SelectTrigger className={cn(errors.city && "border-destructive ring-destructive/20 ring-2")}>
                         <SelectValue placeholder="Select city" />
                       </SelectTrigger>
                       <SelectContent>
@@ -406,18 +468,24 @@ const SubmitReview = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.city && (
+                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.city}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
 
               {isIndia && state && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div id="field-city">
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      District *
+                      District <span className="text-destructive">*</span>
                     </label>
-                    <Select value={city} onValueChange={(v) => { setCity(v); setCustomCity(""); }}>
-                      <SelectTrigger>
+                    <Select value={city} onValueChange={(v) => { setCity(v); setCustomCity(""); clearError('city'); }}>
+                      <SelectTrigger className={cn(errors.city && "border-destructive ring-destructive/20 ring-2")}>
                         <SelectValue placeholder="Select district" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -428,6 +496,12 @@ const SubmitReview = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.city && (
+                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.city}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
@@ -437,7 +511,7 @@ const SubmitReview = () => {
                     <Input
                       placeholder="Enter if not in district list"
                       value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
+                      onChange={(e) => { setCustomCity(e.target.value); if (e.target.value.trim()) clearError('city'); }}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Enter specific city/village name if different from district
@@ -454,7 +528,7 @@ const SubmitReview = () => {
                   <Input
                     placeholder="Enter city/town name"
                     value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
+                    onChange={(e) => { setCustomCity(e.target.value); if (e.target.value.trim()) clearError('city'); }}
                   />
                 </div>
               )}
@@ -506,9 +580,9 @@ const SubmitReview = () => {
           </Card>
 
           {/* Overall Rating */}
-          <Card className="border-0 shadow-md">
+          <Card id="field-overallRating" className={cn("border-0 shadow-md", errors.overallRating && "ring-2 ring-destructive/20 border-destructive")}>
             <CardHeader>
-              <CardTitle className="text-xl">Overall Rating *</CardTitle>
+              <CardTitle className="text-xl">Overall Rating <span className="text-destructive">*</span></CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center gap-4">
@@ -516,16 +590,23 @@ const SubmitReview = () => {
                   rating={overallRating}
                   size="lg"
                   interactive
-                  onRatingChange={setOverallRating}
+                  onRatingChange={(r) => { setOverallRating(r); clearError('overallRating'); }}
                 />
-                <p className="text-muted-foreground">
-                  {overallRating === 0 && "Click to rate"}
-                  {overallRating === 1 && "Poor"}
-                  {overallRating === 2 && "Fair"}
-                  {overallRating === 3 && "Good"}
-                  {overallRating === 4 && "Very Good"}
-                  {overallRating === 5 && "Excellent"}
-                </p>
+                {errors.overallRating ? (
+                  <p className="text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.overallRating}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {overallRating === 0 && "Click to rate"}
+                    {overallRating === 1 && "Poor"}
+                    {overallRating === 2 && "Fair"}
+                    {overallRating === 3 && "Good"}
+                    {overallRating === 4 && "Very Good"}
+                    {overallRating === 5 && "Excellent"}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -555,20 +636,27 @@ const SubmitReview = () => {
           </Card>
 
           {/* Review Text */}
-          <Card className="border-0 shadow-md">
+          <Card id="field-reviewText" className={cn("border-0 shadow-md", errors.reviewText && "ring-2 ring-destructive/20 border-destructive")}>
             <CardHeader>
-              <CardTitle className="text-xl">Your Review *</CardTitle>
+              <CardTitle className="text-xl">Your Review <span className="text-destructive">*</span></CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea
                 placeholder="Tell others about your experience. What service did you get? How was the quality? Would you recommend this garage?"
                 value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                className="min-h-[150px] resize-none"
+                onChange={(e) => { setReviewText(e.target.value); if (e.target.value.trim().length >= 20) clearError('reviewText'); }}
+                className={cn("min-h-[150px] resize-none", errors.reviewText && "border-destructive ring-destructive/20 ring-2")}
               />
-              <p className="text-sm text-muted-foreground mt-2">
-                {reviewText.length}/500 characters (minimum 20)
-              </p>
+              {errors.reviewText ? (
+                <p className="text-sm text-destructive mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.reviewText}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {reviewText.length}/500 characters (minimum 20)
+                </p>
+              )}
             </CardContent>
           </Card>
 
