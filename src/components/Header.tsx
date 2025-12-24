@@ -4,6 +4,7 @@ import { Menu, X, User, LayoutDashboard, Building2, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import logoMain from "@/assets/merigarage-logo-main.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,39 +17,28 @@ export function Header() {
   };
 
   return (
-    <header className={cn(
-      "sticky top-0 z-50 transition-all duration-300",
-      isHomePage 
-        ? "bg-transparent absolute w-full" 
-        : "bg-card/95 backdrop-blur-md shadow-sm border-b border-border"
-    )}>
+    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Brand Name */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <span className={cn(
-              "text-xl md:text-2xl font-bold",
-              isHomePage ? "text-primary-foreground" : "text-primary"
-            )}>
-              MeriGarage<span className="text-secondary">Reviews</span>
-            </span>
+        <div className="flex items-center justify-between h-12 md:h-14">
+          {/* Brand Logo */}
+          <Link to="/" className="flex items-center">
+            <img 
+              src={logoMain} 
+              alt="MeriGarageReviews" 
+              className="h-8 md:h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
             <nav className="flex items-center gap-3">
               <Link to="/search">
-                <Button variant="ghost" size="sm" className={cn(
-                  isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
-                )}>
+                <Button variant="ghost" size="sm">
                   Browse Garages
                 </Button>
               </Link>
               <Link to="/garage-auth">
-                <Button variant="ghost" size="sm" className={cn(
-                  "gap-2",
-                  isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
-                )}>
+                <Button variant="ghost" size="sm" className="gap-2">
                   <Building2 className="w-4 h-4" />
                   Garage Login
                 </Button>
@@ -57,22 +47,16 @@ export function Header() {
                 user ? (
                   <>
                     <Link to="/dashboard">
-                      <Button variant="ghost" size="sm" className={cn(
-                        "gap-2",
-                        isHomePage && "text-primary-foreground hover:bg-primary-foreground/10"
-                      )}>
+                      <Button variant="ghost" size="sm" className="gap-2">
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
                       </Button>
                     </Link>
                     <Button 
-                      variant={isHomePage ? "secondary" : "outline"} 
+                      variant="outline" 
                       size="sm" 
                       onClick={handleSignOut}
-                      className={cn(
-                        "gap-2",
-                        isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
-                      )}
+                      className="gap-2"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -80,10 +64,7 @@ export function Header() {
                   </>
                 ) : (
                   <Link to="/auth">
-                    <Button variant={isHomePage ? "secondary" : "outline"} size="sm" className={cn(
-                      "gap-2",
-                      isHomePage && "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
-                    )}>
+                    <Button variant="outline" size="sm" className="gap-2">
                       <User className="w-4 h-4" />
                       Customer Login
                     </Button>
@@ -99,9 +80,9 @@ export function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <X className={cn("w-6 h-6", isHomePage ? "text-primary-foreground" : "text-foreground")} />
+              <X className="w-6 h-6 text-foreground" />
             ) : (
-              <Menu className={cn("w-6 h-6", isHomePage ? "text-primary-foreground" : "text-foreground")} />
+              <Menu className="w-6 h-6 text-foreground" />
             )}
           </button>
         </div>
