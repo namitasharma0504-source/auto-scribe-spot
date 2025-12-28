@@ -111,18 +111,23 @@ export default function Admin() {
     }
   }, [isAdmin]);
 
-  const handleApprove = async (reviewId: string) => {
+  const handleApprove = async (reviewId: string, wasDisputed: boolean = false, reviewData?: Review) => {
     try {
       const { error } = await supabase
         .from("user_reviews")
-        .update({ status: "approved" })
+        .update({ status: "approved", dispute_reason: null, disputed_at: null })
         .eq("id", reviewId);
 
       if (error) throw error;
 
+      // Send dispute resolution email if it was a disputed review
+      if (wasDisputed && reviewData) {
+        await sendDisputeResolutionEmail(reviewData, "approved");
+      }
+
       toast({
         title: "Review Approved",
-        description: "The review is now live.",
+        description: wasDisputed ? "The disputed review has been re-approved and the garage owner notified." : "The review is now live.",
       });
 
       fetchReviews();
@@ -136,7 +141,7 @@ export default function Admin() {
     }
   };
 
-  const handleReject = async (reviewId: string) => {
+  const handleReject = async (reviewId: string, wasDisputed: boolean = false, reviewData?: Review) => {
     try {
       const { error } = await supabase
         .from("user_reviews")
@@ -145,9 +150,14 @@ export default function Admin() {
 
       if (error) throw error;
 
+      // Send dispute resolution email if it was a disputed review
+      if (wasDisputed && reviewData) {
+        await sendDisputeResolutionEmail(reviewData, "rejected");
+      }
+
       toast({
         title: "Review Rejected",
-        description: "The review has been rejected.",
+        description: wasDisputed ? "The disputed review has been removed and the garage owner notified." : "The review has been rejected.",
       });
 
       fetchReviews();
@@ -158,6 +168,60 @@ export default function Admin() {
         description: "Failed to reject review",
         variant: "destructive",
       });
+    }
+  };
+
+  const sendDisputeResolutionEmail = async (review: Review, resolution: "approved" | "rejected") => {
+    try {
+      // Get the garage owner's email
+      const { data: garage } = await supabase
+        .from("garages")
+        .select("owner_id")
+        .eq("name", review.garage_name)
+        .maybeSingle();
+
+      if (!garage?.owner_id) {
+        console.log("No garage owner found for notification");
+        return;
+      }
+
+      // Get the garage owner's email from auth
+      const { data: garageOwner } = await supabase
+        .from("garage_owners")
+        .select("contact_phone, business_name")
+        .eq("user_id", garage.owner_id)
+        .maybeSingle();
+
+      // Get user email from profiles or use a fallback
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", garage.owner_id)
+        .maybeSingle();
+
+      // We need to get the email from auth.users - use service role via edge function
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      await supabase.functions.invoke("send-review-notification", {
+        body: {
+          type: "dispute_resolution",
+          reviewData: {
+            garageEmail: `${garage.owner_id}@garage.merigarage.com`, // Placeholder - will be handled by edge function
+            garageName: review.garage_name,
+            rating: review.rating,
+            reviewText: review.review_text,
+            disputeReason: review.dispute_reason,
+            resolution: resolution,
+            garageOwnerId: garage.owner_id,
+          },
+        },
+      });
+
+      console.log("Dispute resolution notification sent");
+    } catch (error) {
+      console.error("Error sending dispute resolution email:", error);
+      // Don't throw - email failure shouldn't block the action
     }
   };
 
@@ -394,8 +458,8 @@ export default function Admin() {
                       <AdminReviewCard
                         key={review.id}
                         review={review}
-                        onApprove={() => handleApprove(review.id)}
-                        onReject={() => handleReject(review.id)}
+                        onApprove={() => handleApprove(review.id, true, review)}
+                        onReject={() => handleReject(review.id, true, review)}
                         onEdit={handleEdit}
                         showActions
                         showDisputeReason
