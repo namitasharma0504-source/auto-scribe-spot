@@ -50,7 +50,8 @@ const Index = () => {
         photoMap.set(photo.garage_id, existing);
       });
       
-      return garages.map(garage => {
+      // Map garages with their photos
+      const mappedGarages = garages.map(garage => {
         const garagePhotos = photoMap.get(garage.id) || [];
         return {
           id: garage.id,
@@ -70,7 +71,15 @@ const Index = () => {
           responseTime: garage.response_time || undefined,
           quotesThisMonth: Math.floor(Math.random() * 200) + 50,
           walkInWelcome: garage.walk_in_welcome || false,
+          hasUploadedPhotos: garagePhotos.length > 0, // Track if garage has uploaded photos
         };
+      });
+      
+      // Sort: garages with uploaded photos first, then by rating
+      return mappedGarages.sort((a, b) => {
+        if (a.hasUploadedPhotos && !b.hasUploadedPhotos) return -1;
+        if (!a.hasUploadedPhotos && b.hasUploadedPhotos) return 1;
+        return b.rating - a.rating;
       });
     },
   });
