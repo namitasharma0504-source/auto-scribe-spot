@@ -11,7 +11,8 @@ import {
   RefreshCw,
   LogOut,
   Building2,
-  LayoutDashboard
+  LayoutDashboard,
+  AlertTriangle
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,8 @@ interface Review {
   status: string | null;
   created_at: string;
   is_verified: boolean | null;
+  dispute_reason: string | null;
+  disputed_at: string | null;
 }
 
 export default function Admin() {
@@ -53,6 +56,7 @@ export default function Admin() {
     pending: 0,
     approved: 0,
     rejected: 0,
+    disputed: 0,
   });
 
   useEffect(() => {
@@ -76,7 +80,7 @@ export default function Admin() {
     try {
       const { data, error } = await supabase
         .from("user_reviews")
-        .select("id, garage_name, garage_location, rating, review_text, status, created_at, is_verified")
+        .select("id, garage_name, garage_location, rating, review_text, status, created_at, is_verified, dispute_reason, disputed_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -87,7 +91,8 @@ export default function Admin() {
       const pending = (data || []).filter(r => r.status === "pending" || !r.status).length;
       const approved = (data || []).filter(r => r.status === "approved").length;
       const rejected = (data || []).filter(r => r.status === "rejected").length;
-      setStats({ pending, approved, rejected });
+      const disputed = (data || []).filter(r => r.status === "disputed").length;
+      setStats({ pending, approved, rejected, disputed });
     } catch (error: any) {
       console.error("Error fetching reviews:", error);
       toast({
@@ -194,6 +199,7 @@ export default function Admin() {
   const pendingReviews = filteredReviews.filter(r => r.status === "pending" || !r.status);
   const approvedReviews = filteredReviews.filter(r => r.status === "approved");
   const rejectedReviews = filteredReviews.filter(r => r.status === "rejected");
+  const disputedReviews = filteredReviews.filter(r => r.status === "disputed");
 
   if (authLoading || adminLoading) {
     return (
@@ -230,7 +236,7 @@ export default function Admin() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-yellow-500/30 bg-yellow-500/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -250,6 +256,17 @@ export default function Admin() {
                   <p className="text-3xl font-bold text-green-600">{stats.approved}</p>
                 </div>
                 <CheckCircle className="w-10 h-10 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Disputed Reviews</p>
+                  <p className="text-3xl font-bold text-orange-600">{stats.disputed}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-orange-500" />
               </div>
             </CardContent>
           </Card>
@@ -315,10 +332,14 @@ export default function Admin() {
 
             {/* Review Tabs */}
             <Tabs defaultValue="pending">
-              <TabsList>
+              <TabsList className="flex-wrap">
                 <TabsTrigger value="pending" className="gap-2">
                   <Clock className="w-4 h-4" />
                   Pending ({pendingReviews.length})
+                </TabsTrigger>
+                <TabsTrigger value="disputed" className="gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Disputed ({disputedReviews.length})
                 </TabsTrigger>
                 <TabsTrigger value="approved" className="gap-2">
                   <CheckCircle className="w-4 h-4" />
@@ -353,6 +374,31 @@ export default function Admin() {
                         onReject={() => handleReject(review.id)}
                         onEdit={handleEdit}
                         showActions
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="disputed" className="mt-6">
+                {disputedReviews.length === 0 ? (
+                  <Card className="py-12">
+                    <CardContent className="text-center">
+                      <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No disputed reviews</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {disputedReviews.map((review) => (
+                      <AdminReviewCard
+                        key={review.id}
+                        review={review}
+                        onApprove={() => handleApprove(review.id)}
+                        onReject={() => handleReject(review.id)}
+                        onEdit={handleEdit}
+                        showActions
+                        showDisputeReason
                       />
                     ))}
                   </div>

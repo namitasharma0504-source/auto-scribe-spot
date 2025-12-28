@@ -4,7 +4,8 @@ import {
   Building2, Star, MessageSquare, TrendingUp, Eye, 
   Settings, Image, Wrench, ExternalLink, BarChart3,
   Award, Users, Calendar, ArrowUp, ArrowDown, BadgeCheck,
-  Percent, ShieldCheck, Clock, Info, Rocket, Sparkles
+  Percent, ShieldCheck, Clock, Info, Rocket, Sparkles,
+  AlertTriangle, MapPin
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -15,10 +16,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { BoostPanel } from "@/components/garage/BoostPanel";
+import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Sample analytics data
 const viewsData = [
@@ -38,6 +49,277 @@ const ratingsData = [
   { month: "May", rating: 4.6 },
   { month: "Jun", rating: 4.7 },
 ];
+
+// Garage Reviews Section Component
+interface GarageReview {
+  id: string;
+  garage_name: string;
+  garage_location: string | null;
+  rating: number;
+  review_text: string | null;
+  status: string | null;
+  created_at: string;
+  is_verified: boolean | null;
+  dispute_reason: string | null;
+  disputed_at: string | null;
+}
+
+function GarageReviewsSection({ garageName }: { garageName: string }) {
+  const [reviews, setReviews] = useState<GarageReview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<GarageReview | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [isDisputing, setIsDisputing] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!garageName) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("user_reviews")
+          .select("id, garage_name, garage_location, rating, review_text, status, created_at, is_verified, dispute_reason, disputed_at")
+          .eq("garage_name", garageName)
+          .eq("status", "approved")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setReviews((data as GarageReview[]) || []);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [garageName]);
+
+  const handleDisputeClick = (review: GarageReview) => {
+    setSelectedReview(review);
+    setDisputeReason("");
+    setDisputeDialogOpen(true);
+  };
+
+  const handleSubmitDispute = async () => {
+    if (!selectedReview || !disputeReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for disputing this review.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDisputing(true);
+    try {
+      const { error } = await supabase
+        .from("user_reviews")
+        .update({
+          status: "disputed",
+          dispute_reason: disputeReason.trim(),
+          disputed_at: new Date().toISOString(),
+        })
+        .eq("id", selectedReview.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Dispute Submitted",
+        description: "Your dispute has been sent to admin for review.",
+      });
+
+      // Remove the disputed review from the list
+      setReviews(reviews.filter(r => r.id !== selectedReview.id));
+      setDisputeDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error disputing review:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit dispute. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDisputing(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-12">
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!garageName) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Reviews</CardTitle>
+          <CardDescription>See what customers are saying about your garage</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Please save your garage profile first to see reviews.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Reviews</CardTitle>
+          <CardDescription>
+            See what customers are saying about your garage. You can dispute any review you believe is unfair or inaccurate.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reviews.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No published reviews yet. Share your garage profile to get more reviews!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <Card key={review.id} className="overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                      <div className="flex-1 space-y-3">
+                        {/* Location & Date */}
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          {review.garage_location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {review.garage_location}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {format(new Date(review.created_at), "MMM d, yyyy")}
+                          </span>
+                          {review.is_verified && (
+                            <Badge variant="outline" className="gap-1 bg-primary/10 text-primary border-primary/30">
+                              <BadgeCheck className="w-3 h-3" />
+                              Verified
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Rating */}
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "fill-muted text-muted"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm font-medium">{review.rating}/5</span>
+                        </div>
+
+                        {/* Review Text */}
+                        {review.review_text && (
+                          <p className="text-foreground bg-muted/50 p-4 rounded-lg">
+                            "{review.review_text}"
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Dispute Button */}
+                      <div className="flex lg:flex-col gap-2">
+                        <Button
+                          onClick={() => handleDisputeClick(review)}
+                          variant="outline"
+                          className="gap-2 text-orange-600 border-orange-300 hover:bg-orange-50"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          Dispute
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dispute Dialog */}
+      <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dispute Review</DialogTitle>
+            <DialogDescription>
+              Please explain why you believe this review is unfair or inaccurate. Your dispute will be reviewed by our admin team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedReview && (
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="flex items-center gap-1 mb-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < selectedReview.rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "fill-muted text-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {selectedReview.review_text || "No review text"}
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="dispute-reason">Reason for Dispute *</Label>
+              <Textarea
+                id="dispute-reason"
+                placeholder="Explain why you're disputing this review..."
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisputeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitDispute} 
+              disabled={isDisputing || !disputeReason.trim()}
+              className="gap-2"
+            >
+              {isDisputing ? "Submitting..." : "Submit Dispute"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 export default function GarageDashboard() {
   const [garageOwner, setGarageOwner] = useState<any>(null);
@@ -637,18 +919,7 @@ export default function GarageDashboard() {
 
           {/* Reviews Tab */}
           <TabsContent value="reviews">
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Reviews</CardTitle>
-                <CardDescription>See what customers are saying about your garage</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No reviews yet. Share your garage profile to get more reviews!</p>
-                </div>
-              </CardContent>
-            </Card>
+            <GarageReviewsSection garageName={garage?.name || ""} />
           </TabsContent>
 
           {/* Analytics Tab */}

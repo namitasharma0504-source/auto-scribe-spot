@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, CheckCircle, XCircle, MapPin, Calendar, BadgeCheck, Edit2, Save, X } from "lucide-react";
+import { Star, CheckCircle, XCircle, MapPin, Calendar, BadgeCheck, Edit2, Save, X, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ interface Review {
   status: string | null;
   created_at: string;
   is_verified: boolean | null;
+  dispute_reason?: string | null;
+  disputed_at?: string | null;
 }
 
 interface AdminReviewCardProps {
@@ -24,6 +26,7 @@ interface AdminReviewCardProps {
   onEdit?: (reviewId: string, newText: string) => void;
   showActions?: boolean;
   showApproveOnly?: boolean;
+  showDisputeReason?: boolean;
 }
 
 export function AdminReviewCard({
@@ -33,6 +36,7 @@ export function AdminReviewCard({
   onEdit,
   showActions = true,
   showApproveOnly = false,
+  showDisputeReason = false,
 }: AdminReviewCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(review.review_text || "");
@@ -41,6 +45,7 @@ export function AdminReviewCard({
     pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
     approved: "bg-green-500/10 text-green-600 border-green-500/30",
     rejected: "bg-red-500/10 text-red-600 border-red-500/30",
+    disputed: "bg-orange-500/10 text-orange-600 border-orange-500/30",
   };
 
   const status = review.status || "pending";
@@ -132,6 +137,24 @@ export function AdminReviewCard({
                   "{review.review_text}"
                 </p>
               )
+            )}
+
+            {/* Dispute Reason */}
+            {showDisputeReason && review.dispute_reason && (
+              <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-lg space-y-2">
+                <div className="flex items-center gap-2 text-orange-600 font-medium">
+                  <AlertTriangle className="w-4 h-4" />
+                  Garage Owner's Dispute Reason
+                </div>
+                <p className="text-sm text-foreground">
+                  {review.dispute_reason}
+                </p>
+                {review.disputed_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Disputed on {format(new Date(review.disputed_at), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 

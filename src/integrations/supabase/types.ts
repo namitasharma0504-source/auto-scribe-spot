@@ -369,6 +369,9 @@ export type Database = {
       user_reviews: {
         Row: {
           created_at: string
+          dispute_reason: string | null
+          disputed_at: string | null
+          garage_id: string | null
           garage_location: string | null
           garage_name: string
           id: string
@@ -381,6 +384,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          garage_id?: string | null
           garage_location?: string | null
           garage_name: string
           id?: string
@@ -393,6 +399,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          garage_id?: string | null
           garage_location?: string | null
           garage_name?: string
           id?: string
