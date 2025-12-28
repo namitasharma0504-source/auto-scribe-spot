@@ -330,6 +330,10 @@ export default function GarageDashboard() {
   const [isSavingBadges, setIsSavingBadges] = useState(false);
   const [statDialogOpen, setStatDialogOpen] = useState(false);
   const [selectedStat, setSelectedStat] = useState<"rating" | "reviews" | "views" | "inquiries">("rating");
+  const [verificationRequest, setVerificationRequest] = useState<any>(null);
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -417,6 +421,19 @@ export default function GarageDashboard() {
             response_time: garageData.response_time || "",
             walk_in_welcome: garageData.walk_in_welcome ?? true,
           });
+
+          // Fetch verification request status
+          const { data: verRequest } = await supabase
+            .from("verification_requests")
+            .select("*")
+            .eq("garage_id", garageData.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (verRequest) {
+            setVerificationRequest(verRequest);
+          }
         }
       }
 
@@ -523,6 +540,57 @@ export default function GarageDashboard() {
       });
     } finally {
       setIsSavingBadges(false);
+    }
+  };
+
+  const handleRequestVerification = async () => {
+    if (!garage) return;
+
+    setIsRequestingVerification(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Check if there's already a pending request
+      if (verificationRequest?.status === 'pending') {
+        toast({
+          title: "Request Already Pending",
+          description: "You already have a pending verification request.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("verification_requests")
+        .insert({
+          garage_id: garage.id,
+          requested_by: session.user.id,
+          status: 'pending',
+          request_message: verificationMessage || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setVerificationRequest(data);
+      setVerificationDialogOpen(false);
+      setVerificationMessage("");
+
+      toast({
+        title: "Verification Requested!",
+        description: "Your verification request has been submitted. We'll review it soon.",
+      });
+    } catch (error: any) {
+      console.error("Error requesting verification:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit verification request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRequestingVerification(false);
     }
   };
 
@@ -856,27 +924,62 @@ export default function GarageDashboard() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Verified Garage - Admin Only */}
-                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-                          <BadgeCheck className="w-5 h-5 text-success" />
+                    <div className="flex flex-col p-4 bg-muted/30 rounded-xl border border-border">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                            <BadgeCheck className="w-5 h-5 text-success" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">Verified Garage</h4>
+                            <p className="text-sm text-muted-foreground">Admin verified authenticity</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-foreground">Verified Garage</h4>
-                          <p className="text-sm text-muted-foreground">Admin verified authenticity</p>
+                        <div className="flex flex-col items-end">
+                          {badgeData.is_verified ? (
+                            <span className="px-2 py-1 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">
+                              ✓ Verified
+                            </span>
+                          ) : verificationRequest?.status === 'pending' ? (
+                            <span className="px-2 py-1 bg-yellow-500/10 text-yellow-600 text-xs font-medium rounded-full">
+                              ⏳ Under Review
+                            </span>
+                          ) : verificationRequest?.status === 'rejected' ? (
+                            <span className="px-2 py-1 bg-red-500/10 text-red-600 text-xs font-medium rounded-full">
+                              ✗ Declined
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                              Not Verified
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        {badgeData.is_verified ? (
-                          <span className="px-2 py-1 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">
-                            ✓ Verified
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                            Pending
-                          </span>
-                        )}
-                      </div>
+                      
+                      {/* Request Verification Button */}
+                      {!badgeData.is_verified && verificationRequest?.status !== 'pending' && garage && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setVerificationDialogOpen(true)}
+                          className="mt-2 gap-2"
+                        >
+                          <BadgeCheck className="w-4 h-4" />
+                          Request Verification
+                        </Button>
+                      )}
+                      
+                      {verificationRequest?.status === 'pending' && (
+                        <p className="text-xs text-yellow-600 mt-2">
+                          Your request is being reviewed by our team.
+                        </p>
+                      )}
+                      
+                      {verificationRequest?.status === 'rejected' && verificationRequest?.admin_notes && (
+                        <p className="text-xs text-red-600 mt-2">
+                          Reason: {verificationRequest.admin_notes}
+                        </p>
+                      )}
                     </div>
 
                     {/* Recommended - Admin Only */}
@@ -887,7 +990,7 @@ export default function GarageDashboard() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-foreground">Recommended</h4>
-                          <p className="text-sm text-muted-foreground">Based on rating & reviews</p>
+                          <p className="text-sm text-muted-foreground">Rating 4.5+ with 10+ reviews</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
@@ -905,7 +1008,7 @@ export default function GarageDashboard() {
                   </div>
 
                   <p className="text-xs text-muted-foreground italic">
-                    💡 Tip: Maintain a rating of 4.5+ with 10+ reviews to become Recommended. Contact us to request Verified status.
+                    💡 Tip: Maintain a rating of 4.5+ with 10+ reviews to become Recommended automatically.
                   </p>
                 </div>
 
@@ -1189,6 +1292,55 @@ export default function GarageDashboard() {
       </main>
 
       <Footer />
+
+      {/* Verification Request Dialog */}
+      <Dialog open={verificationDialogOpen} onOpenChange={setVerificationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BadgeCheck className="w-5 h-5 text-success" />
+              Request Garage Verification
+            </DialogTitle>
+            <DialogDescription>
+              Submit a request to get your garage verified by MeriGarageReviews team. 
+              Verified garages get a trust badge that increases customer confidence.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+              <h4 className="font-medium text-sm">What we verify:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Business registration / GST details</li>
+                <li>• Physical location exists</li>
+                <li>• Contact information is valid</li>
+                <li>• Owner identity confirmation</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="verification-message">Additional Information (Optional)</Label>
+              <Textarea
+                id="verification-message"
+                placeholder="Provide any additional details that might help with verification (e.g., business registration number, years in operation, etc.)"
+                value={verificationMessage}
+                onChange={(e) => setVerificationMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerificationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleRequestVerification} 
+              disabled={isRequestingVerification}
+              className="gap-2"
+            >
+              {isRequestingVerification ? "Submitting..." : "Submit Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
