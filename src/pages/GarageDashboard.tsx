@@ -494,14 +494,22 @@ export default function GarageDashboard() {
 
     setIsSavingBadges(true);
     try {
+      // Only update garage-controllable badges (not is_verified or is_recommended)
+      const garageControlledBadges = {
+        is_certified: badgeData.is_certified,
+        has_discounts: badgeData.has_discounts,
+        walk_in_welcome: badgeData.walk_in_welcome,
+        response_time: badgeData.response_time,
+      };
+
       const { error } = await supabase
         .from("garages")
-        .update(badgeData)
+        .update(garageControlledBadges)
         .eq("id", garage.id);
 
       if (error) throw error;
 
-      setGarage({ ...garage, ...badgeData });
+      setGarage({ ...garage, ...garageControlledBadges });
 
       toast({
         title: "Badges Updated!",
@@ -831,101 +839,142 @@ export default function GarageDashboard() {
                 <div className="flex items-start gap-3 p-4 bg-accent/10 rounded-xl border border-accent/20">
                   <Info className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-muted-foreground">
-                    These highlights will be displayed on your garage listing. Enable badges that accurately 
-                    represent your garage to build trust with potential customers.
+                    Some badges can be managed by you, while others require admin verification. 
+                    Enable badges that accurately represent your garage to build trust with potential customers.
                   </p>
                 </div>
 
-                {/* Badge Toggles */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Verified Garage */}
-                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-                        <BadgeCheck className="w-5 h-5 text-success" />
+                {/* Admin-Controlled Badges (Read Only) */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    Admin-Verified Badges
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    These badges are managed by MeriGarageReviews team and cannot be changed by you.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Verified Garage - Admin Only */}
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                          <BadgeCheck className="w-5 h-5 text-success" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">Verified Garage</h4>
+                          <p className="text-sm text-muted-foreground">Admin verified authenticity</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">Verified Garage</h4>
-                        <p className="text-sm text-muted-foreground">Show that your garage is verified</p>
+                      <div className="flex flex-col items-end">
+                        {badgeData.is_verified ? (
+                          <span className="px-2 py-1 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">
+                            ✓ Verified
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                            Pending
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <Switch
-                      checked={badgeData.is_verified}
-                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_verified: checked })}
-                    />
+
+                    {/* Recommended - Admin Only */}
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-star/10 flex items-center justify-center">
+                          <Award className="w-5 h-5 text-star" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">Recommended</h4>
+                          <p className="text-sm text-muted-foreground">Based on rating & reviews</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        {badgeData.is_recommended ? (
+                          <span className="px-2 py-1 bg-yellow-500/10 text-yellow-600 text-xs font-medium rounded-full">
+                            ★ Recommended
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                            Not yet
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Certified Mechanics */}
-                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                        <Wrench className="w-5 h-5 text-accent" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">Certified Mechanics</h4>
-                        <p className="text-sm text-muted-foreground">Your mechanics are certified</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={badgeData.is_certified}
-                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_certified: checked })}
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground italic">
+                    💡 Tip: Maintain a rating of 4.5+ with 10+ reviews to become Recommended. Contact us to request Verified status.
+                  </p>
+                </div>
 
-                  {/* Recommended */}
-                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-star/10 flex items-center justify-center">
-                        <Award className="w-5 h-5 text-star" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">Recommended</h4>
-                        <p className="text-sm text-muted-foreground">Highlight based on reviews</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={badgeData.is_recommended}
-                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_recommended: checked })}
-                    />
-                  </div>
+                {/* Garage-Controlled Badges */}
+                <div className="space-y-3 pt-4 border-t">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Your Badges
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    You can enable or disable these badges based on your garage's offerings.
+                  </p>
 
-                  {/* Discounts Available */}
-                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Percent className="w-5 h-5 text-primary" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Walk-ins Welcome */}
+                    <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-success" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">Walk-ins Welcome</h4>
+                          <p className="text-sm text-muted-foreground">Accept customers without appointment</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">Discounts Available</h4>
-                        <p className="text-sm text-muted-foreground">Show you have special offers</p>
-                      </div>
+                      <Switch
+                        checked={badgeData.walk_in_welcome}
+                        onCheckedChange={(checked) => setBadgeData({ ...badgeData, walk_in_welcome: checked })}
+                      />
                     </div>
-                    <Switch
-                      checked={badgeData.has_discounts}
-                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, has_discounts: checked })}
-                    />
-                  </div>
 
-                  {/* Walk-ins Welcome */}
-                  <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-                        <ShieldCheck className="w-5 h-5 text-success" />
+                    {/* Discounts Available */}
+                    <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Percent className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">Discounts Available</h4>
+                          <p className="text-sm text-muted-foreground">Show you have special offers</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">Walk-ins Welcome</h4>
-                        <p className="text-sm text-muted-foreground">Accept customers without appointment</p>
-                      </div>
+                      <Switch
+                        checked={badgeData.has_discounts}
+                        onCheckedChange={(checked) => setBadgeData({ ...badgeData, has_discounts: checked })}
+                      />
                     </div>
-                    <Switch
-                      checked={badgeData.walk_in_welcome}
-                      onCheckedChange={(checked) => setBadgeData({ ...badgeData, walk_in_welcome: checked })}
-                    />
+
+                    {/* Certified Mechanics */}
+                    <div className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                          <Wrench className="w-5 h-5 text-accent" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">Certified Mechanics</h4>
+                          <p className="text-sm text-muted-foreground">Your mechanics are trained & certified</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={badgeData.is_certified}
+                        onCheckedChange={(checked) => setBadgeData({ ...badgeData, is_certified: checked })}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Response Time */}
-                <div className="space-y-2">
+                <div className="space-y-2 pt-4 border-t">
                   <Label htmlFor="response_time" className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
                     Average Response Time
