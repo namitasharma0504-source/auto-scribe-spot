@@ -13,12 +13,13 @@ import {
   Building2,
   LayoutDashboard,
   AlertTriangle,
-  BadgeCheck
+  BadgeCheck,
+  ArrowRight
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,13 @@ import { GarageManagement } from "@/components/admin/GarageManagement";
 import { CustomerManagement } from "@/components/admin/CustomerManagement";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Review {
   id: string;
@@ -60,6 +68,8 @@ export default function Admin() {
     rejected: 0,
     disputed: 0,
   });
+  const [selectedStatDialog, setSelectedStatDialog] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -301,9 +311,12 @@ export default function Admin() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Clickable */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <Card 
+            className="border-yellow-500/30 bg-yellow-500/5 cursor-pointer hover:bg-yellow-500/10 transition-colors"
+            onClick={() => setSelectedStatDialog("pending")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -312,9 +325,16 @@ export default function Admin() {
                 </div>
                 <Clock className="w-10 h-10 text-yellow-500" />
               </div>
+              <div className="flex items-center gap-1 mt-2 text-xs text-yellow-600">
+                <span>View pending</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-green-500/30 bg-green-500/5">
+          <Card 
+            className="border-green-500/30 bg-green-500/5 cursor-pointer hover:bg-green-500/10 transition-colors"
+            onClick={() => setSelectedStatDialog("approved")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -323,9 +343,16 @@ export default function Admin() {
                 </div>
                 <CheckCircle className="w-10 h-10 text-green-500" />
               </div>
+              <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
+                <span>View approved</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-orange-500/30 bg-orange-500/5">
+          <Card 
+            className="border-orange-500/30 bg-orange-500/5 cursor-pointer hover:bg-orange-500/10 transition-colors"
+            onClick={() => setSelectedStatDialog("disputed")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -334,9 +361,16 @@ export default function Admin() {
                 </div>
                 <AlertTriangle className="w-10 h-10 text-orange-500" />
               </div>
+              <div className="flex items-center gap-1 mt-2 text-xs text-orange-600">
+                <span>View disputes</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-red-500/30 bg-red-500/5">
+          <Card 
+            className="border-red-500/30 bg-red-500/5 cursor-pointer hover:bg-red-500/10 transition-colors"
+            onClick={() => setSelectedStatDialog("rejected")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -345,12 +379,157 @@ export default function Admin() {
                 </div>
                 <XCircle className="w-10 h-10 text-red-500" />
               </div>
+              <div className="flex items-center gap-1 mt-2 text-xs text-red-600">
+                <span>View rejected</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Stat Detail Dialog */}
+        <Dialog open={!!selectedStatDialog} onOpenChange={() => setSelectedStatDialog(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedStatDialog === "pending" && (
+                  <>
+                    <Clock className="w-5 h-5 text-yellow-500" />
+                    <span>Pending Reviews ({stats.pending})</span>
+                  </>
+                )}
+                {selectedStatDialog === "approved" && (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span>Approved Reviews ({stats.approved})</span>
+                  </>
+                )}
+                {selectedStatDialog === "disputed" && (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    <span>Disputed Reviews ({stats.disputed})</span>
+                  </>
+                )}
+                {selectedStatDialog === "rejected" && (
+                  <>
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span>Rejected Reviews ({stats.rejected})</span>
+                  </>
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedStatDialog === "pending" && "Reviews awaiting your approval or rejection."}
+                {selectedStatDialog === "approved" && "Reviews that are live and visible to users."}
+                {selectedStatDialog === "disputed" && "Reviews contested by garage owners requiring resolution."}
+                {selectedStatDialog === "rejected" && "Reviews that were removed from the platform."}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              {selectedStatDialog === "pending" && (
+                <>
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                    <h4 className="font-semibold text-yellow-700 mb-2">Quick Actions</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Approve reviews to make them visible on garage profiles
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        Reject reviews that violate community guidelines
+                      </li>
+                    </ul>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setSelectedStatDialog(null);
+                      setActiveTab("reviews");
+                    }}
+                    className="w-full"
+                  >
+                    Go to Pending Reviews
+                  </Button>
+                </>
+              )}
+              
+              {selectedStatDialog === "approved" && (
+                <>
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                    <h4 className="font-semibold text-green-700 mb-2">About Approved Reviews</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li>• Visible on garage profiles and search results</li>
+                      <li>• Contribute to garage ratings and rankings</li>
+                      <li>• Can still be disputed by garage owners</li>
+                      <li>• Points awarded to reviewers</li>
+                    </ul>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setSelectedStatDialog(null);
+                      setActiveTab("reviews");
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    View Approved Reviews
+                  </Button>
+                </>
+              )}
+              
+              {selectedStatDialog === "disputed" && (
+                <>
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+                    <h4 className="font-semibold text-orange-700 mb-2">Dispute Resolution</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li>• Review garage owner's dispute reason carefully</li>
+                      <li>• Check if review violates community guidelines</li>
+                      <li>• Re-approve if dispute is invalid</li>
+                      <li>• Reject if the review is genuinely problematic</li>
+                      <li>• Garage owners are notified of your decision</li>
+                    </ul>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setSelectedStatDialog(null);
+                      setActiveTab("reviews");
+                    }}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    Resolve Disputes Now
+                  </Button>
+                </>
+              )}
+              
+              {selectedStatDialog === "rejected" && (
+                <>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                    <h4 className="font-semibold text-red-700 mb-2">Rejected Reviews</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li>• Not visible to users</li>
+                      <li>• No points awarded to reviewer</li>
+                      <li>• Can be re-approved if rejected in error</li>
+                      <li>• Keep record for moderation audit</li>
+                    </ul>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setSelectedStatDialog(null);
+                      setActiveTab("reviews");
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    View Rejected Reviews
+                  </Button>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-6 gap-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
