@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   Star, Gift, CheckCircle, Clock, MapPin, Calendar,
-  TrendingUp, Award, LogOut, ChevronRight
+  TrendingUp, Award, LogOut, ChevronRight, Home, ArrowRight
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -48,6 +49,8 @@ interface Profile {
   total_points: number;
 }
 
+type StatDialogType = "points" | "reviews" | "verified" | "redeemed" | null;
+
 function DashboardContent() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -56,6 +59,7 @@ function DashboardContent() {
   const [rewardsHistory, setRewardsHistory] = useState<RewardHistory[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [statDialog, setStatDialog] = useState<StatDialogType>(null);
 
   useEffect(() => {
     if (user) {
@@ -105,6 +109,168 @@ function DashboardContent() {
   const nextTierPoints = 1000;
   const progressToNextTier = Math.min((availablePoints / nextTierPoints) * 100, 100);
 
+  const getStatDialogContent = () => {
+    switch (statDialog) {
+      case "points":
+        return {
+          title: "Available Points",
+          description: "Your reward points balance and ways to earn more",
+          content: (
+            <div className="space-y-6">
+              <div className="text-center p-6 bg-primary/10 rounded-lg">
+                <Gift className="w-12 h-12 mx-auto mb-2 text-primary" />
+                <p className="text-4xl font-bold text-primary">{availablePoints}</p>
+                <p className="text-muted-foreground">Available Points</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">Ways to Earn Points</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Star className="w-5 h-5 text-primary" />
+                      <span>Write a review</span>
+                    </div>
+                    <Badge>+50 pts</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>Get review verified</span>
+                    </div>
+                    <Badge>+25 pts</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-5 h-5 text-amber-500" />
+                      <span>First review bonus</span>
+                    </div>
+                    <Badge>+100 pts</Badge>
+                  </div>
+                </div>
+              </div>
+              <Link to="/rewards" className="block">
+                <Button className="w-full gap-2">
+                  Browse Rewards <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )
+        };
+      case "reviews":
+        return {
+          title: "Your Reviews",
+          description: "All reviews you've submitted",
+          content: (
+            <div className="space-y-4">
+              <div className="text-center p-6 bg-primary/10 rounded-lg">
+                <Star className="w-12 h-12 mx-auto mb-2 text-primary" />
+                <p className="text-4xl font-bold">{reviews.length}</p>
+                <p className="text-muted-foreground">Total Reviews</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">Why Review?</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <Gift className="w-4 h-4 mt-1 text-primary" />
+                    <span>Earn 50 points per review</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 mt-1 text-primary" />
+                    <span>Help others find great garages</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Award className="w-4 h-4 mt-1 text-primary" />
+                    <span>Unlock exclusive tier rewards</span>
+                  </li>
+                </ul>
+              </div>
+              <Link to="/submit-review" className="block">
+                <Button className="w-full gap-2">
+                  Write a Review <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )
+        };
+      case "verified":
+        return {
+          title: "Verified Reviews",
+          description: "Reviews confirmed with proof of visit",
+          content: (
+            <div className="space-y-4">
+              <div className="text-center p-6 bg-green-100 rounded-lg">
+                <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-600" />
+                <p className="text-4xl font-bold text-green-700">{verifiedReviews}</p>
+                <p className="text-muted-foreground">Verified Reviews</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">How to Get Verified</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 mt-1 text-green-500" />
+                    <span>Upload receipt or invoice from the garage</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 mt-1 text-green-500" />
+                    <span>Share booking confirmation</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 mt-1 text-green-500" />
+                    <span>Earn extra 25 points per verified review</span>
+                  </li>
+                </ul>
+              </div>
+              <Link to="/submit-review" className="block">
+                <Button className="w-full gap-2" variant="outline">
+                  Submit Verified Review <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )
+        };
+      case "redeemed":
+        return {
+          title: "Redemptions",
+          description: "Rewards you've redeemed",
+          content: (
+            <div className="space-y-4">
+              <div className="text-center p-6 bg-amber-100 rounded-lg">
+                <Award className="w-12 h-12 mx-auto mb-2 text-amber-600" />
+                <p className="text-4xl font-bold text-amber-700">{redemptions.length}</p>
+                <p className="text-muted-foreground">Total Redemptions</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">Available Rewards</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <Gift className="w-4 h-4 mt-1 text-amber-500" />
+                    <span>Free car wash vouchers</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Gift className="w-4 h-4 mt-1 text-amber-500" />
+                    <span>Service discounts at partner garages</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Gift className="w-4 h-4 mt-1 text-amber-500" />
+                    <span>Exclusive member perks</span>
+                  </li>
+                </ul>
+              </div>
+              <Link to="/rewards" className="block">
+                <Button className="w-full gap-2">
+                  Redeem Rewards <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )
+        };
+      default:
+        return null;
+    }
+  };
+
+  const dialogContent = getStatDialogContent();
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -118,54 +284,87 @@ function DashboardContent() {
             </h1>
             <p className="text-muted-foreground mt-1">Track your reviews, rewards, and redemptions</p>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="mt-4 md:mt-0 gap-2">
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          <div className="flex gap-2 mt-4 md:mt-0">
+            <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+              <Home className="w-4 h-4" />
+              Home
+            </Button>
+            <Button variant="outline" onClick={handleSignOut} className="gap-2">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
-        {/* Stats Overview */}
+        {/* Stats Overview - Clickable Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+          <Card 
+            className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setStatDialog("points")}
+          >
             <CardContent className="pt-6">
               <div className="flex flex-col">
                 <Gift className="w-8 h-8 mb-2 opacity-80" />
                 <p className="text-primary-foreground/80 text-sm">Available Points</p>
                 <p className="text-3xl font-bold">{availablePoints}</p>
+                <p className="text-primary-foreground/60 text-xs mt-1">Click for details</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setStatDialog("reviews")}
+          >
             <CardContent className="pt-6">
               <div className="flex flex-col">
                 <Star className="w-8 h-8 mb-2 text-primary" />
                 <p className="text-muted-foreground text-sm">Total Reviews</p>
                 <p className="text-3xl font-bold text-foreground">{reviews.length}</p>
+                <p className="text-muted-foreground/60 text-xs mt-1">Click for details</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setStatDialog("verified")}
+          >
             <CardContent className="pt-6">
               <div className="flex flex-col">
                 <CheckCircle className="w-8 h-8 mb-2 text-green-500" />
                 <p className="text-muted-foreground text-sm">Verified</p>
                 <p className="text-3xl font-bold text-foreground">{verifiedReviews}</p>
+                <p className="text-muted-foreground/60 text-xs mt-1">Click for details</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setStatDialog("redeemed")}
+          >
             <CardContent className="pt-6">
               <div className="flex flex-col">
                 <Award className="w-8 h-8 mb-2 text-amber-500" />
                 <p className="text-muted-foreground text-sm">Redeemed</p>
                 <p className="text-3xl font-bold text-foreground">{redemptions.length}</p>
+                <p className="text-muted-foreground/60 text-xs mt-1">Click for details</p>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Stat Detail Dialog */}
+        <Dialog open={statDialog !== null} onOpenChange={(open) => !open && setStatDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{dialogContent?.title}</DialogTitle>
+              <DialogDescription>{dialogContent?.description}</DialogDescription>
+            </DialogHeader>
+            {dialogContent?.content}
+          </DialogContent>
+        </Dialog>
 
         {/* Progress to Next Tier */}
         <Card className="mb-8">
