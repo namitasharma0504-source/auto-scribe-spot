@@ -187,6 +187,98 @@ serve(async (req: Request): Promise<Response> => {
         `,
       });
       console.log("Garage notification email sent to:", reviewData.garageEmail);
+    } else if (type === "dispute_resolution") {
+      // Email to garage owner when their disputed review is resolved
+      // First, get the garage owner's email using the service role
+      let garageOwnerEmail = reviewData.garageEmail;
+      
+      if (reviewData.garageOwnerId) {
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
+          reviewData.garageOwnerId
+        );
+        
+        if (!authError && authUser?.user?.email) {
+          garageOwnerEmail = authUser.user.email;
+          console.log("Found garage owner email:", garageOwnerEmail);
+        } else {
+          console.log("Could not find garage owner email, using fallback");
+        }
+      }
+
+      // Skip if no valid email
+      if (!garageOwnerEmail || garageOwnerEmail.includes("@garage.merigarage.com")) {
+        console.log("No valid email found for garage owner, skipping notification");
+        return new Response(JSON.stringify({ success: true, message: "No valid email found" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const isApproved = reviewData.resolution === "approved";
+      const emoji = isApproved ? "✅" : "❌";
+      const statusText = isApproved ? "Re-approved" : "Removed";
+      const headerBg = isApproved ? "#22c55e" : "#dc2626";
+      const borderColor = isApproved ? "#22c55e" : "#dc2626";
+      const message = isApproved 
+        ? "After careful review of your dispute, we have determined that the review meets our community guidelines and will remain published on your garage profile."
+        : "After reviewing your dispute, we have decided to remove this review from your garage profile. The review did not meet our community guidelines.";
+
+      await sendEmail({
+        to: garageOwnerEmail,
+        subject: `Dispute Resolution: Review ${statusText} - MeriGarageReviews`,
+        htmlBody: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: ${headerBg}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+              .review-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid ${borderColor}; }
+              .dispute-box { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+              .status { font-size: 14px; font-weight: bold; color: ${headerBg}; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>${emoji} Dispute Resolution</h1>
+              </div>
+              <div class="content">
+                <p>Dear ${escapeHtml(reviewData.garageName)} Team,</p>
+                <p>We have reviewed your dispute regarding a customer review on your garage profile.</p>
+                
+                <p class="status">Status: Review ${statusText}</p>
+                
+                <div class="review-box">
+                  <p><strong>Review in Question:</strong></p>
+                  <p><strong>Rating:</strong> ${"⭐".repeat(Math.min(Math.max(Number(reviewData.rating) || 0, 0), 5))}</p>
+                  <p><strong>Review:</strong> ${escapeHtml(reviewData.reviewText) || "No text provided"}</p>
+                </div>
+                
+                <div class="dispute-box">
+                  <p><strong>Your Dispute Reason:</strong></p>
+                  <p>${escapeHtml(reviewData.disputeReason) || "No reason provided"}</p>
+                </div>
+                
+                <p>${message}</p>
+                
+                <p>If you have any questions, please contact our support team.</p>
+                
+                <p>Best regards,<br>The MeriGarageReviews Team</p>
+              </div>
+              <div class="footer">
+                <p>© 2024 MeriGarageReviews. All rights reserved.</p>
+                <p>Phone: +91 9582051155 | Email: info@merigarage.com</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+      console.log("Dispute resolution email sent to:", garageOwnerEmail);
     }
 
     return new Response(JSON.stringify({ success: true }), {
