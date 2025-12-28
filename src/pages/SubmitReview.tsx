@@ -261,7 +261,7 @@ const SubmitReview = () => {
       });
 
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 2000);
     } catch (error: any) {
       console.error("Submit error:", error);
