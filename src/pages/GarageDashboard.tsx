@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { BoostPanel } from "@/components/garage/BoostPanel";
+import { StatDetailDialog } from "@/components/garage/StatDetailDialog";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -327,6 +328,8 @@ export default function GarageDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingBadges, setIsSavingBadges] = useState(false);
+  const [statDialogOpen, setStatDialogOpen] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<"rating" | "reviews" | "views" | "inquiries">("rating");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -545,9 +548,15 @@ export default function GarageDashboard() {
           </Button>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - Clickable */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+            onClick={() => {
+              setSelectedStat("rating");
+              setStatDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -557,12 +566,18 @@ export default function GarageDashboard() {
                 <Star className="w-8 h-8 text-primary fill-primary" />
               </div>
               <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                <ArrowUp className="w-3 h-3" /> +0.2 this month
+                <ArrowUp className="w-3 h-3" /> Click for details
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+            onClick={() => {
+              setSelectedStat("reviews");
+              setStatDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -572,12 +587,18 @@ export default function GarageDashboard() {
                 <MessageSquare className="w-8 h-8 text-accent" />
               </div>
               <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                <ArrowUp className="w-3 h-3" /> +5 this month
+                <ArrowUp className="w-3 h-3" /> Click for details
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+            onClick={() => {
+              setSelectedStat("views");
+              setStatDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -587,12 +608,18 @@ export default function GarageDashboard() {
                 <Eye className="w-8 h-8 text-primary" />
               </div>
               <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                <ArrowUp className="w-3 h-3" /> +12% this month
+                <ArrowUp className="w-3 h-3" /> Click for details
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+            onClick={() => {
+              setSelectedStat("inquiries");
+              setStatDialogOpen(true);
+            }}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -602,11 +629,24 @@ export default function GarageDashboard() {
                 <Users className="w-8 h-8 text-accent" />
               </div>
               <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                <ArrowDown className="w-3 h-3" /> -3% this month
+                <ArrowDown className="w-3 h-3" /> Click for details
               </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Stat Detail Dialog */}
+        <StatDetailDialog
+          open={statDialogOpen}
+          onOpenChange={setStatDialogOpen}
+          statType={selectedStat}
+          garageName={garage?.name || ""}
+          currentValue={
+            selectedStat === "rating" ? (garage?.rating || "5.0") :
+            selectedStat === "reviews" ? (garage?.review_count || 0) :
+            selectedStat === "views" ? "1,234" : "42"
+          }
+        />
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-7 max-w-4xl">
