@@ -12,7 +12,8 @@ import {
   LogOut,
   Building2,
   LayoutDashboard,
-  AlertTriangle
+  AlertTriangle,
+  BadgeCheck
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import { EnhancedUserManagement } from "@/components/admin/EnhancedUserManagemen
 import { GarageManagement } from "@/components/admin/GarageManagement";
 import { CustomerManagement } from "@/components/admin/CustomerManagement";
 import { AdminOverview } from "@/components/admin/AdminOverview";
+import { VerificationRequests } from "@/components/admin/VerificationRequests";
 
 interface Review {
   id: string;
@@ -349,7 +351,7 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-2">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-6 gap-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               Overview
@@ -357,6 +359,10 @@ export default function Admin() {
             <TabsTrigger value="reviews" className="gap-2">
               <Star className="w-4 h-4" />
               Reviews
+            </TabsTrigger>
+            <TabsTrigger value="verification" className="gap-2">
+              <BadgeCheck className="w-4 h-4" />
+              Verification
             </TabsTrigger>
             <TabsTrigger value="garages" className="gap-2">
               <Building2 className="w-4 h-4" />
@@ -516,6 +522,10 @@ export default function Admin() {
                 )}
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          <TabsContent value="verification">
+            <VerificationRequests />
           </TabsContent>
 
           <TabsContent value="garages">
