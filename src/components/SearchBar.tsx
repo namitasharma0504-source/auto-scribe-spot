@@ -202,19 +202,19 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
 
   return (
     <div className={cn("w-full max-w-4xl mx-auto", className)}>
-      <div className="bg-card rounded-2xl shadow-xl p-2 border border-border">
+      <div className="bg-card rounded-2xl shadow-xl p-2 md:p-3 border border-border">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="relative">
             <Select value={country} onValueChange={(v) => { setCountry(v); setCity(""); }}>
-              <SelectTrigger className="h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors">
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-primary" />
+              <SelectTrigger className="h-12 md:h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors touch-manipulation">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                   <SelectValue placeholder="Country" />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {countries.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
+                  <SelectItem key={c.value} value={c.value} className="py-3">
                     {c.label}
                   </SelectItem>
                 ))}
@@ -224,15 +224,15 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           
           <div className="relative">
             <Select value={city} onValueChange={setCity} disabled={!country}>
-              <SelectTrigger className="h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors">
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-primary" />
+              <SelectTrigger className="h-12 md:h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors touch-manipulation">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <Building2 className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                   <SelectValue placeholder="City" />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {country && cities[country]?.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
+                  <SelectItem key={c.value} value={c.value} className="py-3">
                     {c.label}
                   </SelectItem>
                 ))}
@@ -242,8 +242,8 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           
           {/* Garage Name with Autosuggest */}
           <div className="relative" ref={wrapperRef}>
-            <div className="flex items-center h-14 px-4 rounded-xl bg-secondary/50">
-              <Search className="w-5 h-5 text-primary mr-3 flex-shrink-0" />
+            <div className="flex items-center h-12 md:h-14 px-3 md:px-4 rounded-xl bg-secondary/50">
+              <Search className="w-4 h-4 md:w-5 md:h-5 text-primary mr-2 md:mr-3 flex-shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -274,7 +274,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
                         onClick={() => handleSelectGarage(garage)}
                         onMouseEnter={() => setHighlightedIndex(idx)}
                         className={cn(
-                          "w-full px-4 py-3 flex items-center gap-3 transition-colors text-left",
+                          "w-full px-4 py-3 md:py-3.5 flex items-center gap-3 transition-colors text-left touch-manipulation min-h-[48px]",
                           highlightedIndex === idx 
                             ? "bg-primary/10" 
                             : "hover:bg-secondary/50"
@@ -297,7 +297,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
                     </li>
                   ))}
                 </ul>
-                <div className="px-4 py-2 border-t border-border bg-muted/30">
+                <div className="px-4 py-2 border-t border-border bg-muted/30 hidden md:block">
                   <p className="text-xs text-muted-foreground">
                     Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">↵</kbd> to search
                   </p>
@@ -308,9 +308,9 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           
           <Button
             onClick={handleSearch}
-            className="h-14 rounded-xl text-lg font-semibold shadow-glow hover:shadow-xl transition-all duration-300"
+            className="h-12 md:h-14 rounded-xl text-base md:text-lg font-semibold shadow-glow hover:shadow-xl transition-all duration-300 touch-manipulation min-h-[48px]"
           >
-            <Search className="w-5 h-5 mr-2" />
+            <Search className="w-4 h-4 md:w-5 md:h-5 mr-2" />
             Search
           </Button>
         </div>

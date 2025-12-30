@@ -3,19 +3,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
   {
-    image: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1920&h=1080&fit=crop",
+    image: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=800&fit=crop&q=80",
     alt: "Professional automobile garage"
   },
   {
-    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1920&h=1080&fit=crop",
+    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1200&h=800&fit=crop&q=80",
     alt: "Mechanic working on car engine"
   },
   {
-    image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=1920&h=1080&fit=crop",
+    image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=1200&h=800&fit=crop&q=80",
     alt: "Modern car service center"
   },
   {
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1920&h=1080&fit=crop",
+    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1200&h=800&fit=crop&q=80",
     alt: "Car repair workshop"
   }
 ];
@@ -49,6 +49,8 @@ export const HeroSlider = () => {
           key={index}
           src={slide.image}
           alt={slide.alt}
+          loading={index === 0 ? "eager" : "lazy"}
+          fetchPriority={index === 0 ? "high" : "auto"}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
             index === currentSlide ? "opacity-100" : "opacity-0"
           }`}
