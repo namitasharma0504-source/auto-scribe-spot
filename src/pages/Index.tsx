@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock, Loader2 } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock, Loader2, CheckCircle, Users, Zap } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
-import { GarageCard } from "@/components/GarageCard";
 import { HeroSlider } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import indianGarageExterior from "@/assets/indian-garage-exterior.jpg";
 import indianCustomer from "@/assets/indian-customer.jpg";
 import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
+
+// Lazy load components below the fold
+const GarageCard = lazy(() => import("@/components/GarageCard").then(m => ({ default: m.GarageCard })));
 
 const trendingCities = [
   { name: "Mumbai", country: "India", garageCount: 2450, slug: "mumbai" },
@@ -88,9 +91,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Hero Section */}
+      {/* Hero Section - Optimized for conversion */}
       <main>
-        <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden" aria-label="Search for garage reviews">
+        <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center justify-center overflow-hidden" aria-label="Search for garage reviews">
           {/* Background Slider */}
           <HeroSlider />
           
@@ -102,84 +105,114 @@ const Index = () => {
             }} />
           </div>
           
-          <div className="container mx-auto px-4 py-20 relative z-10">
+          <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
             <div className="text-center max-w-4xl mx-auto">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-6 animate-fade-in">
-                <Award className="w-4 h-4" />
-                Trusted by 50,000+ car owners
+              {/* Social Proof Badge */}
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium mb-4 md:mb-6 animate-fade-in">
+                <Star className="w-4 h-4 fill-current" />
+                Rated 4.8/5 by 50,000+ car owners
               </span>
               
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                Rate My Garage
-                <span className="block text-primary">Find Trusted Mechanics</span>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-4 md:mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                Find Trusted Mechanics
+                <span className="block text-primary mt-2">Near You</span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                Find trusted car service centers, write a review for garage, and discover top-rated mechanics near you
+              <p className="text-lg md:text-xl lg:text-2xl text-primary-foreground/90 mb-6 md:mb-8 animate-fade-in max-w-2xl mx-auto" style={{ animationDelay: "0.2s" }}>
+                Read verified reviews, compare ratings, and book the best garage for your car
               </p>
             
-            <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-              <SearchBar />
+              {/* Search Bar */}
+              <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+                <SearchBar />
+              </div>
+              
+              {/* Quick Action CTAs */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                <Link to="/submit-review">
+                  <Button size="lg" variant="secondary" className="text-base px-6 h-12 rounded-xl w-full sm:w-auto min-w-[180px]">
+                    <Star className="w-4 h-4 mr-2" />
+                    Write a Review
+                  </Button>
+                </Link>
+                <Link to="/search">
+                  <Button size="lg" variant="outline" className="text-base px-6 h-12 rounded-xl border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto min-w-[180px]">
+                    <Search className="w-4 h-4 mr-2" />
+                    Browse Garages
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Quick Trust Indicators */}
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6 md:mt-8 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+                <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span>Verified Reviews</span>
+                </div>
+                <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <Users className="w-4 h-4 text-blue-400" />
+                  <span>5,000+ Garages</span>
+                </div>
+                <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <Zap className="w-4 h-4 text-yellow-400" />
+                  <span>Instant Quotes</span>
+                </div>
+              </div>
             </div>
-            
-            <p className="mt-6 text-primary-foreground/60 text-sm animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              Popular: Oil Change • Brake Repair • Engine Diagnostics • Tire Service
-            </p>
           </div>
-        </div>
-        
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse">
-          <div className="w-6 h-10 border-2 border-primary-foreground/30 rounded-full flex justify-center pt-2">
-            <div className="w-1.5 h-3 bg-primary-foreground/50 rounded-full" />
+          
+          {/* Scroll Indicator - Hidden on mobile for cleaner look */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-pulse hidden md:block">
+            <div className="w-6 h-10 border-2 border-primary-foreground/30 rounded-full flex justify-center pt-2">
+              <div className="w-1.5 h-3 bg-primary-foreground/50 rounded-full" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Trust Banner */}
-      <section className="py-12 bg-card border-b border-border">
+      {/* Social Proof Banner - Compact & Impactful */}
+      <section className="py-8 md:py-10 bg-card border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-4 md:gap-8">
             {/* Garages */}
             <div className="text-center group">
-              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
+              <div className="relative w-16 h-16 md:w-20 md:h-20 mx-auto mb-2 md:mb-3 rounded-full overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                 <img 
                   src={indianGarageExterior} 
                   alt="Auto repair garage in India" 
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-1">5,000+</h3>
-              <p className="text-muted-foreground">Verified Garages</p>
-              <p className="text-sm text-primary mt-2">Across India</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground">5,000+</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Verified Garages</p>
             </div>
             
             {/* Happy Customers */}
             <div className="text-center group">
-              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-accent/20 group-hover:ring-accent/40 transition-all">
+              <div className="relative w-16 h-16 md:w-20 md:h-20 mx-auto mb-2 md:mb-3 rounded-full overflow-hidden ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all">
                 <img 
                   src={indianCustomer} 
                   alt="Happy Indian customer" 
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-1">50,000+</h3>
-              <p className="text-muted-foreground">Happy Customers</p>
-              <p className="text-sm text-accent mt-2">Trusted Reviews</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground">50,000+</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Happy Customers</p>
             </div>
             
             {/* Garage Owners */}
             <div className="text-center group">
-              <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
+              <div className="relative w-16 h-16 md:w-20 md:h-20 mx-auto mb-2 md:mb-3 rounded-full overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                 <img 
                   src={indianGarageOwner} 
                   alt="Indian garage owner" 
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-1">2,500+</h3>
-              <p className="text-muted-foreground">Garage Partners</p>
-              <p className="text-sm text-primary mt-2">Growing Network</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground">2,500+</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Garage Partners</p>
             </div>
           </div>
         </div>
@@ -314,17 +347,19 @@ const Index = () => {
               <p className="text-muted-foreground">No garages found. Add some garages to get started!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {featuredGarages.map((garage, index) => (
-                <div
-                  key={garage.id}
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <GarageCard {...garage} />
-                </div>
-              ))}
-            </div>
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {featuredGarages.map((garage, index) => (
+                  <div
+                    key={garage.id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <GarageCard {...garage} />
+                  </div>
+                ))}
+              </div>
+            </Suspense>
           )}
         </div>
       </section>
