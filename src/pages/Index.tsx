@@ -149,10 +149,10 @@ const Index = () => {
                   <CheckCircle className="w-4 h-4 text-green-400" />
                   <span>Verified Reviews</span>
                 </div>
-                <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
-                  <Users className="w-4 h-4 text-blue-400" />
-                  <span>5,000+ Garages</span>
-                </div>
+                <Link to="/search" className="flex items-center gap-2 text-primary-foreground/80 text-sm hover:text-primary-foreground transition-colors cursor-pointer">
+                  <Search className="w-4 h-4 text-blue-400" />
+                  <span className="underline underline-offset-2">Browse 5,000+ Garages</span>
+                </Link>
                 <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                   <Zap className="w-4 h-4 text-yellow-400" />
                   <span>Instant Quotes</span>
