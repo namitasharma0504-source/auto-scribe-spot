@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, LayoutDashboard, Building2, LogOut } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, Building2, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,7 +46,8 @@ export function Header() {
           <div className="hidden md:flex items-center gap-4">
             <nav className="flex items-center gap-3">
               <Link to="/search">
-                <Button variant="ghost" size="sm">
+                <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                  <Search className="w-4 h-4" />
                   Browse Garages
                 </Button>
               </Link>
@@ -105,7 +106,8 @@ export function Header() {
           <div className="md:hidden bg-card rounded-xl shadow-xl mb-4 p-4 animate-scale-in">
             <nav className="flex flex-col gap-2">
               <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
+                <Button className="w-full justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                  <Search className="w-4 h-4" />
                   Browse Garages
                 </Button>
               </Link>
