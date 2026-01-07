@@ -113,7 +113,7 @@ const TrustSafety = () => {
                   <a href="mailto:info@merigarage.com" className="text-primary hover:underline">
                     info@merigarage.com
                   </a>{" "}
-                  or call us at +91 9582051155.
+                  or call us at +91 93107 45153.
                 </p>
               </div>
             </div>
