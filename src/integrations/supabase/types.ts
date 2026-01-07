@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      garage_claim_requests: {
+        Row: {
+          admin_notes: string | null
+          business_proof: string | null
+          claimant_email: string
+          claimant_name: string
+          claimant_phone: string
+          claimant_user_id: string
+          created_at: string
+          garage_id: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_proof?: string | null
+          claimant_email: string
+          claimant_name: string
+          claimant_phone: string
+          claimant_user_id: string
+          created_at?: string
+          garage_id: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_proof?: string | null
+          claimant_email?: string
+          claimant_name?: string
+          claimant_phone?: string
+          claimant_user_id?: string
+          created_at?: string
+          garage_id?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garage_claim_requests_garage_id_fkey"
+            columns: ["garage_id"]
+            isOneToOne: false
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garage_meta_credentials: {
         Row: {
           created_at: string

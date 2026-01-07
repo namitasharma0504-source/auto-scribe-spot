@@ -1,0 +1,446 @@
+import { useState, useEffect } from "react";
+import { 
+  Building2, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  RefreshCw,
+  Search,
+  Phone,
+  Mail,
+  FileText,
+  User,
+  ArrowRight
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface ClaimRequest {
+  id: string;
+  garage_id: string;
+  claimant_user_id: string;
+  claimant_name: string;
+  claimant_phone: string;
+  claimant_email: string;
+  business_proof: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  garage?: {
+    id: string;
+    name: string;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+  };
+}
+
+export function ClaimManagement() {
+  const [claims, setClaims] = useState<ClaimRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [actionDialog, setActionDialog] = useState<{ claim: ClaimRequest; action: "approve" | "reject" } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const fetchClaims = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("garage_claim_requests")
+        .select(`
+          *,
+          garage:garages(id, name, address, city, state)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setClaims(data || []);
+    } catch (error: any) {
+      console.error("Error fetching claims:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load claim requests",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClaims();
+  }, []);
+
+  const handleApprove = async (claim: ClaimRequest) => {
+    setIsProcessing(true);
+    try {
+      // Update claim status
+      const { error: claimError } = await supabase
+        .from("garage_claim_requests")
+        .update({ 
+          status: "approved", 
+          admin_notes: adminNotes || null,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq("id", claim.id);
+
+      if (claimError) throw claimError;
+
+      // Update garage owner_id
+      const { error: garageError } = await supabase
+        .from("garages")
+        .update({ owner_id: claim.claimant_user_id })
+        .eq("id", claim.garage_id);
+
+      if (garageError) throw garageError;
+
+      // Add garage_owner role to user if not exists
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .upsert({ 
+          user_id: claim.claimant_user_id, 
+          role: "garage_owner" 
+        }, { 
+          onConflict: "user_id,role" 
+        });
+
+      // Create garage_owners record
+      await supabase
+        .from("garage_owners")
+        .upsert({
+          user_id: claim.claimant_user_id,
+          garage_id: claim.garage_id,
+          business_name: claim.garage?.name,
+          contact_phone: claim.claimant_phone
+        }, {
+          onConflict: "user_id"
+        });
+
+      toast({
+        title: "Claim Approved!",
+        description: `${claim.claimant_name} is now the owner of ${claim.garage?.name}. They can login to manage their garage.`,
+      });
+
+      setActionDialog(null);
+      setAdminNotes("");
+      fetchClaims();
+    } catch (error: any) {
+      console.error("Error approving claim:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve claim",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async (claim: ClaimRequest) => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("garage_claim_requests")
+        .update({ 
+          status: "rejected", 
+          admin_notes: adminNotes || null,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq("id", claim.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Claim Rejected",
+        description: "The claim request has been rejected.",
+      });
+
+      setActionDialog(null);
+      setAdminNotes("");
+      fetchClaims();
+    } catch (error: any) {
+      console.error("Error rejecting claim:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject claim",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const pendingClaims = claims.filter(c => c.status === "pending");
+  const approvedClaims = claims.filter(c => c.status === "approved");
+  const rejectedClaims = claims.filter(c => c.status === "rejected");
+
+  const filteredClaims = claims.filter(claim =>
+    claim.claimant_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    claim.claimant_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    claim.garage?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      case "approved":
+        return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>;
+      case "rejected":
+        return <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Claims</p>
+                <p className="text-3xl font-bold text-yellow-600">{pendingClaims.length}</p>
+              </div>
+              <Clock className="w-10 h-10 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Approved Claims</p>
+                <p className="text-3xl font-bold text-green-600">{approvedClaims.length}</p>
+              </div>
+              <CheckCircle className="w-10 h-10 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-red-500/30 bg-red-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Rejected Claims</p>
+                <p className="text-3xl font-bold text-red-600">{rejectedClaims.length}</p>
+              </div>
+              <XCircle className="w-10 h-10 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Refresh */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email, or garage..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" onClick={fetchClaims} disabled={isLoading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Claims List */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="text-center py-8">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground mt-2">Loading claims...</p>
+          </div>
+        ) : filteredClaims.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No claim requests found</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredClaims.map((claim) => (
+            <Card key={claim.id} className={claim.status === "pending" ? "border-yellow-500/30" : ""}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <Building2 className="w-5 h-5 text-primary" />
+                          {claim.garage?.name || "Unknown Garage"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {[claim.garage?.address, claim.garage?.city, claim.garage?.state].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                      {getStatusBadge(claim.status)}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span>{claim.claimant_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <span>{claim.claimant_phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span>{claim.claimant_email}</span>
+                      </div>
+                    </div>
+
+                    {claim.business_proof && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          Ownership Proof:
+                        </p>
+                        <p className="text-sm">{claim.business_proof}</p>
+                      </div>
+                    )}
+
+                    {claim.admin_notes && (
+                      <div className="bg-primary/5 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Admin Notes:</p>
+                        <p className="text-sm">{claim.admin_notes}</p>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Submitted: {formatDate(claim.created_at)}
+                    </p>
+                  </div>
+
+                  {claim.status === "pending" && (
+                    <div className="flex gap-2 lg:flex-col">
+                      <Button
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setActionDialog({ claim, action: "approve" })}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="gap-1"
+                        onClick={() => setActionDialog({ claim, action: "reject" })}
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Action Confirmation Dialog */}
+      <AlertDialog open={!!actionDialog} onOpenChange={() => setActionDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionDialog?.action === "approve" ? "Approve Claim" : "Reject Claim"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionDialog?.action === "approve" ? (
+                <>
+                  This will make <strong>{actionDialog.claim.claimant_name}</strong> the owner of{" "}
+                  <strong>{actionDialog.claim.garage?.name}</strong>. They will be able to login and manage this garage.
+                </>
+              ) : (
+                <>
+                  This will reject the claim from <strong>{actionDialog?.claim.claimant_name}</strong> for{" "}
+                  <strong>{actionDialog?.claim.garage?.name}</strong>.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Admin Notes (Optional)</label>
+            <Textarea
+              placeholder="Add any notes about this decision..."
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isProcessing}
+              className={actionDialog?.action === "reject" ? "bg-destructive hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (actionDialog?.action === "approve") {
+                  handleApprove(actionDialog.claim);
+                } else if (actionDialog?.action === "reject") {
+                  handleReject(actionDialog!.claim);
+                }
+              }}
+            >
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : actionDialog?.action === "approve" ? (
+                "Approve & Assign Ownership"
+              ) : (
+                "Reject Claim"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
