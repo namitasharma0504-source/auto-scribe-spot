@@ -10,7 +10,10 @@ import {
   Mail,
   FileText,
   User,
-  ArrowRight
+  ArrowRight,
+  Download,
+  ExternalLink,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +58,95 @@ interface ClaimRequest {
     city: string | null;
     state: string | null;
   };
+}
+
+// Component to display proof documents
+function ClaimProofSection({ businessProof, claimantUserId }: { businessProof: string; claimantUserId: string }) {
+  const [documentUrls, setDocumentUrls] = useState<{ url: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Try to parse the proof as JSON to get documents
+  let proofData: { description?: string; documents?: string[] } | null = null;
+  try {
+    proofData = JSON.parse(businessProof);
+  } catch {
+    // It's plain text
+  }
+
+  useEffect(() => {
+    const fetchDocumentUrls = async () => {
+      if (!proofData?.documents?.length) return;
+      
+      setLoading(true);
+      const urls: { url: string; name: string }[] = [];
+      
+      for (const docPath of proofData.documents) {
+        const { data } = await supabase.storage
+          .from('claim-documents')
+          .createSignedUrl(docPath, 3600); // 1 hour expiry
+        
+        if (data?.signedUrl) {
+          const fileName = docPath.split('/').pop() || 'Document';
+          urls.push({ url: data.signedUrl, name: fileName });
+        }
+      }
+      
+      setDocumentUrls(urls);
+      setLoading(false);
+    };
+
+    fetchDocumentUrls();
+  }, [businessProof]);
+
+  const isImage = (name: string) => {
+    return /\.(jpg|jpeg|png|webp)$/i.test(name);
+  };
+
+  return (
+    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <FileText className="w-3 h-3" />
+        Ownership Proof:
+      </p>
+      
+      {/* Text description */}
+      {proofData?.description && (
+        <p className="text-sm">{proofData.description}</p>
+      )}
+      
+      {/* Plain text (if not JSON) */}
+      {!proofData && businessProof && (
+        <p className="text-sm">{businessProof}</p>
+      )}
+      
+      {/* Documents */}
+      {loading && (
+        <p className="text-xs text-muted-foreground">Loading documents...</p>
+      )}
+      
+      {documentUrls.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {documentUrls.map((doc, index) => (
+            <a
+              key={index}
+              href={doc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs bg-background border rounded px-2 py-1 hover:bg-accent transition-colors"
+            >
+              {isImage(doc.name) ? (
+                <ImageIcon className="w-3 h-3 text-primary" />
+              ) : (
+                <FileText className="w-3 h-3 text-primary" />
+              )}
+              <span className="truncate max-w-[100px]">{doc.name}</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ClaimManagement() {
@@ -333,13 +425,7 @@ export function ClaimManagement() {
                     </div>
 
                     {claim.business_proof && (
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          Ownership Proof:
-                        </p>
-                        <p className="text-sm">{claim.business_proof}</p>
-                      </div>
+                      <ClaimProofSection businessProof={claim.business_proof} claimantUserId={claim.claimant_user_id} />
                     )}
 
                     {claim.admin_notes && (
