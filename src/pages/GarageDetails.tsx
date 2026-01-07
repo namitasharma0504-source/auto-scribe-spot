@@ -12,6 +12,7 @@ import { GarageActivityStats } from "@/components/GarageActivityStats";
 import { GarageMapPreview } from "@/components/GarageMapPreview";
 import { GetQuoteDialog } from "@/components/GetQuoteDialog";
 import { GarageOffers } from "@/components/GarageOffers";
+import { ClaimGarageDialog } from "@/components/ClaimGarageDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ interface Garage {
   response_time: string | null;
   walk_in_welcome: boolean | null;
   location_link: string | null;
+  owner_id: string | null;
 }
 
 interface GaragePhoto {
@@ -408,6 +410,11 @@ const GarageDetails = () => {
                     Save
                   </Button>
                 </div>
+
+                {/* Claim Garage Button - Only show if garage has no owner */}
+                {!garage.owner_id && (
+                  <ClaimGarageDialog garageId={garage.id} garageName={garage.name} />
+                )}
 
                 <div className="bg-card rounded-2xl p-6 shadow-md border border-border">
                   <h3 className="font-semibold text-foreground mb-4">Quick Stats</h3>

@@ -32,6 +32,7 @@ import { GarageManagement } from "@/components/admin/GarageManagement";
 import { CustomerManagement } from "@/components/admin/CustomerManagement";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
+import { ClaimManagement } from "@/components/admin/ClaimManagement";
 import {
   Dialog,
   DialogContent,
@@ -530,7 +531,7 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-6 gap-2">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-7 gap-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               Overview
@@ -538,6 +539,10 @@ export default function Admin() {
             <TabsTrigger value="reviews" className="gap-2">
               <Star className="w-4 h-4" />
               Reviews
+            </TabsTrigger>
+            <TabsTrigger value="claims" className="gap-2">
+              <Building2 className="w-4 h-4" />
+              Claims
             </TabsTrigger>
             <TabsTrigger value="verification" className="gap-2">
               <BadgeCheck className="w-4 h-4" />
@@ -559,6 +564,23 @@ export default function Admin() {
 
           <TabsContent value="overview">
             <AdminOverview />
+          </TabsContent>
+
+          <TabsContent value="claims">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  Garage Claim Requests
+                </CardTitle>
+                <CardDescription>
+                  Review and approve ownership claims from garage owners
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ClaimManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
