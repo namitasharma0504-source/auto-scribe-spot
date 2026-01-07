@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   AlertTriangle,
   BadgeCheck,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { CustomerManagement } from "@/components/admin/CustomerManagement";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
 import { ClaimManagement } from "@/components/admin/ClaimManagement";
+import { LeadsManagement } from "@/components/admin/LeadsManagement";
 import {
   Dialog,
   DialogContent,
@@ -531,10 +533,14 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-7 gap-2">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-8 gap-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Leads
             </TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2">
               <Star className="w-4 h-4" />
@@ -564,6 +570,23 @@ export default function Admin() {
 
           <TabsContent value="overview">
             <AdminOverview />
+          </TabsContent>
+
+          <TabsContent value="leads">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Quote Requests / Leads
+                </CardTitle>
+                <CardDescription>
+                  Manage customer quote requests. For unclaimed garages, contact them manually to pass on leads.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LeadsManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="claims">
