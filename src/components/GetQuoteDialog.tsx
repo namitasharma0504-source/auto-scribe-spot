@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface GetQuoteDialogProps {
   garageName: string;
@@ -40,6 +42,21 @@ export function GetQuoteDialog({
     service: "",
   });
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen && !user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to request a quote.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    setOpen(isOpen);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,7 +102,7 @@ export function GetQuoteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant={variant === "primary" ? "default" : "outline"} 
