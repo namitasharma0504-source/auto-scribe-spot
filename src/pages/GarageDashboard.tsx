@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { BoostPanel } from "@/components/garage/BoostPanel";
 import { StatDetailDialog } from "@/components/garage/StatDetailDialog";
+import { GarageLeadsSection } from "@/components/garage/GarageLeadsSection";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -727,10 +728,14 @@ export default function GarageDashboard() {
         />
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-5xl">
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="gap-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Leads</span>
             </TabsTrigger>
             <TabsTrigger value="badges" className="gap-2">
               <BadgeCheck className="w-4 h-4" />
@@ -761,6 +766,11 @@ export default function GarageDashboard() {
               <span className="hidden sm:inline">Upgrade</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Leads Tab */}
+          <TabsContent value="leads">
+            <GarageLeadsSection garageId={garage?.id || ""} />
+          </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
