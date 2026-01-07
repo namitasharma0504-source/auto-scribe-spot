@@ -33,7 +33,32 @@ serve(async (req) => {
 
     const { action, garage_id, credentials, offer_id } = await req.json();
 
-    console.log(`Meta Ads action: ${action} for garage: ${garage_id}`);
+    // Verify user owns the garage before any action
+    if (!garage_id) {
+      throw new Error('garage_id is required');
+    }
+
+    const { data: garage, error: garageError } = await supabase
+      .from('garages')
+      .select('owner_id')
+      .eq('id', garage_id)
+      .single();
+
+    if (garageError || !garage) {
+      return new Response(
+        JSON.stringify({ error: 'Garage not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    if (garage.owner_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: You do not own this garage' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    console.log(`Meta Ads action: ${action} for garage: ${garage_id} by user: ${user.id}`);
 
     if (action === 'verify') {
       // Verify Meta credentials by making a test API call
