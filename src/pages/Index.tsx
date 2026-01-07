@@ -135,10 +135,10 @@ const Index = () => {
                     Write a Review
                   </Button>
                 </Link>
-                <Link to="/search">
-                  <Button size="lg" variant="outline" className="text-base px-6 h-12 rounded-xl border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto min-w-[180px]">
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse Garages
+                <Link to="/list-garage">
+                  <Button size="lg" className="text-base px-6 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto min-w-[180px]">
+                    <Award className="w-4 h-4 mr-2" />
+                    List Your Garage
                   </Button>
                 </Link>
               </div>

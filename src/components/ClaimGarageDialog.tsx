@@ -289,7 +289,7 @@ export function ClaimGarageDialog({ garageId, garageName }: ClaimGarageDialogPro
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 w-full">
+        <Button className="gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white">
           <Building2 className="w-4 h-4" />
           Claim This Garage
         </Button>
