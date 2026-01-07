@@ -163,9 +163,9 @@ const Advertise = () => {
                 info@merigarage.com
               </a>
               <span className="text-muted-foreground hidden sm:inline">|</span>
-              <a href="tel:+919582051155" className="flex items-center gap-2 text-primary hover:underline">
+              <a href="tel:+919310745153" className="flex items-center gap-2 text-primary hover:underline">
                 <Phone className="w-5 h-5" />
-                +91 9582051155
+                +91 93107 45153
               </a>
             </div>
           </div>

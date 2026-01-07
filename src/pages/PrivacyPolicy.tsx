@@ -150,7 +150,7 @@ const PrivacyPolicy = () => {
                     <Mail className="w-5 h-5" />
                     info@merigarage.com
                   </a>
-                  <span className="text-muted-foreground">or call +91 9582051155</span>
+                  <span className="text-muted-foreground">or call +91 93107 45153</span>
                 </div>
               </div>
             </div>
