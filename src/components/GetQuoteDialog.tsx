@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GetQuoteDialogProps {
   garageName: string;
@@ -31,22 +32,56 @@ export function GetQuoteDialog({
 }: GetQuoteDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    vehicle: "",
+    service: "",
+  });
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate sending quote request
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const { error } = await supabase
+        .from("garage_leads")
+        .insert({
+          garage_id: garageId,
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          customer_email: formData.email || null,
+          vehicle_details: formData.vehicle || null,
+          service_required: formData.service,
+        });
 
-    toast({
-      title: "Quote Request Sent!",
-      description: `${garageName} will contact you shortly with a quote.`,
-    });
+      if (error) throw error;
 
-    setLoading(false);
-    setOpen(false);
+      toast({
+        title: "Quote Request Sent!",
+        description: `Your request has been received. ${garageName} or our team will contact you shortly.`,
+      });
+
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        vehicle: "",
+        service: "",
+      });
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error submitting lead:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send quote request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,34 +100,67 @@ export function GetQuoteDialog({
         <DialogHeader>
           <DialogTitle>Get a Quote from {garageName}</DialogTitle>
           <DialogDescription>
-            Fill in your details and the garage will contact you with a quote.
+            Fill in your details and we'll get you a quote as soon as possible.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Your Name</Label>
-            <Input id="name" placeholder="Enter your name" required />
+            <Label htmlFor="name">Your Name *</Label>
+            <Input 
+              id="name" 
+              placeholder="Enter your name" 
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required 
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" placeholder="Enter your phone number" required />
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input 
+              id="phone" 
+              type="tel" 
+              placeholder="Enter your phone number" 
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              required 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email (Optional)</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="Enter your email" 
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="vehicle">Vehicle Details</Label>
-            <Input id="vehicle" placeholder="e.g., Maruti Swift 2020" required />
+            <Input 
+              id="vehicle" 
+              placeholder="e.g., Maruti Swift 2020" 
+              value={formData.vehicle}
+              onChange={(e) => setFormData({ ...formData, vehicle: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="service">Service Required</Label>
+            <Label htmlFor="service">Service Required *</Label>
             <Textarea 
               id="service" 
               placeholder="Describe the service or issue you need help with..."
               className="min-h-[80px]"
+              value={formData.service}
+              onChange={(e) => setFormData({ ...formData, service: e.target.value })}
               required 
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
-              "Sending..."
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Sending...
+              </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />

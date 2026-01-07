@@ -70,6 +70,59 @@ export type Database = {
           },
         ]
       }
+      garage_leads: {
+        Row: {
+          admin_notes: string | null
+          contacted_at: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          garage_id: string
+          id: string
+          service_required: string
+          status: string
+          updated_at: string
+          vehicle_details: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          garage_id: string
+          id?: string
+          service_required: string
+          status?: string
+          updated_at?: string
+          vehicle_details?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          garage_id?: string
+          id?: string
+          service_required?: string
+          status?: string
+          updated_at?: string
+          vehicle_details?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garage_leads_garage_id_fkey"
+            columns: ["garage_id"]
+            isOneToOne: false
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garage_meta_credentials: {
         Row: {
           created_at: string
