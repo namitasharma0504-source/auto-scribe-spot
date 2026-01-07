@@ -52,6 +52,8 @@ interface Lead {
     id: string;
     name: string;
     phone: string | null;
+    city: string | null;
+    address: string | null;
     owner_id: string | null;
   };
 }
@@ -73,7 +75,7 @@ export function LeadsManagement() {
         .from("garage_leads")
         .select(`
           *,
-          garage:garages(id, name, phone, owner_id)
+          garage:garages(id, name, phone, city, address, owner_id)
         `)
         .order("created_at", { ascending: false });
 
@@ -205,63 +207,101 @@ export function LeadsManagement() {
     <Card className={lead.status === "new" ? "border-blue-500/30" : ""}>
       <CardContent className="pt-6">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-          <div className="flex-1 space-y-3">
-            <div className="flex items-start justify-between flex-wrap gap-2">
-              <div>
-                <h3 className="font-semibold text-lg">{lead.customer_name}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building2 className="w-4 h-4" />
-                  <span>{lead.garage?.name || "Unknown Garage"}</span>
-                  {!lead.garage?.owner_id && (
-                    <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-600 border-orange-500/30">
-                      Unclaimed
-                    </Badge>
+          <div className="flex-1 space-y-4">
+            {/* Status Badge */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {getStatusBadge(lead.status)}
+                {!lead.garage?.owner_id && (
+                  <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-600 border-orange-500/30">
+                    Unclaimed Garage
+                  </Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(lead.created_at)}
+              </span>
+            </div>
+
+            {/* Two Column Layout: Customer & Garage */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Customer Details */}
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+                <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  Customer Details
+                </h4>
+                <div className="space-y-2">
+                  <p className="font-semibold text-lg">{lead.customer_name}</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <a href={`tel:${lead.customer_phone}`} className="text-primary hover:underline font-medium">
+                      {lead.customer_phone}
+                    </a>
+                  </div>
+                  {lead.customer_email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <a href={`mailto:${lead.customer_email}`} className="text-primary hover:underline">
+                        {lead.customer_email}
+                      </a>
+                    </div>
+                  )}
+                  {lead.vehicle_details && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Car className="w-4 h-4 text-muted-foreground" />
+                      <span>{lead.vehicle_details}</span>
+                    </div>
                   )}
                 </div>
               </div>
-              {getStatusBadge(lead.status)}
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <a href={`tel:${lead.customer_phone}`} className="text-primary hover:underline">
-                  {lead.customer_phone}
-                </a>
+              {/* Garage Details */}
+              <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
+                <h4 className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-3 flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  Garage Details
+                </h4>
+                <div className="space-y-2">
+                  <p className="font-semibold text-lg">{lead.garage?.name || "Unknown Garage"}</p>
+                  {lead.garage?.city && (
+                    <p className="text-sm text-muted-foreground">{lead.garage.city}</p>
+                  )}
+                  {lead.garage?.address && (
+                    <p className="text-xs text-muted-foreground">{lead.garage.address}</p>
+                  )}
+                  {lead.garage?.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <a href={`tel:${lead.garage.phone}`} className="text-primary hover:underline font-medium">
+                        {lead.garage.phone}
+                      </a>
+                    </div>
+                  )}
+                  {lead.garage?.id && (
+                    <a 
+                      href={`/garage/${lead.garage.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                    >
+                      View Garage Page →
+                    </a>
+                  )}
+                </div>
               </div>
-              {lead.customer_email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <a href={`mailto:${lead.customer_email}`} className="text-primary hover:underline">
-                    {lead.customer_email}
-                  </a>
-                </div>
-              )}
-              {lead.vehicle_details && (
-                <div className="flex items-center gap-2">
-                  <Car className="w-4 h-4 text-muted-foreground" />
-                  <span>{lead.vehicle_details}</span>
-                </div>
-              )}
-              {lead.garage?.phone && (
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs">Garage: </span>
-                  <a href={`tel:${lead.garage.phone}`} className="text-primary hover:underline">
-                    {lead.garage.phone}
-                  </a>
-                </div>
-              )}
             </div>
 
+            {/* Service Required */}
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                 <Wrench className="w-3 h-3" />
                 Service Required:
               </p>
-              <p className="text-sm">{lead.service_required}</p>
+              <p className="text-sm font-medium">{lead.service_required}</p>
             </div>
 
+            {/* Admin Notes */}
             {lead.admin_notes && (
               <div className="bg-primary/5 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground mb-1">Admin Notes:</p>
@@ -269,26 +309,21 @@ export function LeadsManagement() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Received: {formatDate(lead.created_at)}
-              </span>
-              {lead.contacted_at && (
-                <span className="flex items-center gap-1">
-                  <PhoneCall className="w-3 h-3" />
-                  Contacted: {formatDate(lead.contacted_at)}
-                </span>
-              )}
-            </div>
+            {/* Timestamps */}
+            {lead.contacted_at && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <PhoneCall className="w-3 h-3" />
+                Contacted: {formatDate(lead.contacted_at)}
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-2 lg:flex-col">
+          <div className="flex gap-2 lg:flex-col lg:min-w-[140px]">
             <Select
               value={lead.status}
               onValueChange={(value) => updateLeadStatus(lead.id, value)}
             >
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -301,12 +336,24 @@ export function LeadsManagement() {
             <Button
               size="sm"
               variant="outline"
+              className="w-full"
               onClick={() => {
                 setSelectedLead(lead);
                 setAdminNotes(lead.admin_notes || "");
               }}
             >
               Add Notes
+            </Button>
+            <Button
+              size="sm"
+              variant="default"
+              className="w-full bg-green-600 hover:bg-green-700"
+              asChild
+            >
+              <a href={`tel:${lead.customer_phone}`}>
+                <Phone className="w-4 h-4 mr-1" />
+                Call
+              </a>
             </Button>
           </div>
         </div>
