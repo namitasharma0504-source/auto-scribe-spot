@@ -51,6 +51,8 @@ interface Review {
   review_text: string | null;
   created_at: string;
   garage_name: string;
+  is_verified: boolean | null;
+  customer_name: string | null;
 }
 
 const GarageDetails = () => {
@@ -94,18 +96,41 @@ const GarageDetails = () => {
           setPhotos(photosData || []);
         }
 
-        // Fetch approved reviews for this garage
+        // Fetch approved reviews for this garage with customer profiles
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('user_reviews')
-          .select('id, rating, review_text, created_at, garage_name')
+          .select('id, rating, review_text, created_at, garage_name, is_verified, user_id')
           .eq('garage_name', garageData?.name || '')
           .eq('status', 'approved')
           .order('created_at', { ascending: false });
 
         if (reviewsError) {
           console.error('Error fetching reviews:', reviewsError);
+          setReviews([]);
         } else {
-          setReviews(reviewsData || []);
+          // Fetch profiles for all review authors
+          const userIds = (reviewsData || []).map(r => r.user_id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('user_id, full_name')
+            .in('user_id', userIds);
+          
+          const profileMap = new Map<string, string>();
+          profilesData?.forEach(p => {
+            if (p.full_name) profileMap.set(p.user_id, p.full_name);
+          });
+
+          const mappedReviews: Review[] = (reviewsData || []).map(r => ({
+            id: r.id,
+            rating: r.rating,
+            review_text: r.review_text,
+            created_at: r.created_at,
+            garage_name: r.garage_name,
+            is_verified: r.is_verified,
+            customer_name: profileMap.get(r.user_id) || null,
+          }));
+          
+          setReviews(mappedReviews);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -366,13 +391,14 @@ const GarageDetails = () => {
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
                         <ReviewCard 
-                            username="Verified Customer"
+                            username={review.customer_name || "Customer"}
                             rating={review.rating}
                             reviewText={review.review_text || ''}
                             date={formatDate(review.created_at)}
                             tags={[]}
                             images={[]}
                             helpfulCount={0}
+                            isVerifiedCustomer={true}
                           />
                         </div>
                       ))}
