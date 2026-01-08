@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CarCareTipsSection } from "@/components/home/CarCareTipsSection";
+import { FAQSection } from "@/components/home/FAQSection";
 import indianGarageExterior from "@/assets/indian-garage-exterior.jpg";
 import indianCustomer from "@/assets/indian-customer.jpg";
 import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
@@ -657,6 +658,9 @@ const Index = () => {
 
         {/* Car Care Tips - Dynamic from Blog */}
         <CarCareTipsSection />
+
+        {/* FAQ Section with Schema Markup */}
+        <FAQSection />
       </main>
 
       <Footer />
