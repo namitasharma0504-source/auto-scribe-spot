@@ -59,6 +59,7 @@ export function BlogManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<BlogArticle | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -670,12 +671,119 @@ export function BlogManagement() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPreviewOpen(true)}
+              disabled={!formData.title || !formData.content}
+              className="gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Preview
             </Button>
-            <Button onClick={handleSave}>
-              {editingArticle ? "Update Article" : "Create Article"}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                {editingArticle ? "Update Article" : "Create Article"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Article Preview
+            </DialogTitle>
+            <DialogDescription>
+              This is how your article will look when published
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {/* Preview Header */}
+            <article className="prose prose-slate max-w-none dark:prose-invert">
+              {formData.featured_image && (
+                <div className="relative w-full h-64 rounded-xl overflow-hidden mb-6">
+                  <img
+                    src={formData.featured_image}
+                    alt={formData.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mb-4 not-prose">
+                <Badge variant="outline">
+                  {categories.find(c => c.value === formData.category)?.label || formData.category}
+                </Badge>
+                {formData.tags && formData.tags.split(",").map((tag, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs">
+                    {tag.trim()}
+                  </Badge>
+                ))}
+              </div>
+
+              <h1 className="text-3xl font-bold mb-2">{formData.title || "Untitled Article"}</h1>
+              
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 not-prose">
+                <span>By {formData.author_name || "MeriGarage Team"}</span>
+                <span>•</span>
+                <span>{new Date().toLocaleDateString()}</span>
+              </div>
+
+              {formData.excerpt && (
+                <p className="text-lg text-muted-foreground italic border-l-4 border-primary pl-4 mb-6">
+                  {formData.excerpt}
+                </p>
+              )}
+
+              {formData.video_url && (
+                <div className="rounded-xl overflow-hidden mb-6 not-prose">
+                  <div className="bg-muted p-4 text-center">
+                    <Video className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Video: {formData.video_url}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="whitespace-pre-wrap">
+                {formData.content || "No content yet..."}
+              </div>
+            </article>
+
+            {/* SEO Preview */}
+            <div className="mt-8 pt-6 border-t">
+              <h4 className="font-medium mb-3 text-sm text-muted-foreground">Search Engine Preview</h4>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-blue-600 text-lg hover:underline cursor-pointer">
+                  {formData.meta_title || formData.title || "Article Title"}
+                </p>
+                <p className="text-green-700 text-sm">
+                  merigarage.com/blog/{formData.slug || "article-slug"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {formData.meta_description || formData.excerpt || "Article description will appear here..."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              Back to Editor
+            </Button>
+            <Button onClick={() => {
+              setIsPreviewOpen(false);
+              handleSave();
+            }}>
+              {formData.is_published ? "Save & Publish" : "Save as Draft"}
             </Button>
           </DialogFooter>
         </DialogContent>
