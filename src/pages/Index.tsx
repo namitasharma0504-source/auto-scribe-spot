@@ -220,51 +220,51 @@ const Index = () => {
       </section>
 
       {/* Customer CTA Section - Recently Visited */}
-      <section className="py-12 bg-card border-b border-border">
+      <section className="py-8 md:py-10 bg-card border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-3">
                 <Gift className="w-4 h-4" />
                 Earn Rewards
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                 Recently Visited a Garage?
               </h2>
-              <p className="text-lg text-muted-foreground mb-6">
+              <p className="text-base text-muted-foreground mb-4">
                 Share your experience and help others find great mechanics. Submit verified reviews and earn points redeemable for exclusive rewards!
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                 <Link to="/submit-review">
-                  <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-glow w-full sm:w-auto">
+                  <Button size="lg" className="text-base px-6 h-12 rounded-xl shadow-glow w-full sm:w-auto">
                     <Star className="w-5 h-5 mr-2" />
                     Submit a Review
                   </Button>
                 </Link>
               </div>
             </div>
-            <div className="bg-secondary/50 rounded-2xl p-6 md:p-8">
-              <h3 className="font-semibold text-foreground mb-6">How it works</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
+            <div className="bg-secondary/50 rounded-2xl p-5 md:p-6">
+              <h3 className="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">How it works</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0">1</div>
                   <div>
-                    <h4 className="font-medium text-foreground">Add Garage Details</h4>
-                    <p className="text-sm text-muted-foreground">Enter the garage name and location you visited</p>
+                    <h4 className="font-medium text-foreground text-sm">Add Garage Details</h4>
+                    <p className="text-xs text-muted-foreground">Enter the garage name and location you visited</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">2</div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0">2</div>
                   <div>
-                    <h4 className="font-medium text-foreground">Rate & Review</h4>
-                    <p className="text-sm text-muted-foreground">Share your honest experience with ratings and details</p>
+                    <h4 className="font-medium text-foreground text-sm">Rate & Review</h4>
+                    <p className="text-xs text-muted-foreground">Share your honest experience with ratings and details</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">3</div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0">3</div>
                   <div>
-                    <h4 className="font-medium text-foreground">Earn Points</h4>
-                    <p className="text-sm text-muted-foreground">Get 50 points per verified review - redeem for rewards!</p>
+                    <h4 className="font-medium text-foreground text-sm">Earn Points</h4>
+                    <p className="text-xs text-muted-foreground">Get 50 points per verified review - redeem for rewards!</p>
                   </div>
                 </div>
               </div>
@@ -274,7 +274,7 @@ const Index = () => {
       </section>
 
       {/* Trending Cities */}
-      <section className="py-12 bg-background">
+      <section className="py-8 md:py-10 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <div>
