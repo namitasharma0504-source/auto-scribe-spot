@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   BadgeCheck,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import { AdminOverview } from "@/components/admin/AdminOverview";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
 import { ClaimManagement } from "@/components/admin/ClaimManagement";
 import { LeadsManagement } from "@/components/admin/LeadsManagement";
+import { BlogManagement } from "@/components/admin/BlogManagement";
 import {
   Dialog,
   DialogContent,
@@ -533,7 +535,7 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-8 gap-2">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-9 gap-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               Overview
@@ -557,6 +559,10 @@ export default function Admin() {
             <TabsTrigger value="garages" className="gap-2">
               <Building2 className="w-4 h-4" />
               Garages
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Blog
             </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
@@ -754,6 +760,23 @@ export default function Admin() {
 
           <TabsContent value="garages">
             <GarageManagement />
+          </TabsContent>
+
+          <TabsContent value="blog">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Blog & Car Care Tips
+                </CardTitle>
+                <CardDescription>
+                  Create and manage blog articles for SEO. Published articles appear on homepage and /blog page.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BlogManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="customers">

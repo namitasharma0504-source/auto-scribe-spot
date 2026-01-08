@@ -8,6 +8,7 @@ import { HeroSlider, heroSlides } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { CarCareTipsSection } from "@/components/home/CarCareTipsSection";
 import indianGarageExterior from "@/assets/indian-garage-exterior.jpg";
 import indianCustomer from "@/assets/indian-customer.jpg";
 import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
@@ -654,67 +655,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Car Care Tips */}
-        <section className="py-12 bg-card border-t border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-10">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                <Wrench className="w-4 h-4" />
-                Expert Advice
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Car Care Tips & Advice
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Keep your car running smoothly with these expert tips from trusted mechanics
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
-                  <Thermometer className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-foreground text-lg mb-2">AC Maintenance in Summer</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Get your AC serviced before peak summer. Check refrigerant levels, clean filters, and inspect for leaks to ensure cool drives all season.
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>Recommended: Every 6 months</span>
-                </div>
-              </div>
-              
-              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
-                  <Activity className="w-6 h-6 text-amber-600" />
-                </div>
-                <h3 className="font-semibold text-foreground text-lg mb-2">Regular Oil Changes</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Change engine oil every 5,000-7,500 km for optimal engine health. Use manufacturer-recommended oil grade for best performance.
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>Recommended: Every 5,000 km</span>
-                </div>
-              </div>
-              
-              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
-                  <CircleDot className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="font-semibold text-foreground text-lg mb-2">Tyre Care Essentials</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Check tyre pressure weekly, rotate tyres every 10,000 km, and inspect tread depth regularly. Proper tyre care improves fuel efficiency and safety.
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>Recommended: Weekly checks</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Car Care Tips - Dynamic from Blog */}
+        <CarCareTipsSection />
       </main>
 
       <Footer />
