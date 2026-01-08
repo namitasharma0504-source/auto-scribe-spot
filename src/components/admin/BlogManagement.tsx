@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { RichTextEditor } from "./RichTextEditor";
 
 interface BlogArticle {
   id: string;
@@ -506,12 +507,10 @@ export function BlogManagement() {
 
             <div className="space-y-2">
               <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Write your article content here... (Markdown supported)"
-                rows={10}
+              <RichTextEditor
+                content={formData.content}
+                onChange={(content) => setFormData({ ...formData, content })}
+                placeholder="Write your article content here..."
               />
             </div>
 
@@ -753,9 +752,10 @@ export function BlogManagement() {
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap">
-                {formData.content || "No content yet..."}
-              </div>
+              <div 
+                className="prose-content"
+                dangerouslySetInnerHTML={{ __html: formData.content || "<p>No content yet...</p>" }}
+              />
             </article>
 
             {/* SEO Preview */}
