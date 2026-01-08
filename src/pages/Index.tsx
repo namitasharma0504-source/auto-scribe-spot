@@ -487,6 +487,234 @@ const Index = () => {
             </Link>
           </div>
         </section>
+
+        {/* Why List Your Garage - Visual Banner for Garage Owners */}
+        <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-10 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+          </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                  <Award className="w-4 h-4" />
+                  For Garage Owners
+                </span>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  Grow Your Business with MeriGarage
+                </h2>
+                <p className="text-lg text-muted-foreground mb-6">
+                  Join India's fastest-growing garage discovery platform. Get discovered by thousands of car owners actively looking for trusted mechanics.
+                </p>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">Free Listing</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Search className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">Get Found Online</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                      <Star className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">Build Reputation</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">Get More Customers</span>
+                  </div>
+                </div>
+                <Link to="/list-garage">
+                  <Button size="lg" className="gap-2">
+                    <Award className="w-5 h-5" />
+                    List Your Garage Free
+                  </Button>
+                </Link>
+              </div>
+              <div className="bg-card rounded-2xl p-6 shadow-xl border border-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <Car className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground">AutoCare Motors</h4>
+                    <p className="text-xs text-muted-foreground">Mumbai, Maharashtra</p>
+                  </div>
+                  <span className="ml-auto px-2 py-1 bg-green-500/10 text-green-600 text-xs font-medium rounded-full">Verified</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">4.8</p>
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                  </div>
+                  <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">156</p>
+                    <p className="text-xs text-muted-foreground">Reviews</p>
+                  </div>
+                  <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">89</p>
+                    <p className="text-xs text-muted-foreground">Leads/Month</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground italic text-center">
+                  "MeriGarage brought us 40% more customers in just 3 months!"
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why Write Reviews - Visual Banner for Customers */}
+        <section className="py-16 bg-gradient-to-br from-accent/5 via-background to-primary/5 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-20 right-20 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-20 left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+          </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="order-2 md:order-1">
+                <div className="bg-card rounded-2xl p-6 shadow-xl border border-border">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="font-semibold text-foreground">Your Review Impact</h4>
+                    <span className="text-xs text-muted-foreground">Real stats</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <Star className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Help 50+ Car Owners</p>
+                        <p className="text-xs text-muted-foreground">Your review guides others</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+                        <Gift className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Earn 50 Reward Points</p>
+                        <p className="text-xs text-muted-foreground">Redeem for exciting rewards</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                        <ShieldCheck className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Make Garages Accountable</p>
+                        <p className="text-xs text-muted-foreground">Improve service quality</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
+                  <Star className="w-4 h-4" />
+                  For Car Owners
+                </span>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  Your Voice Matters!
+                </h2>
+                <p className="text-lg text-muted-foreground mb-6">
+                  Every review you write helps fellow car owners make better decisions. Share your experience and earn rewards while building a trusted community.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-foreground">Reading reviews is free, no login required</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-foreground">Write reviews and earn points</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-foreground">Upload receipt for verified badge & bonus points</span>
+                  </div>
+                </div>
+                <Link to="/submit-review">
+                  <Button size="lg" variant="secondary" className="gap-2">
+                    <Star className="w-5 h-5" />
+                    Write Your First Review
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Car Care Tips */}
+        <section className="py-12 bg-card border-t border-b border-border">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-10">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                <Wrench className="w-4 h-4" />
+                Expert Advice
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Car Care Tips & Advice
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Keep your car running smoothly with these expert tips from trusted mechanics
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
+                  <Thermometer className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-foreground text-lg mb-2">AC Maintenance in Summer</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Get your AC serviced before peak summer. Check refrigerant levels, clean filters, and inspect for leaks to ensure cool drives all season.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>Recommended: Every 6 months</span>
+                </div>
+              </div>
+              
+              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
+                  <Activity className="w-6 h-6 text-amber-600" />
+                </div>
+                <h3 className="font-semibold text-foreground text-lg mb-2">Regular Oil Changes</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Change engine oil every 5,000-7,500 km for optimal engine health. Use manufacturer-recommended oil grade for best performance.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>Recommended: Every 5,000 km</span>
+                </div>
+              </div>
+              
+              <div className="bg-background rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
+                  <CircleDot className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="font-semibold text-foreground text-lg mb-2">Tyre Care Essentials</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Check tyre pressure weekly, rotate tyres every 10,000 km, and inspect tread depth regularly. Proper tyre care improves fuel efficiency and safety.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>Recommended: Weekly checks</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
