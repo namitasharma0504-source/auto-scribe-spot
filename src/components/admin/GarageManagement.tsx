@@ -311,14 +311,48 @@ export function GarageManagement() {
     if (!selectedGarage) return;
 
     try {
-      const { error } = await supabase
+      // Update the garages.photo_url column
+      const { error: garageError } = await supabase
         .from('garages')
         .update({ photo_url: photo.photo_url })
         .eq('id', selectedGarage.id);
 
-      if (error) throw error;
+      if (garageError) throw garageError;
+
+      // Update display_order: set selected photo to 0, shift others
+      // First, get current max display_order and set the selected photo's current order
+      const currentOrder = photo.display_order || 0;
+      
+      // Update all photos with display_order less than current to shift up by 1
+      const { error: shiftError } = await supabase
+        .from('garage_photos')
+        .update({ display_order: 999 }) // Temporary placeholder
+        .eq('id', photo.id);
+      
+      if (shiftError) throw shiftError;
+
+      // Shift all photos that were before this one down
+      for (const p of garagePhotos) {
+        if (p.id !== photo.id && (p.display_order || 0) < currentOrder) {
+          await supabase
+            .from('garage_photos')
+            .update({ display_order: (p.display_order || 0) + 1 })
+            .eq('id', p.id);
+        }
+      }
+
+      // Set the selected photo as display_order 0
+      const { error: mainError } = await supabase
+        .from('garage_photos')
+        .update({ display_order: 0 })
+        .eq('id', photo.id);
+
+      if (mainError) throw mainError;
 
       setEditForm(prev => ({ ...prev, photo_url: photo.photo_url }));
+      
+      // Refresh photos to reflect new order
+      fetchGaragePhotos(selectedGarage.id);
 
       toast({
         title: "Main Photo Updated",
