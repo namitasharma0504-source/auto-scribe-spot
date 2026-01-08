@@ -535,7 +535,7 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-9 gap-2">
+          <TabsList className="flex flex-wrap h-auto gap-2 p-2">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               Overview
