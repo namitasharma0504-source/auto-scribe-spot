@@ -136,7 +136,7 @@ const Index = () => {
                   </Button>
                 </Link>
                 <Link to="/list-garage">
-                  <Button size="lg" className="text-base px-6 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto min-w-[180px]">
+                  <Button size="lg" variant="secondary" className="text-base px-6 h-12 rounded-xl w-full sm:w-auto min-w-[180px]">
                     <Award className="w-4 h-4 mr-2" />
                     List Your Garage
                   </Button>
