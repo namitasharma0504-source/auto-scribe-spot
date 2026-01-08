@@ -362,11 +362,13 @@ export type Database = {
       garages: {
         Row: {
           address: string | null
+          approval_notes: string | null
           city: string | null
           country: string | null
           created_at: string
           has_discounts: boolean | null
           id: string
+          is_approved: boolean | null
           is_certified: boolean | null
           is_recommended: boolean | null
           is_verified: boolean | null
@@ -382,16 +384,19 @@ export type Database = {
           services: string[] | null
           special_offers: string | null
           state: string | null
+          submitted_by: string | null
           updated_at: string
           walk_in_welcome: boolean | null
         }
         Insert: {
           address?: string | null
+          approval_notes?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
           has_discounts?: boolean | null
           id?: string
+          is_approved?: boolean | null
           is_certified?: boolean | null
           is_recommended?: boolean | null
           is_verified?: boolean | null
@@ -407,16 +412,19 @@ export type Database = {
           services?: string[] | null
           special_offers?: string | null
           state?: string | null
+          submitted_by?: string | null
           updated_at?: string
           walk_in_welcome?: boolean | null
         }
         Update: {
           address?: string | null
+          approval_notes?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
           has_discounts?: boolean | null
           id?: string
+          is_approved?: boolean | null
           is_certified?: boolean | null
           is_recommended?: boolean | null
           is_verified?: boolean | null
@@ -432,6 +440,7 @@ export type Database = {
           services?: string[] | null
           special_offers?: string | null
           state?: string | null
+          submitted_by?: string | null
           updated_at?: string
           walk_in_welcome?: boolean | null
         }

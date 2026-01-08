@@ -38,7 +38,8 @@ const SearchResults = () => {
     queryFn: async () => {
       let queryBuilder = supabase
         .from('garages')
-        .select('*');
+        .select('*')
+        .eq('is_approved', true);
       
       // Filter by city if provided
       if (city) {

@@ -40,6 +40,7 @@ const Index = () => {
         .from('garages')
         .select('*')
         .eq('country', 'India')
+        .eq('is_approved', true)
         .order('rating', { ascending: false })
         .limit(12);
       

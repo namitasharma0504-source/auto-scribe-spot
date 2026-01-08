@@ -399,6 +399,9 @@ const ListGarage = () => {
     setIsSubmitting(true);
     
     try {
+      // Get current user for tracking who submitted
+      const { data: { user } } = await supabase.auth.getUser();
+      
       let photoUrl = null;
       if (photoFile) {
         photoUrl = await uploadPhoto();
@@ -414,6 +417,16 @@ const ListGarage = () => {
         cityLabel = districts.find(c => c.value === formData.city)?.label || formData.city;
       }
       
+      // Validation-based auto-approval logic
+      // Auto-approve if all required fields are valid
+      const isValidPhone = /^[\d\s\-+()]{8,15}$/.test(formData.phone.trim());
+      const isValidAddress = formData.address.trim().length >= 10;
+      const hasServices = formData.services.length > 0;
+      const hasValidName = formData.garageName.trim().length >= 2;
+      
+      // Auto-approve if all validations pass
+      const shouldAutoApprove = isValidPhone && isValidAddress && hasServices && hasValidName;
+      
       const { error } = await supabase
         .from('garages')
         .insert({
@@ -427,13 +440,19 @@ const ListGarage = () => {
           photo_url: photoUrl,
           services: formData.services,
           is_verified: false,
+          is_approved: shouldAutoApprove,
+          submitted_by: user?.id || null,
           rating: 5.0,
           review_count: 0
         });
       
       if (error) throw error;
       
-      toast.success("Your garage has been submitted for review! We'll notify you once it's approved.");
+      if (shouldAutoApprove) {
+        toast.success("Your garage has been listed successfully! It's now live on the platform.");
+      } else {
+        toast.success("Your garage has been submitted for review. We'll notify you once it's approved.");
+      }
       navigate("/");
     } catch (error) {
       console.error('Error submitting garage:', error);
