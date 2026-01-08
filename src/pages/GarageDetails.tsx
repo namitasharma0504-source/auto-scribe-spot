@@ -53,6 +53,7 @@ interface Review {
   garage_name: string;
   is_verified: boolean | null;
   customer_name: string | null;
+  customer_display_name: string | null;
 }
 
 const GarageDetails = () => {
@@ -99,7 +100,7 @@ const GarageDetails = () => {
         // Fetch approved reviews for this garage with customer profiles
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('user_reviews')
-          .select('id, rating, review_text, created_at, garage_name, is_verified, user_id')
+          .select('id, rating, review_text, created_at, garage_name, is_verified, user_id, customer_display_name')
           .eq('garage_name', garageData?.name || '')
           .eq('status', 'approved')
           .order('created_at', { ascending: false });
@@ -126,15 +127,30 @@ const GarageDetails = () => {
             }
           });
 
-          const mappedReviews: Review[] = (reviewsData || []).map(r => ({
-            id: r.id,
-            rating: r.rating,
-            review_text: r.review_text,
-            created_at: r.created_at,
-            garage_name: r.garage_name,
-            is_verified: r.is_verified,
-            customer_name: profileMap.get(r.user_id) || null,
-          }));
+          const mappedReviews: Review[] = (reviewsData || []).map(r => {
+            // Use customer_display_name if set, otherwise format profile name for privacy
+            let displayName: string | null = null;
+            if (r.customer_display_name) {
+              // Format display name for privacy: "First L." format
+              const nameParts = r.customer_display_name.trim().split(' ');
+              const firstName = nameParts[0];
+              const lastInitial = nameParts.length > 1 ? ` ${nameParts[nameParts.length - 1].charAt(0)}.` : '';
+              displayName = `${firstName}${lastInitial}`;
+            } else {
+              displayName = profileMap.get(r.user_id) || null;
+            }
+
+            return {
+              id: r.id,
+              rating: r.rating,
+              review_text: r.review_text,
+              created_at: r.created_at,
+              garage_name: r.garage_name,
+              is_verified: r.is_verified,
+              customer_name: displayName,
+              customer_display_name: r.customer_display_name,
+            };
+          });
           
           setReviews(mappedReviews);
         }

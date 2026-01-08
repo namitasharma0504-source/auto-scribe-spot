@@ -26,6 +26,7 @@ interface Review {
   garage_name: string;
   garage_id: string | null;
   customer_name: string | null;
+  customer_display_name: string | null;
 }
 
 interface Garage {
@@ -68,7 +69,7 @@ export function GarageAllReviews() {
     try {
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("user_reviews")
-        .select("id, user_id, rating, review_text, status, created_at, is_verified, garage_name, garage_id")
+        .select("id, user_id, rating, review_text, status, created_at, is_verified, garage_name, garage_id, customer_display_name")
         .order("created_at", { ascending: false });
 
       if (reviewsError) throw reviewsError;
@@ -93,6 +94,7 @@ export function GarageAllReviews() {
       const mappedReviews: Review[] = reviewsData.map(r => ({
         ...r,
         customer_name: profileMap.get(r.user_id) || null,
+        customer_display_name: r.customer_display_name || null,
       }));
 
       setReviews(mappedReviews);
@@ -110,7 +112,7 @@ export function GarageAllReviews() {
 
   const handleEditName = (review: Review) => {
     setEditingId(review.id);
-    setEditName(review.customer_name || "");
+    setEditName(review.customer_display_name || review.customer_name || "");
   };
 
   const handleSaveName = async (review: Review) => {
@@ -125,16 +127,17 @@ export function GarageAllReviews() {
 
     setIsSaving(true);
     try {
+      // Update the customer_display_name on the review itself (not the profile)
       const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: editName.trim() })
-        .eq("user_id", review.user_id);
+        .from("user_reviews")
+        .update({ customer_display_name: editName.trim() })
+        .eq("id", review.id);
 
       if (error) throw error;
 
       setReviews(prev =>
         prev.map(r =>
-          r.id === review.id ? { ...r, customer_name: editName.trim() } : r
+          r.id === review.id ? { ...r, customer_display_name: editName.trim() } : r
         )
       );
 
@@ -183,8 +186,9 @@ export function GarageAllReviews() {
       review.garage_id === selectedGarageId || 
       review.garage_name === garages.find(g => g.id === selectedGarageId)?.name;
     
+    const displayName = review.customer_display_name || review.customer_name;
     const matchesSearch = searchQuery === "" ||
-      (review.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (displayName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (review.review_text?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (review.garage_name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -361,7 +365,7 @@ export function GarageAllReviews() {
                         ) : (
                           <>
                             <span className="font-medium">
-                              {review.customer_name || "Unknown Customer"}
+                              {review.customer_display_name || review.customer_name || "Unknown Customer"}
                             </span>
                             <Button
                               size="sm"
