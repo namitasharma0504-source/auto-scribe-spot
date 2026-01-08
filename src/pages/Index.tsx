@@ -177,7 +177,7 @@ const Index = () => {
         </section>
 
       {/* Social Proof Banner - Compact & Impactful */}
-      <section className="py-8 md:py-10 bg-card border-b border-border">
+      <section className="py-6 md:py-8 bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-3 gap-4 md:gap-8">
             {/* Garages */}
@@ -226,7 +226,7 @@ const Index = () => {
       </section>
 
       {/* Customer CTA Section - Recently Visited */}
-      <section className="py-8 md:py-10 bg-card border-b border-border">
+      <section className="py-6 md:py-8 bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="text-center md:text-left">
@@ -280,9 +280,9 @@ const Index = () => {
       </section>
 
       {/* Browse by Service */}
-      <section className="py-8 md:py-10 bg-background">
+      <section className="py-6 md:py-8 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 text-primary mb-2">
                 <Wrench className="w-5 h-5" />
@@ -324,9 +324,9 @@ const Index = () => {
       </section>
 
       {/* Top Rated Garages */}
-      <section className="py-12 bg-secondary/30">
+      <section className="py-8 md:py-10 bg-secondary/30">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 text-primary mb-2">
                 <Award className="w-5 h-5" />
@@ -371,18 +371,18 @@ const Index = () => {
       </section>
 
       {/* How We Help You Choose - SEO Section */}
-      <section className="py-12 bg-background">
+      <section className="py-8 md:py-10 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
               How We Help You Choose the Right Garage for Your Car
             </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base text-muted-foreground max-w-3xl mx-auto">
               Finding a trustworthy car service center can be challenging. MeriGarage Reviews simplifies your search by providing verified reviews, transparent ratings, and detailed information about garages near you.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border text-center">
               <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
                 <Search className="w-7 h-7 text-primary" />
@@ -424,8 +424,8 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="bg-secondary/50 rounded-2xl p-8 md:p-10">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="bg-secondary/50 rounded-2xl p-6 md:p-8">
+            <div className="grid md:grid-cols-2 gap-6 items-center">
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
                   Why Read Reviews Before Choosing a Garage?
@@ -473,7 +473,7 @@ const Index = () => {
       </section>
 
         {/* Garage Owner CTA Section */}
-        <section className="py-12 bg-foreground" aria-label="List your garage">
+        <section className="py-8 md:py-10 bg-foreground" aria-label="List your garage">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-background mb-4">
               Own a Garage?
@@ -490,13 +490,13 @@ const Index = () => {
         </section>
 
         {/* Why List Your Garage - Visual Banner for Garage Owners */}
-        <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+        <section className="py-10 md:py-12 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-10 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
             <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
           </div>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="grid md:grid-cols-2 gap-6 items-center">
               <div>
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                   <Award className="w-4 h-4" />
@@ -575,13 +575,13 @@ const Index = () => {
         </section>
 
         {/* Why Write Reviews - Visual Banner for Customers */}
-        <section className="py-16 bg-gradient-to-br from-accent/5 via-background to-primary/5 relative overflow-hidden">
+        <section className="py-10 md:py-12 bg-gradient-to-br from-accent/5 via-background to-primary/5 relative overflow-hidden">
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-20 right-20 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
             <div className="absolute bottom-20 left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
           </div>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="grid md:grid-cols-2 gap-6 items-center">
               <div className="order-2 md:order-1">
                 <div className="bg-card rounded-2xl p-6 shadow-xl border border-border">
                   <div className="flex items-center justify-between mb-6">
