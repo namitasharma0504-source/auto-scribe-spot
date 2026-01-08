@@ -1,9 +1,10 @@
-import { ThumbsUp } from "lucide-react";
+import { ThumbsUp, BadgeCheck } from "lucide-react";
 import { StarRating } from "./StarRating";
 import { ServiceTag } from "./ServiceTag";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ReviewCardProps {
   username: string;
@@ -14,6 +15,7 @@ interface ReviewCardProps {
   tags?: string[];
   images?: string[];
   helpfulCount?: number;
+  isVerifiedCustomer?: boolean;
 }
 
 export function ReviewCard({
@@ -25,6 +27,7 @@ export function ReviewCard({
   tags = [],
   images = [],
   helpfulCount = 0,
+  isVerifiedCustomer = false,
 }: ReviewCardProps) {
   return (
     <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300 bg-card">
@@ -39,7 +42,15 @@ export function ReviewCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
-                <h4 className="font-semibold text-foreground">{username}</h4>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-semibold text-foreground">{username}</h4>
+                  {isVerifiedCustomer && (
+                    <Badge variant="secondary" className="gap-1 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      <BadgeCheck className="w-3 h-3" />
+                      Verified Customer
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">{date}</p>
               </div>
               <StarRating rating={rating} size="sm" />
