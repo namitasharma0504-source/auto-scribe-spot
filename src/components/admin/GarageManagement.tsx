@@ -126,6 +126,7 @@ export function GarageManagement() {
   const [editForm, setEditForm] = useState<Partial<Garage>>({});
   const [customService, setCustomService] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     fetchGarages();
@@ -566,6 +567,56 @@ export function GarageManagement() {
     return result;
   };
 
+  const handleSyncAllPhotos = async () => {
+    if (!confirm("This will update all garage photo_urls from garage_photos table. Continue?")) return;
+    
+    setIsSyncing(true);
+    try {
+      // Fetch all garage photos
+      const { data: allPhotos, error: photosError } = await supabase
+        .from("garage_photos")
+        .select("garage_id, photo_url, display_order")
+        .order("display_order", { ascending: true });
+      
+      if (photosError) throw photosError;
+
+      // Create a map of garage_id to first photo
+      const photoMap = new Map<string, string>();
+      (allPhotos || []).forEach((photo) => {
+        if (!photoMap.has(photo.garage_id)) {
+          photoMap.set(photo.garage_id, photo.photo_url);
+        }
+      });
+
+      // Update garages that have photos in garage_photos
+      let updatedCount = 0;
+      for (const [garageId, photoUrl] of photoMap.entries()) {
+        const { error } = await supabase
+          .from("garages")
+          .update({ photo_url: photoUrl })
+          .eq("id", garageId);
+        
+        if (!error) updatedCount++;
+      }
+
+      toast({
+        title: "Sync Complete",
+        description: `Updated photo URLs for ${updatedCount} garages`,
+      });
+
+      fetchGarages();
+    } catch (error: any) {
+      console.error("Error syncing photos:", error);
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync photos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const filteredGarages = garages.filter(garage =>
     garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (garage.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -608,6 +659,15 @@ export function GarageManagement() {
           >
             <Upload className={`w-4 h-4 ${isUploading ? "animate-spin" : ""}`} />
             {isUploading ? "Importing..." : "Import CSV"}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleSyncAllPhotos} 
+            className="gap-2"
+            disabled={isSyncing}
+          >
+            <ImageIcon className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            {isSyncing ? "Syncing..." : "Sync Photos"}
           </Button>
         </div>
       </div>
