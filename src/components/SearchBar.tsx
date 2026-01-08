@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Building2, Loader2 } from "lucide-react";
+import { Search, MapPin, Building2, Loader2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,16 @@ const cities: Record<string, { value: string; label: string }[]> = {
   ],
 };
 
+const RECENT_SEARCHES_KEY = "merigarage_recent_searches";
+const MAX_RECENT_SEARCHES = 3;
+
+interface RecentSearch {
+  query: string;
+  country?: string;
+  city?: string;
+  timestamp: number;
+}
+
 export function SearchBar({ variant = "hero", className }: SearchBarProps) {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
@@ -59,9 +69,34 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  // Load recent searches from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (stored) {
+        setRecentSearches(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Error loading recent searches:", e);
+    }
+  }, []);
+
+  const saveRecentSearch = useCallback((search: RecentSearch) => {
+    setRecentSearches((prev) => {
+      // Remove duplicates and add new search at the beginning
+      const filtered = prev.filter(
+        (s) => s.query.toLowerCase() !== search.query.toLowerCase()
+      );
+      const updated = [search, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -112,12 +147,30 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
     return () => clearTimeout(debounce);
   }, [garageName, escapeIlikePattern]);
 
-  const handleSearch = () => {
+  const handleSearch = (searchQuery?: string, searchCountry?: string, searchCity?: string) => {
+    const q = searchQuery ?? garageName;
+    const c = searchCountry ?? country;
+    const ct = searchCity ?? city;
+    
+    // Save to recent searches if there's a query
+    if (q.trim()) {
+      saveRecentSearch({
+        query: q,
+        country: c || undefined,
+        city: ct || undefined,
+        timestamp: Date.now(),
+      });
+    }
+    
     const params = new URLSearchParams();
-    if (country) params.set("country", country);
-    if (city) params.set("city", city);
-    if (garageName) params.set("q", garageName);
+    if (c) params.set("country", c);
+    if (ct) params.set("city", ct);
+    if (q) params.set("q", q);
     navigate(`/search?${params.toString()}`);
+  };
+
+  const handleRecentSearchClick = (search: RecentSearch) => {
+    handleSearch(search.query, search.country, search.city);
   };
 
   const handleSelectGarage = (garage: GarageSuggestion) => {
@@ -163,7 +216,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           onKeyDown={handleKeyDown}
           className="border-0 bg-transparent focus:outline-none px-0 flex-1"
         />
-        <Button onClick={handleSearch} size="sm" className="rounded-full">
+        <Button onClick={() => handleSearch()} size="sm" className="rounded-full">
           Search
         </Button>
       </div>
@@ -277,7 +330,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           </div>
           
           <Button
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             className="h-12 md:h-14 rounded-xl text-base md:text-lg font-semibold shadow-glow hover:shadow-xl transition-all duration-300 touch-manipulation min-h-[48px]"
           >
             <Search className="w-4 h-4 md:w-5 md:h-5 mr-2" />
@@ -285,6 +338,25 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
           </Button>
         </div>
       </div>
+      
+      {/* Recent Searches */}
+      {variant === "hero" && recentSearches.length > 0 && (
+        <div className="mt-3 flex items-center justify-center gap-2 flex-wrap animate-fade-in">
+          <span className="text-xs text-primary-foreground/60 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Recent:
+          </span>
+          {recentSearches.map((search, idx) => (
+            <button
+              key={`${search.query}-${idx}`}
+              onClick={() => handleRecentSearchClick(search)}
+              className="px-3 py-1.5 text-xs bg-background/20 hover:bg-background/30 text-primary-foreground rounded-full transition-colors backdrop-blur-sm border border-primary-foreground/10"
+            >
+              {search.query}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
