@@ -171,9 +171,9 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
   }
 
   return (
-    <div className={cn("w-full max-w-4xl mx-auto", className)}>
+    <div className={cn("w-full max-w-5xl mx-auto", className)}>
       <div className="bg-card rounded-2xl shadow-xl p-2 md:p-3 border border-border">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr_auto] gap-2">
           <div className="relative">
             <Select value={country} onValueChange={(v) => { setCountry(v); setCity(""); }}>
               <SelectTrigger className="h-12 md:h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors touch-manipulation">
