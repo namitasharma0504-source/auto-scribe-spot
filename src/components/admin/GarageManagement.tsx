@@ -21,6 +21,7 @@ import {
   Loader2
 } from "lucide-react";
 import { GarageRecentReviews } from "./GarageRecentReviews";
+import { GarageAllReviews } from "./GarageAllReviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
@@ -658,7 +665,20 @@ export function GarageManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <Tabs defaultValue="garages" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="garages" className="gap-2">
+            <Building2 className="w-4 h-4" />
+            Garages
+          </TabsTrigger>
+          <TabsTrigger value="all-reviews" className="gap-2">
+            <Star className="w-4 h-4" />
+            All Reviews
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="garages" className="space-y-6">
+          {/* Header */}
       <div className="flex flex-col lg:flex-row gap-4 justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -958,7 +978,13 @@ export function GarageManagement() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+        </TabsContent>
+
+        <TabsContent value="all-reviews">
+          <GarageAllReviews />
+        </TabsContent>
+      </Tabs>
 
       {/* Garage Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
