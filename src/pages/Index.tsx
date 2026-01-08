@@ -28,10 +28,11 @@ const Index = () => {
   const { data: featuredGarages = [], isLoading } = useQuery({
     queryKey: ['featured-garages'],
     queryFn: async () => {
-      // Fetch garages with their photos from garage_photos table
+      // Fetch garages with their photos from garage_photos table (India only)
       const { data: garages, error: garagesError } = await supabase
         .from('garages')
         .select('*')
+        .eq('country', 'India')
         .order('rating', { ascending: false })
         .limit(12);
       
