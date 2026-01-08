@@ -1,50 +1,66 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const slides = [
+export const heroSlides = [
   {
     image: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=800&fit=crop&q=80",
-    alt: "Professional automobile garage"
+    alt: "Professional automobile garage",
+    headline: "Find Trusted Mechanics",
+    subline: "Near You"
   },
   {
     image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1200&h=800&fit=crop&q=80",
-    alt: "Mechanic working on car engine"
+    alt: "Mechanic working on car engine",
+    headline: "Read Verified Reviews",
+    subline: "Before You Visit"
   },
   {
     image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=1200&h=800&fit=crop&q=80",
-    alt: "Modern car service center"
+    alt: "Modern car service center",
+    headline: "Compare & Choose",
+    subline: "The Best Garage"
   },
   {
     image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1200&h=800&fit=crop&q=80",
-    alt: "Car repair workshop"
+    alt: "Car repair workshop",
+    headline: "Get Instant Quotes",
+    subline: "Save Time & Money"
   }
 ];
 
-export const HeroSlider = () => {
+interface HeroSliderProps {
+  onSlideChange?: (index: number) => void;
+}
+
+export const HeroSlider = ({ onSlideChange }: HeroSliderProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    onSlideChange?.(currentSlide);
+  }, [currentSlide, onSlideChange]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
   };
 
   const goToPrev = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
   const goToNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   };
 
   return (
     <div className="absolute inset-0">
-      {slides.map((slide, index) => (
+      {heroSlides.map((slide, index) => (
         <img
           key={index}
           src={slide.image}
@@ -78,7 +94,7 @@ export const HeroSlider = () => {
       
       {/* Dots */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {slides.map((_, index) => (
+        {heroSlides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}

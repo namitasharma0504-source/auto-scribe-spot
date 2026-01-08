@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useCallback } from "react";
 import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock, Loader2, CheckCircle, Users, Zap } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
-import { HeroSlider } from "@/components/HeroSlider";
+import { HeroSlider, heroSlides } from "@/components/HeroSlider";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,9 @@ const trendingCities = [
 ];
 
 const Index = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const handleSlideChange = useCallback((index: number) => setCurrentSlide(index), []);
+  
   const { data: featuredGarages = [], isLoading } = useQuery({
     queryKey: ['featured-garages'],
     queryFn: async () => {
@@ -96,7 +99,7 @@ const Index = () => {
       <main>
         <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center justify-center overflow-hidden" aria-label="Search for garage reviews">
           {/* Background Slider */}
-          <HeroSlider />
+          <HeroSlider onSlideChange={handleSlideChange} />
           
           {/* Accent overlay */}
           <div className="absolute inset-0 opacity-20 z-10">
@@ -114,9 +117,9 @@ const Index = () => {
                 Rated 4.8/5 by 50,000+ car owners
               </span>
               
-              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-4 md:mb-6 leading-tight animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                Find Trusted Mechanics
-                <span className="block text-primary mt-2">Near You</span>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-4 md:mb-6 leading-tight transition-all duration-500" key={currentSlide}>
+                {heroSlides[currentSlide].headline}
+                <span className="block text-primary mt-2">{heroSlides[currentSlide].subline}</span>
               </h1>
               
               <p className="text-lg md:text-xl lg:text-2xl text-primary-foreground/90 mb-6 md:mb-8 animate-fade-in max-w-2xl mx-auto" style={{ animationDelay: "0.2s" }}>
