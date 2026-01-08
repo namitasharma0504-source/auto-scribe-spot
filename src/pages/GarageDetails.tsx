@@ -117,7 +117,13 @@ const GarageDetails = () => {
           
           const profileMap = new Map<string, string>();
           profilesData?.forEach(p => {
-            if (p.full_name) profileMap.set(p.user_id, p.full_name);
+            if (p.full_name) {
+              // Format name for privacy: "First L." format
+              const nameParts = p.full_name.trim().split(' ');
+              const firstName = nameParts[0];
+              const lastInitial = nameParts.length > 1 ? ` ${nameParts[nameParts.length - 1].charAt(0)}.` : '';
+              profileMap.set(p.user_id, `${firstName}${lastInitial}`);
+            }
           });
 
           const mappedReviews: Review[] = (reviewsData || []).map(r => ({
