@@ -26,6 +26,8 @@ import GarageDashboard from "./pages/GarageDashboard";
 import TrustSafety from "./pages/TrustSafety";
 import ContentGuidelines from "./pages/ContentGuidelines";
 import Advertise from "./pages/Advertise";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +62,8 @@ const App = () => (
             <Route path="/trust-safety" element={<TrustSafety />} />
             <Route path="/content-guidelines" element={<ContentGuidelines />} />
             <Route path="/advertise" element={<Advertise />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogArticle />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
