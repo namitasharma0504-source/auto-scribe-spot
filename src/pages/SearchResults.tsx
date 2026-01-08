@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle, Loader2 } from "lucide-react";
+import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle, Loader2, Search } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GarageCard } from "@/components/GarageCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -23,14 +24,26 @@ const filterTags = [
 ];
 
 const SearchResults = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("rating");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
 
   const city = searchParams.get("city") || "";
   const query = searchParams.get("q") || "";
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams);
+    if (searchInput.trim()) {
+      params.set("q", searchInput.trim());
+    } else {
+      params.delete("q");
+    }
+    setSearchParams(params);
+  };
 
   // Fetch garages from database
   const { data: garages = [], isLoading } = useQuery({
@@ -119,6 +132,25 @@ const SearchResults = () => {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8">
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="mb-6">
+          <div className="flex gap-2">
+            <div className="relative flex-1 max-w-xl">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search garages by name..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 h-12 rounded-xl"
+              />
+            </div>
+            <Button type="submit" className="h-12 px-6 rounded-xl">
+              Search
+            </Button>
+          </div>
+        </form>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
