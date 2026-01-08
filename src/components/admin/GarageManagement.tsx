@@ -311,48 +311,43 @@ export function GarageManagement() {
     if (!selectedGarage) return;
 
     try {
-      // Update the garages.photo_url column
+      // 1) Persist main photo URL for legacy/thumbnail usage
       const { error: garageError } = await supabase
-        .from('garages')
+        .from("garages")
         .update({ photo_url: photo.photo_url })
-        .eq('id', selectedGarage.id);
+        .eq("id", selectedGarage.id);
 
       if (garageError) throw garageError;
 
-      // Update display_order: set selected photo to 0, shift others
-      // First, get current max display_order and set the selected photo's current order
-      const currentOrder = photo.display_order || 0;
-      
-      // Update all photos with display_order less than current to shift up by 1
-      const { error: shiftError } = await supabase
-        .from('garage_photos')
-        .update({ display_order: 999 }) // Temporary placeholder
-        .eq('id', photo.id);
-      
-      if (shiftError) throw shiftError;
+      // 2) Reorder gallery photos so the selected one is always display_order = 0
+      // Fetch fresh list from DB to avoid stale state ordering
+      const { data: freshPhotos, error: photosError } = await supabase
+        .from("garage_photos")
+        .select("id, photo_url, display_order, created_at")
+        .eq("garage_id", selectedGarage.id)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
 
-      // Shift all photos that were before this one down
-      for (const p of garagePhotos) {
-        if (p.id !== photo.id && (p.display_order || 0) < currentOrder) {
-          await supabase
-            .from('garage_photos')
-            .update({ display_order: (p.display_order || 0) + 1 })
-            .eq('id', p.id);
-        }
+      if (photosError) throw photosError;
+
+      const list = freshPhotos ?? [];
+      const selected = list.find((p) => p.id === photo.id);
+      if (!selected) {
+        throw new Error("Selected photo not found for this garage");
       }
 
-      // Set the selected photo as display_order 0
-      const { error: mainError } = await supabase
-        .from('garage_photos')
-        .update({ display_order: 0 })
-        .eq('id', photo.id);
+      const reordered = [selected, ...list.filter((p) => p.id !== photo.id)];
 
-      if (mainError) throw mainError;
+      const updates = reordered.map((p, index) =>
+        supabase.from("garage_photos").update({ display_order: index }).eq("id", p.id)
+      );
 
-      setEditForm(prev => ({ ...prev, photo_url: photo.photo_url }));
-      
-      // Refresh photos to reflect new order
-      fetchGaragePhotos(selectedGarage.id);
+      const results = await Promise.all(updates);
+      const firstError = results.find((r) => r.error)?.error;
+      if (firstError) throw firstError;
+
+      setEditForm((prev) => ({ ...prev, photo_url: photo.photo_url }));
+      await fetchGaragePhotos(selectedGarage.id);
 
       toast({
         title: "Main Photo Updated",
@@ -362,7 +357,7 @@ export function GarageManagement() {
       console.error("Error setting main photo:", error);
       toast({
         title: "Error",
-        description: "Failed to update main photo",
+        description: error.message || "Failed to update main photo",
         variant: "destructive",
       });
     }
