@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { indiaStates } from "@/data/indiaLocations";
 
 interface SearchBarProps {
   variant?: "hero" | "compact";
@@ -29,26 +30,26 @@ const countries = [
   { value: "ae", label: "UAE" },
 ];
 
-const cities: Record<string, { value: string; label: string }[]> = {
-  in: [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "chennai", label: "Chennai" },
-    { value: "hyderabad", label: "Hyderabad" },
-    { value: "pune", label: "Pune" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "jaipur", label: "Jaipur" },
-    { value: "lucknow", label: "Lucknow" },
-  ],
-  ae: [
-    { value: "dubai", label: "Dubai" },
-    { value: "abu-dhabi", label: "Abu Dhabi" },
-    { value: "sharjah", label: "Sharjah" },
-    { value: "ajman", label: "Ajman" },
-    { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
-  ],
+// UAE Emirates
+const uaeEmirates = [
+  { value: "dubai", label: "Dubai" },
+  { value: "abu-dhabi", label: "Abu Dhabi" },
+  { value: "sharjah", label: "Sharjah" },
+  { value: "ajman", label: "Ajman" },
+  { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
+  { value: "fujairah", label: "Fujairah" },
+  { value: "umm-al-quwain", label: "Umm Al Quwain" },
+];
+
+// Get states/regions based on country
+const getRegions = (countryCode: string) => {
+  if (countryCode === "in") {
+    return indiaStates;
+  }
+  if (countryCode === "ae") {
+    return uaeEmirates;
+  }
+  return [];
 };
 
 const RECENT_SEARCHES_KEY = "merigarage_recent_searches";
@@ -250,13 +251,13 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
               <SelectTrigger className="h-12 md:h-14 rounded-xl border-0 bg-secondary/50 hover:bg-secondary transition-colors touch-manipulation">
                 <div className="flex items-center gap-2 md:gap-3">
                   <Building2 className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                  <SelectValue placeholder="City" />
+                  <SelectValue placeholder={country === "in" ? "State" : "Emirate"} />
                 </div>
               </SelectTrigger>
-              <SelectContent>
-                {country && cities[country]?.map((c) => (
-                  <SelectItem key={c.value} value={c.value} className="py-3">
-                    {c.label}
+              <SelectContent className="max-h-[300px]">
+                {country && getRegions(country).map((region) => (
+                  <SelectItem key={region.value} value={region.value} className="py-3">
+                    {region.label}
                   </SelectItem>
                 ))}
               </SelectContent>
