@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
+import confetti from "canvas-confetti";
 
 interface Garage {
   id: string;
@@ -113,6 +114,32 @@ export function GarageSearchInput({
       // Reset form and show success preview
       setShowAddDialog(false);
       setShowSuccessPreview(true);
+      
+      // Trigger confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6'],
+      });
+      // Second burst for more impact
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ef4444', '#3b82f6', '#22c55e'],
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#f59e0b', '#8b5cf6', '#ec4899'],
+        });
+      }, 150);
+      
       setNewGarageName("");
       setNewGaragePhone("");
       setNewGarageAddress("");
