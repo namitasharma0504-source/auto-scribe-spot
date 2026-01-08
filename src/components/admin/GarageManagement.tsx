@@ -92,12 +92,15 @@ interface Garage {
   is_verified: boolean | null;
   is_certified: boolean | null;
   is_recommended: boolean | null;
+  is_approved: boolean | null;
   has_discounts: boolean | null;
   walk_in_welcome: boolean | null;
   response_time: string | null;
   services: string[] | null;
   location_link: string | null;
   photo_url: string | null;
+  submitted_by: string | null;
+  approval_notes: string | null;
   created_at: string;
 }
 
@@ -673,7 +676,7 @@ export function GarageManagement() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -682,6 +685,17 @@ export function GarageManagement() {
                 <p className="text-2xl font-bold">{garages.length}</p>
               </div>
               <Building2 className="w-8 h-8 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-yellow-600">Pending Approval</p>
+                <p className="text-2xl font-bold text-yellow-600">{garages.filter(g => g.is_approved === false).length}</p>
+              </div>
+              <XCircle className="w-8 h-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
@@ -708,6 +722,87 @@ export function GarageManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Garages Section */}
+      {garages.filter(g => g.is_approved === false).length > 0 && (
+        <Card className="border-yellow-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-600">
+              <XCircle className="w-5 h-5" />
+              Pending Approval ({garages.filter(g => g.is_approved === false).length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {garages.filter(g => g.is_approved === false).map((garage) => (
+                <div key={garage.id} className="flex items-center justify-between p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20">
+                  <div className="flex items-center gap-4">
+                    {garage.photo_url ? (
+                      <img src={garage.photo_url} alt={garage.name} className="w-12 h-12 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{garage.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {[garage.city, garage.state, garage.country].filter(Boolean).join(", ") || "Location not specified"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Phone: {garage.phone || "N/A"} | Services: {garage.services?.length || 0}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedGarage(garage);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={async () => {
+                        const { error } = await supabase
+                          .from("garages")
+                          .update({ is_approved: true })
+                          .eq("id", garage.id);
+                        if (error) {
+                          toast({ title: "Error", description: "Failed to approve garage", variant: "destructive" });
+                        } else {
+                          toast({ title: "Approved", description: `${garage.name} is now live!` });
+                          fetchGarages();
+                        }
+                      }}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        if (!confirm(`Delete "${garage.name}"? This cannot be undone.`)) return;
+                        await handleDeleteGarage(garage.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Garages Table */}
       <Card>
@@ -781,15 +876,21 @@ export function GarageManagement() {
                       </TableCell>
                       <TableCell>{garage.review_count || 0}</TableCell>
                       <TableCell>
-                        {garage.is_verified ? (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-gray-500/10 text-gray-600 border-gray-500/30">
-                            Unverified
-                          </Badge>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {garage.is_approved === false ? (
+                            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                              Pending
+                            </Badge>
+                          ) : garage.is_verified ? (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-500/10 text-gray-600 border-gray-500/30">
+                              Unverified
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
