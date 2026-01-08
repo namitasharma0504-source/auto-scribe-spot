@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Building2, Loader2, MapPin, CheckCircle2, Plus, Phone, Link as LinkIcon } from "lucide-react";
+import { Search, Building2, Loader2, MapPin, CheckCircle2, Plus, Phone, Link as LinkIcon, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -44,6 +44,8 @@ export function GarageSearchInput({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showSuccessPreview, setShowSuccessPreview] = useState(false);
+  const [addedGarage, setAddedGarage] = useState<Garage | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   
   // Add garage form state
@@ -105,19 +107,12 @@ export function GarageSearchInput({
 
       if (error) throw error;
 
-      toast({
-        title: "Garage Added!",
-        description: `"${newGarageName}" has been added. You can now review it.`,
-      });
-
-      // Update the input with the new garage name
-      onChange(newGarage.name);
-      setSelectedGarage(newGarage);
-      onGarageSelect?.(newGarage);
-      onGarageAdded?.(newGarage);
+      // Store the added garage for preview
+      setAddedGarage(newGarage);
       
-      // Reset form and close dialog
+      // Reset form and show success preview
       setShowAddDialog(false);
+      setShowSuccessPreview(true);
       setNewGarageName("");
       setNewGaragePhone("");
       setNewGarageAddress("");
@@ -499,6 +494,96 @@ export function GarageSearchInput({
                   Add Garage
                 </>
               )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Preview Dialog */}
+      <Dialog open={showSuccessPreview} onOpenChange={setShowSuccessPreview}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <CheckCircle2 className="w-5 h-5" />
+              Garage Added Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Great! This garage has been added to our directory.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {addedGarage && (
+            <div className="py-4">
+              {/* Garage Preview Card */}
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-lg">
+                      {addedGarage.name}
+                    </h3>
+                    {(addedGarage.city || addedGarage.state || addedGarage.country) && (
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        {[addedGarage.city, addedGarage.state, addedGarage.country].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                    {addedGarage.address && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {addedGarage.address}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-600 text-xs font-medium">
+                    <CheckCircle2 className="w-3 h-3" />
+                    New Listing
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Ready for your review
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm text-muted-foreground text-center mt-4">
+                Click below to continue writing your review for this garage.
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowSuccessPreview(false);
+                setAddedGarage(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (addedGarage) {
+                  onChange(addedGarage.name);
+                  setSelectedGarage(addedGarage);
+                  onGarageSelect?.(addedGarage);
+                  onGarageAdded?.(addedGarage);
+                  toast({
+                    title: "Garage Selected",
+                    description: "You can now complete your review.",
+                  });
+                }
+                setShowSuccessPreview(false);
+                setAddedGarage(null);
+              }}
+              className="gap-2"
+            >
+              Continue to Review
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
         </DialogContent>
