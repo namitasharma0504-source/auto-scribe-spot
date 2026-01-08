@@ -20,6 +20,7 @@ import {
   Plus,
   Loader2
 } from "lucide-react";
+import { GarageRecentReviews } from "./GarageRecentReviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1488,6 +1489,14 @@ export function GarageManagement() {
                 </div>
               </div>
             </div>
+
+            {/* Recent Reviews Section */}
+            {selectedGarage && (
+              <GarageRecentReviews 
+                garageId={selectedGarage.id} 
+                garageName={selectedGarage.name} 
+              />
+            )}
           </div>
 
           <DialogFooter className="gap-2">
