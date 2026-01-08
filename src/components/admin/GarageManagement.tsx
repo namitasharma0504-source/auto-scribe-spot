@@ -139,7 +139,7 @@ export function GarageManagement() {
       const { data: garagesData, error: garagesError } = await supabase
         .from("garages")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (garagesError) throw garagesError;
 
