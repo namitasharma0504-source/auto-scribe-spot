@@ -68,9 +68,9 @@ export function CarCareTipsSection() {
   ];
 
   return (
-    <section className="py-16 bg-secondary/30">
+    <section className="py-8 md:py-10 bg-secondary/30">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 text-primary mb-2">
               <BookOpen className="w-5 h-5" />
