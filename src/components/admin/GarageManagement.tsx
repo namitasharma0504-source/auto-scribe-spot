@@ -134,13 +134,35 @@ export function GarageManagement() {
   const fetchGarages = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch garages
+      const { data: garagesData, error: garagesError } = await supabase
         .from("garages")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setGarages(data || []);
+      if (garagesError) throw garagesError;
+
+      // Fetch all garage photos to get the first photo for each garage
+      const { data: photosData } = await supabase
+        .from("garage_photos")
+        .select("garage_id, photo_url, display_order")
+        .order("display_order", { ascending: true });
+
+      // Create a map of garage_id to first photo
+      const photoMap = new Map<string, string>();
+      (photosData || []).forEach((photo) => {
+        if (!photoMap.has(photo.garage_id)) {
+          photoMap.set(photo.garage_id, photo.photo_url);
+        }
+      });
+
+      // Merge photos with garages - prefer garage_photos over garages.photo_url
+      const enrichedGarages = (garagesData || []).map((garage) => ({
+        ...garage,
+        photo_url: photoMap.get(garage.id) || garage.photo_url,
+      }));
+
+      setGarages(enrichedGarages);
     } catch (error: any) {
       console.error("Error fetching garages:", error);
       toast({
@@ -203,8 +225,8 @@ export function GarageManagement() {
 
         if (dbError) throw dbError;
 
-        // Update main photo_url if this is the first photo
-        if (garagePhotos.length === 0 && i === 0) {
+        // Update main photo_url if this is the first uploaded photo or if no photo_url exists
+        if (i === 0 && (garagePhotos.length === 0 || !editForm.photo_url || editForm.photo_url.includes('drive.google.com'))) {
           await supabase
             .from('garages')
             .update({ photo_url: urlData.publicUrl })
