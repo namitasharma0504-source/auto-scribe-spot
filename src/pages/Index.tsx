@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { lazy, Suspense, useState, useCallback } from "react";
-import { TrendingUp, Award, MapPin, ArrowRight, Star, Gift, ShieldCheck, Search, ThumbsUp, Clock, Loader2, CheckCircle, Users, Zap } from "lucide-react";
+import { Wrench, Award, ArrowRight, Star, Gift, Search, Loader2, CheckCircle, Zap, Car, Thermometer, Paintbrush, CircleDot, Activity, Plug, Layers, Crown, ThumbsUp, ShieldCheck, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
@@ -15,13 +15,15 @@ import indianGarageOwner from "@/assets/indian-garage-owner.jpg";
 // Lazy load components below the fold
 const GarageCard = lazy(() => import("@/components/GarageCard").then(m => ({ default: m.GarageCard })));
 
-const trendingCities = [
-  { name: "Mumbai", country: "India", garageCount: 2450, slug: "mumbai" },
-  { name: "Delhi", country: "India", garageCount: 2180, slug: "delhi" },
-  { name: "Bangalore", country: "India", garageCount: 1890, slug: "bangalore" },
-  { name: "Chennai", country: "India", garageCount: 1650, slug: "chennai" },
-  { name: "Hyderabad", country: "India", garageCount: 1420, slug: "hyderabad" },
-  { name: "Pune", country: "India", garageCount: 1280, slug: "pune" },
+const serviceCategories = [
+  { name: "General Service", icon: Wrench, slug: "general-service", color: "bg-blue-500/10 text-blue-600" },
+  { name: "AC Repair", icon: Thermometer, slug: "ac-repair", color: "bg-cyan-500/10 text-cyan-600" },
+  { name: "Body Work", icon: Paintbrush, slug: "body-work", color: "bg-orange-500/10 text-orange-600" },
+  { name: "Tyres", icon: CircleDot, slug: "tyres", color: "bg-gray-500/10 text-gray-600" },
+  { name: "Diagnostics", icon: Activity, slug: "diagnostics", color: "bg-purple-500/10 text-purple-600" },
+  { name: "EV Services", icon: Plug, slug: "ev-friendly", color: "bg-green-500/10 text-green-600" },
+  { name: "Multi-brand", icon: Layers, slug: "multi-brand", color: "bg-indigo-500/10 text-indigo-600" },
+  { name: "Premium Cars", icon: Crown, slug: "premium-cars", color: "bg-amber-500/10 text-amber-600" },
 ];
 
 const Index = () => {
@@ -276,17 +278,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Trending Cities */}
+      {/* Browse by Service */}
       <section className="py-8 md:py-10 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 text-primary mb-2">
-                <TrendingUp className="w-5 h-5" />
-                <span className="font-semibold">Trending Now</span>
+                <Wrench className="w-5 h-5" />
+                <span className="font-semibold">Find What You Need</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                Popular Cities
+                Browse by Service
               </h2>
             </div>
             <Link to="/search">
@@ -297,26 +299,25 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {trendingCities.map((city, index) => (
-              <Link
-                key={city.slug}
-                to={`/search?city=${city.slug}`}
-                className="group animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="bg-card rounded-2xl p-5 text-center shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border group-hover:border-primary/30">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <MapPin className="w-6 h-6 text-primary" />
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
+            {serviceCategories.map((service, index) => {
+              const IconComponent = service.icon;
+              return (
+                <Link
+                  key={service.slug}
+                  to={`/search?service=${service.slug}`}
+                  className="group animate-fade-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="bg-card rounded-xl p-4 text-center shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border group-hover:border-primary/30">
+                    <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${service.color} group-hover:scale-110 transition-transform`}>
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-medium text-foreground text-sm">{service.name}</h3>
                   </div>
-                  <h3 className="font-semibold text-foreground">{city.name}</h3>
-                  <p className="text-sm text-muted-foreground">{city.country}</p>
-                  <p className="text-sm text-primary mt-2 font-medium">
-                    {city.garageCount.toLocaleString()} garages
-                  </p>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
