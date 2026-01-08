@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Building2, Loader2, MapPin, CheckCircle2 } from "lucide-react";
+import { Search, Building2, Loader2, MapPin, CheckCircle2, Plus, Phone, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 
 interface Garage {
   id: string;
@@ -17,22 +22,39 @@ interface GarageSearchInputProps {
   value: string;
   onChange: (value: string) => void;
   onGarageSelect?: (garage: Garage) => void;
+  onGarageAdded?: (garage: Garage) => void;
   placeholder?: string;
   className?: string;
+  showAddOption?: boolean;
 }
 
 export function GarageSearchInput({
   value,
   onChange,
   onGarageSelect,
+  onGarageAdded,
   placeholder = "Search for a garage...",
   className,
+  showAddOption = true,
 }: GarageSearchInputProps) {
+  const { toast } = useToast();
   const [suggestions, setSuggestions] = useState<Garage[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  
+  // Add garage form state
+  const [newGarageName, setNewGarageName] = useState("");
+  const [newGaragePhone, setNewGaragePhone] = useState("");
+  const [newGarageAddress, setNewGarageAddress] = useState("");
+  const [newGarageState, setNewGarageState] = useState("");
+  const [newGarageCity, setNewGarageCity] = useState("");
+  const [newGarageCustomCity, setNewGarageCustomCity] = useState("");
+  const [newGarageLocationLink, setNewGarageLocationLink] = useState("");
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,6 +69,73 @@ export function GarageSearchInput({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Handle adding a new garage
+  const handleAddGarage = async () => {
+    if (!newGarageName.trim() || !newGarageState) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the garage name and state.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const stateLabel = indiaStates.find(s => s.value === newGarageState)?.label || newGarageState;
+      const districtLabel = newGarageCity 
+        ? indiaDistricts[newGarageState]?.find(d => d.value === newGarageCity)?.label || newGarageCity 
+        : "";
+      const cityName = newGarageCustomCity.trim() || districtLabel;
+
+      const { data: newGarage, error } = await supabase
+        .from("garages")
+        .insert({
+          name: newGarageName.trim(),
+          phone: newGaragePhone.trim() || null,
+          address: newGarageAddress.trim() || null,
+          state: stateLabel,
+          city: cityName || null,
+          country: "India",
+          location_link: newGarageLocationLink.trim() || null,
+        })
+        .select("id, name, city, state, country, address")
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Garage Added!",
+        description: `"${newGarageName}" has been added. You can now review it.`,
+      });
+
+      // Update the input with the new garage name
+      onChange(newGarage.name);
+      setSelectedGarage(newGarage);
+      onGarageSelect?.(newGarage);
+      onGarageAdded?.(newGarage);
+      
+      // Reset form and close dialog
+      setShowAddDialog(false);
+      setNewGarageName("");
+      setNewGaragePhone("");
+      setNewGarageAddress("");
+      setNewGarageState("");
+      setNewGarageCity("");
+      setNewGarageCustomCity("");
+      setNewGarageLocationLink("");
+    } catch (error: any) {
+      console.error("Error adding garage:", error);
+      toast({
+        title: "Failed to Add Garage",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   // Escape special ILIKE characters
   const escapeIlikePattern = useCallback((input: string): string => {
@@ -232,18 +321,188 @@ export function GarageSearchInput({
         </div>
       )}
 
-      {/* No results message */}
+      {/* No results message with Add Garage option */}
       {isOpen && value.length >= 2 && suggestions.length === 0 && !isLoading && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-[100] p-4">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Search className="w-4 h-4" />
-            <div>
-              <p className="text-sm">No garages found for "{value}"</p>
-              <p className="text-xs mt-1">You can still enter the name manually</p>
+          <div className="flex items-start gap-3 text-muted-foreground">
+            <Search className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-foreground">No garages found for "{value}"</p>
+              {showAddOption && (
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 text-primary border-primary/30 hover:bg-primary/10"
+                    onClick={() => {
+                      setNewGarageName(value);
+                      setShowAddDialog(true);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add "{value}" as a new garage
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Add this garage to our directory so you can review it
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Add Garage Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-primary" />
+              Add New Garage
+            </DialogTitle>
+            <DialogDescription>
+              Add this garage to our directory. Fill in the details you know.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Garage Name */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Garage Name <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={newGarageName}
+                onChange={(e) => setNewGarageName(e.target.value)}
+                placeholder="Enter garage name"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={newGaragePhone}
+                  onChange={(e) => setNewGaragePhone(e.target.value)}
+                  placeholder="e.g., +91 98765 43210"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* State */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                State <span className="text-destructive">*</span>
+              </label>
+              <Select value={newGarageState} onValueChange={(v) => { setNewGarageState(v); setNewGarageCity(""); setNewGarageCustomCity(""); }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {indiaStates.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* City/District */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                City/District
+              </label>
+              <Select 
+                value={newGarageCity} 
+                onValueChange={setNewGarageCity}
+                disabled={!newGarageState}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select city/district" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {newGarageState && indiaDistricts[newGarageState]?.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {newGarageState && (
+                <div className="mt-2">
+                  <Input
+                    value={newGarageCustomCity}
+                    onChange={(e) => setNewGarageCustomCity(e.target.value)}
+                    placeholder="Or type city/village name if not listed"
+                    className="text-sm"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Address
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={newGarageAddress}
+                  onChange={(e) => setNewGarageAddress(e.target.value)}
+                  placeholder="Street address"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Location Link */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Google Maps Link
+              </label>
+              <div className="relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={newGarageLocationLink}
+                  onChange={(e) => setNewGarageLocationLink(e.target.value)}
+                  placeholder="https://maps.google.com/..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddGarage}
+              disabled={isAdding || !newGarageName.trim() || !newGarageState}
+            >
+              {isAdding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Garage
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
