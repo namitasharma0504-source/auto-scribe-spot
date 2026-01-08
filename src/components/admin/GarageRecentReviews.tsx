@@ -17,6 +17,7 @@ interface Review {
   created_at: string;
   is_verified: boolean | null;
   customer_name: string | null;
+  customer_display_name: string | null;
 }
 
 interface GarageRecentReviewsProps {
@@ -44,7 +45,7 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
       // Fetch reviews for this garage from last month
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("user_reviews")
-        .select("id, user_id, rating, review_text, status, created_at, is_verified")
+        .select("id, user_id, rating, review_text, status, created_at, is_verified, customer_display_name")
         .or(`garage_id.eq.${garageId},garage_name.eq.${garageName}`)
         .gte("created_at", oneMonthAgo)
         .order("created_at", { ascending: false });
@@ -71,6 +72,7 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
       const mappedReviews: Review[] = reviewsData.map(r => ({
         ...r,
         customer_name: profileMap.get(r.user_id) || null,
+        customer_display_name: r.customer_display_name || null,
       }));
 
       setReviews(mappedReviews);
@@ -88,7 +90,7 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
 
   const handleEditName = (review: Review) => {
     setEditingId(review.id);
-    setEditName(review.customer_name || "");
+    setEditName(review.customer_display_name || review.customer_name || "");
   };
 
   const handleSaveName = async (review: Review) => {
@@ -103,18 +105,18 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
 
     setIsSaving(true);
     try {
-      // Update the profile's full_name
+      // Update the customer_display_name on the review itself (not the profile)
       const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: editName.trim() })
-        .eq("user_id", review.user_id);
+        .from("user_reviews")
+        .update({ customer_display_name: editName.trim() })
+        .eq("id", review.id);
 
       if (error) throw error;
 
       // Update local state
       setReviews(prev =>
         prev.map(r =>
-          r.id === review.id ? { ...r, customer_name: editName.trim() } : r
+          r.id === review.id ? { ...r, customer_display_name: editName.trim() } : r
         )
       );
 
@@ -226,7 +228,7 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
                 ) : (
                   <>
                     <span className="font-medium">
-                      {review.customer_name || "Unknown Customer"}
+                      {review.customer_display_name || review.customer_name || "Unknown Customer"}
                     </span>
                     <Button
                       size="sm"
