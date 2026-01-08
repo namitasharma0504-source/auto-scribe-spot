@@ -27,10 +27,6 @@ interface GarageSuggestion {
 const countries = [
   { value: "in", label: "India" },
   { value: "ae", label: "UAE" },
-  { value: "ng", label: "Nigeria" },
-  { value: "eg", label: "Egypt" },
-  { value: "qa", label: "Qatar" },
-  { value: "sd", label: "Sudan" },
 ];
 
 const cities: Record<string, { value: string; label: string }[]> = {
@@ -52,32 +48,6 @@ const cities: Record<string, { value: string; label: string }[]> = {
     { value: "sharjah", label: "Sharjah" },
     { value: "ajman", label: "Ajman" },
     { value: "ras-al-khaimah", label: "Ras Al Khaimah" },
-  ],
-  ng: [
-    { value: "lagos", label: "Lagos" },
-    { value: "abuja", label: "Abuja" },
-    { value: "port-harcourt", label: "Port Harcourt" },
-    { value: "kano", label: "Kano" },
-    { value: "ibadan", label: "Ibadan" },
-  ],
-  eg: [
-    { value: "cairo", label: "Cairo" },
-    { value: "alexandria", label: "Alexandria" },
-    { value: "giza", label: "Giza" },
-    { value: "sharm-el-sheikh", label: "Sharm El Sheikh" },
-    { value: "luxor", label: "Luxor" },
-  ],
-  qa: [
-    { value: "doha", label: "Doha" },
-    { value: "al-wakrah", label: "Al Wakrah" },
-    { value: "al-khor", label: "Al Khor" },
-    { value: "lusail", label: "Lusail" },
-  ],
-  sd: [
-    { value: "khartoum", label: "Khartoum" },
-    { value: "omdurman", label: "Omdurman" },
-    { value: "port-sudan", label: "Port Sudan" },
-    { value: "kassala", label: "Kassala" },
   ],
 };
 
