@@ -67,6 +67,7 @@ const Index = () => {
         const garagePhotos = photoMap.get(garage.id) || [];
         return {
           id: garage.id,
+          slug: garage.slug || garage.id,
           name: garage.name,
           location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
           address: garage.address || undefined,
@@ -83,7 +84,7 @@ const Index = () => {
           responseTime: garage.response_time || undefined,
           quotesThisMonth: Math.floor(Math.random() * 200) + 50,
           walkInWelcome: garage.walk_in_welcome || false,
-          hasUploadedPhotos: garagePhotos.length > 0, // Track if garage has uploaded photos
+          hasUploadedPhotos: garagePhotos.length > 0,
         };
       });
       
