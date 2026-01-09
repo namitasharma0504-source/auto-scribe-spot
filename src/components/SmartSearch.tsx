@@ -10,6 +10,7 @@ interface Suggestion {
   name: string;
   subtitle?: string;
   id?: string;
+  slug?: string;
 }
 
 const popularCities = [
@@ -83,7 +84,7 @@ export function SmartSearch({
         // Search garages from database
         const { data: garages } = await supabase
           .from("garages")
-          .select("id, name, city, country, rating")
+          .select("id, name, city, country, rating, slug")
           .or(`name.ilike.%${escapedQuery}%,city.ilike.%${escapedQuery}%,address.ilike.%${escapedQuery}%`)
           .order("rating", { ascending: false })
           .limit(5);
@@ -93,6 +94,7 @@ export function SmartSearch({
           name: g.name,
           subtitle: `${g.city || ""}, ${g.country || ""}`.replace(/^, |, $/g, ""),
           id: g.id,
+          slug: g.slug || g.id,
         }));
 
         // Filter cities based on query
@@ -125,8 +127,8 @@ export function SmartSearch({
   }, [query, escapeIlikePattern]);
 
   const handleSelect = useCallback((suggestion: Suggestion) => {
-    if (suggestion.type === "garage") {
-      navigate(`/garage/${encodeURIComponent(suggestion.name)}`);
+    if (suggestion.type === "garage" && suggestion.slug) {
+      navigate(`/garage/${suggestion.slug}`);
     } else if (suggestion.type === "city") {
       navigate(`/search?city=${encodeURIComponent(suggestion.name.toLowerCase())}`);
     }

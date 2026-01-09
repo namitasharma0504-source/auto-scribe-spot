@@ -382,6 +382,7 @@ export type Database = {
           response_time: string | null
           review_count: number | null
           services: string[] | null
+          slug: string | null
           special_offers: string | null
           state: string | null
           submitted_by: string | null
@@ -410,6 +411,7 @@ export type Database = {
           response_time?: string | null
           review_count?: number | null
           services?: string[] | null
+          slug?: string | null
           special_offers?: string | null
           state?: string | null
           submitted_by?: string | null
@@ -438,6 +440,7 @@ export type Database = {
           response_time?: string | null
           review_count?: number | null
           services?: string[] | null
+          slug?: string | null
           special_offers?: string | null
           state?: string | null
           submitted_by?: string | null
@@ -719,6 +722,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_garage_slug: { Args: { garage_name: string }; Returns: string }
       get_public_reviews: {
         Args: never
         Returns: {

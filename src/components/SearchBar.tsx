@@ -23,6 +23,7 @@ interface GarageSuggestion {
   name: string;
   city: string | null;
   country: string | null;
+  slug: string | null;
 }
 
 const countries = [
@@ -130,7 +131,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
         
         const { data: garages } = await supabase
           .from("garages")
-          .select("id, name, city, country")
+          .select("id, name, city, country, slug")
           .ilike("name", `%${escapedQuery}%`)
           .order("rating", { ascending: false })
           .limit(8);
@@ -175,7 +176,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
   };
 
   const handleSelectGarage = (garage: GarageSuggestion) => {
-    navigate(`/garage/${encodeURIComponent(garage.name)}`);
+    navigate(`/garage/${garage.slug || garage.id}`);
     setIsOpen(false);
     setGarageName("");
     setHighlightedIndex(-1);

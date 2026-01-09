@@ -31,7 +31,7 @@ const categoryRatings = [
 ];
 
 const WriteReview = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -42,28 +42,29 @@ const WriteReview = () => {
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [garageName, setGarageName] = useState("");
+  const [garageSlug, setGarageSlug] = useState("");
   const [garageLocation, setGarageLocation] = useState("");
 
-  // Fetch garage details
+  // Fetch garage details by slug
   useEffect(() => {
     const fetchGarage = async () => {
-      if (!id) return;
+      if (!slug) return;
       
       const { data, error } = await supabase
         .from("garages")
-        .select("name, city, country, phone")
-        .eq("id", id)
+        .select("name, city, country, phone, slug")
+        .eq("slug", slug)
         .maybeSingle();
       
       if (data) {
         setGarageName(data.name);
+        setGarageSlug(data.slug || slug);
         setGarageLocation(`${data.city || ""}, ${data.country || ""}`);
-        // For now, we don't have garage email in the schema, so we'll skip it
       }
     };
     
     fetchGarage();
-  }, [id]);
+  }, [slug]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -145,7 +146,7 @@ const WriteReview = () => {
       });
 
       setTimeout(() => {
-        navigate(`/garage/${id}`);
+        navigate(`/garage/${garageSlug || slug}`);
       }, 1500);
     } catch (error: any) {
       console.error("Submit error:", error);
@@ -166,7 +167,7 @@ const WriteReview = () => {
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Back Link */}
         <Link
-          to={`/garage/${id}`}
+          to={`/garage/${garageSlug || slug}`}
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
