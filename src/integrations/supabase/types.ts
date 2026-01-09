@@ -446,6 +446,63 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_applications: {
+        Row: {
+          admin_notes: string | null
+          city: string | null
+          created_at: string
+          education: string
+          email: string
+          estimated_garages: string | null
+          full_name: string
+          garage_network: string | null
+          id: string
+          phone: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string
+          status: string
+          updated_at: string
+          why_join: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          city?: string | null
+          created_at?: string
+          education: string
+          email: string
+          estimated_garages?: string | null
+          full_name: string
+          garage_network?: string | null
+          id?: string
+          phone: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state: string
+          status?: string
+          updated_at?: string
+          why_join: string
+        }
+        Update: {
+          admin_notes?: string | null
+          city?: string | null
+          created_at?: string
+          education?: string
+          email?: string
+          estimated_garages?: string | null
+          full_name?: string
+          garage_network?: string | null
+          id?: string
+          phone?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+          why_join?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
