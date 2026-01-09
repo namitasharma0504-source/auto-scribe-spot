@@ -1,0 +1,468 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  XCircle,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  GraduationCap,
+  Briefcase,
+  MessageSquare,
+  Calendar,
+  Eye,
+} from "lucide-react";
+import { format } from "date-fns";
+
+interface PartnerApplication {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  state: string;
+  city: string | null;
+  education: string;
+  occupation: string | null;
+  why_join: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export const PartnerApplicationsManagement = () => {
+  const { toast } = useToast();
+  const [applications, setApplications] = useState<PartnerApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedApplication, setSelectedApplication] = useState<PartnerApplication | null>(null);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const fetchApplications = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("partner_applications")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (error: any) {
+      console.error("Error fetching applications:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load partner applications",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const handleStatusUpdate = async (id: string, newStatus: "approved" | "rejected") => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("partner_applications")
+        .update({
+          status: newStatus,
+          admin_notes: adminNotes || null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: newStatus === "approved" ? "Application Approved" : "Application Rejected",
+        description: `The partner application has been ${newStatus}.`,
+      });
+
+      setSelectedApplication(null);
+      setAdminNotes("");
+      fetchApplications();
+    } catch (error: any) {
+      console.error("Error updating application:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Approved</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-500/10 text-red-600 border-red-500/30">Rejected</Badge>;
+      default:
+        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pending</Badge>;
+    }
+  };
+
+  const filteredApplications = applications.filter(app =>
+    app.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    app.phone.includes(searchQuery) ||
+    app.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (app.city || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const pendingApplications = filteredApplications.filter(a => a.status === "pending");
+  const approvedApplications = filteredApplications.filter(a => a.status === "approved");
+  const rejectedApplications = filteredApplications.filter(a => a.status === "rejected");
+
+  const stats = {
+    total: applications.length,
+    pending: applications.filter(a => a.status === "pending").length,
+    approved: applications.filter(a => a.status === "approved").length,
+    rejected: applications.filter(a => a.status === "rejected").length,
+  };
+
+  const ApplicationCard = ({ application }: { application: PartnerApplication }) => (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-foreground">{application.full_name}</h3>
+              {getStatusBadge(application.status)}
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <span className="truncate">{application.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>{application.phone}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{application.city ? `${application.city}, ${application.state}` : application.state}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{format(new Date(application.created_at), "dd MMM yyyy, h:mm a")}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline" className="gap-1">
+                <GraduationCap className="w-3 h-3" />
+                {application.education}
+              </Badge>
+              {application.occupation && (
+                <Badge variant="outline" className="gap-1">
+                  <Briefcase className="w-3 h-3" />
+                  {application.occupation}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSelectedApplication(application);
+                setAdminNotes(application.admin_notes || "");
+              }}
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              View
+            </Button>
+            {application.status === "pending" && (
+              <>
+                <Button 
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    setSelectedApplication(application);
+                    setAdminNotes(application.admin_notes || "");
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Review
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-muted/30">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold">{stats.total}</p>
+            <p className="text-sm text-muted-foreground">Total Applications</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-yellow-500/10 border-yellow-500/30">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+            <p className="text-sm text-muted-foreground">Pending</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-500/10 border-green-500/30">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+            <p className="text-sm text-muted-foreground">Approved</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-500/10 border-red-500/30">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+            <p className="text-sm text-muted-foreground">Rejected</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Refresh */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email, phone, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" onClick={fetchApplications} className="gap-2">
+          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Status Tabs */}
+      <Tabs defaultValue="pending">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="pending" className="gap-2">
+            <Clock className="w-4 h-4" />
+            Pending ({pendingApplications.length})
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Approved ({approvedApplications.length})
+          </TabsTrigger>
+          <TabsTrigger value="rejected" className="gap-2">
+            <XCircle className="w-4 h-4" />
+            Rejected ({rejectedApplications.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending" className="mt-4">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading applications...</p>
+            </div>
+          ) : pendingApplications.length === 0 ? (
+            <Card className="py-12">
+              <CardContent className="text-center">
+                <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No pending applications</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {pendingApplications.map((app) => (
+                <ApplicationCard key={app.id} application={app} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="approved" className="mt-4">
+          {approvedApplications.length === 0 ? (
+            <Card className="py-12">
+              <CardContent className="text-center">
+                <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No approved applications</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {approvedApplications.map((app) => (
+                <ApplicationCard key={app.id} application={app} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="rejected" className="mt-4">
+          {rejectedApplications.length === 0 ? (
+            <Card className="py-12">
+              <CardContent className="text-center">
+                <XCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No rejected applications</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {rejectedApplications.map((app) => (
+                <ApplicationCard key={app.id} application={app} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Application Detail Dialog */}
+      <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Partner Application
+            </DialogTitle>
+            <DialogDescription>
+              Review application details and take action
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedApplication && (
+            <div className="space-y-4">
+              {/* Applicant Info */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">{selectedApplication.full_name}</h3>
+                  {getStatusBadge(selectedApplication.status)}
+                </div>
+
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <a href={`mailto:${selectedApplication.email}`} className="text-primary hover:underline">
+                      {selectedApplication.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <a href={`tel:${selectedApplication.phone}`} className="text-primary hover:underline">
+                      {selectedApplication.phone}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span>{selectedApplication.city ? `${selectedApplication.city}, ${selectedApplication.state}` : selectedApplication.state}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Education & Occupation */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-primary/5 rounded-lg">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                    <GraduationCap className="w-3 h-3" />
+                    Education
+                  </p>
+                  <p className="font-medium text-sm">{selectedApplication.education}</p>
+                </div>
+                <div className="p-3 bg-primary/5 rounded-lg">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                    <Briefcase className="w-3 h-3" />
+                    Occupation
+                  </p>
+                  <p className="font-medium text-sm">{selectedApplication.occupation || "Not specified"}</p>
+                </div>
+              </div>
+
+              {/* Why Join */}
+              <div className="p-3 bg-accent/30 rounded-lg">
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                  <MessageSquare className="w-3 h-3" />
+                  Why they want to join
+                </p>
+                <p className="text-sm">{selectedApplication.why_join}</p>
+              </div>
+
+              {/* Application Date */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="w-4 h-4" />
+                Applied on {format(new Date(selectedApplication.created_at), "dd MMM yyyy, h:mm a")}
+              </div>
+
+              {/* Admin Notes */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Admin Notes</label>
+                <Textarea
+                  placeholder="Add internal notes about this application..."
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Actions */}
+              {selectedApplication.status === "pending" && (
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-red-500/30 text-red-600 hover:bg-red-500/10"
+                    onClick={() => handleStatusUpdate(selectedApplication.id, "rejected")}
+                    disabled={isProcessing}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => handleStatusUpdate(selectedApplication.id, "approved")}
+                    disabled={isProcessing}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Approve
+                  </Button>
+                </DialogFooter>
+              )}
+
+              {selectedApplication.status !== "pending" && selectedApplication.reviewed_at && (
+                <div className="text-sm text-muted-foreground text-center pt-2 border-t">
+                  Reviewed on {format(new Date(selectedApplication.reviewed_at), "dd MMM yyyy, h:mm a")}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};

@@ -16,7 +16,8 @@ import {
   BadgeCheck,
   ArrowRight,
   MessageSquare,
-  FileText
+  FileText,
+  Handshake
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { VerificationRequests } from "@/components/admin/VerificationRequests";
 import { ClaimManagement } from "@/components/admin/ClaimManagement";
 import { LeadsManagement } from "@/components/admin/LeadsManagement";
 import { BlogManagement } from "@/components/admin/BlogManagement";
+import { PartnerApplicationsManagement } from "@/components/admin/PartnerApplicationsManagement";
 import {
   Dialog,
   DialogContent,
@@ -564,6 +566,10 @@ export default function Admin() {
               <FileText className="w-4 h-4" />
               Blog
             </TabsTrigger>
+            <TabsTrigger value="partners" className="gap-2">
+              <Handshake className="w-4 h-4" />
+              Partners
+            </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
               Customers
@@ -775,6 +781,23 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <BlogManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="partners">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Handshake className="w-5 h-5" />
+                  Partner Applications
+                </CardTitle>
+                <CardDescription>
+                  Review and manage applications from candidates wanting to join the MeriGarage Partner program.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PartnerApplicationsManagement />
               </CardContent>
             </Card>
           </TabsContent>
