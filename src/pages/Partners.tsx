@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -157,6 +157,7 @@ const Partners = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showApplication, setShowApplication] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Handle #apply hash to auto-open application form
   useEffect(() => {
@@ -230,6 +231,11 @@ const Partners = () => {
         whyJoin: "",
       });
       setShowApplication(false);
+
+      // Clear #apply so clicking footer "Apply Now" works again after cancel/submit
+      if (location.hash) {
+        navigate("/partners", { replace: true });
+      }
     } catch (error: any) {
       console.error("Error submitting application:", error);
       toast.error("Failed to submit application. Please try again.");
@@ -915,7 +921,12 @@ const Partners = () => {
                       type="button" 
                       variant="outline" 
                       className="flex-1"
-                      onClick={() => setShowApplication(false)}
+                      onClick={() => {
+                        setShowApplication(false);
+                        if (location.hash) {
+                          navigate("/partners", { replace: true });
+                        }
+                      }}
                     >
                       Cancel
                     </Button>
