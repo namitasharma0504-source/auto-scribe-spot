@@ -98,6 +98,7 @@ const SearchResults = () => {
         const garagePhotos = photoMap.get(garage.id) || [];
         return {
           id: garage.id,
+          slug: garage.slug || garage.id,
           name: garage.name,
           location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
           address: garage.address || undefined,

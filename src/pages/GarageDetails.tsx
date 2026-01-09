@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Garage {
   id: string;
   name: string;
+  slug: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
@@ -65,20 +66,17 @@ const GarageDetails = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Decode the slug to get the garage name
-  const garageName = slug ? decodeURIComponent(slug) : '';
-
   useEffect(() => {
     const fetchGarageData = async () => {
-      if (!garageName) return;
+      if (!slug) return;
 
       setLoading(true);
       try {
-        // Fetch garage details by name
+        // Fetch garage details by slug
         const { data: garageData, error: garageError } = await supabase
           .from('garages')
           .select('*')
-          .eq('name', garageName)
+          .eq('slug', slug)
           .maybeSingle();
 
         if (garageError) {
@@ -165,7 +163,7 @@ const GarageDetails = () => {
     };
 
     fetchGarageData();
-  }, [garageName]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -397,7 +395,7 @@ const GarageDetails = () => {
                 {reviews.length === 0 ? (
                   <div className="text-center py-8 bg-card rounded-2xl border border-border">
                     <p className="text-muted-foreground mb-4">No reviews yet. Be the first to review!</p>
-                    <Link to={`/garage/${encodeURIComponent(garage.name)}/review`}>
+                    <Link to={`/garage/${garage.slug || slug}/review`}>
                       <Button>Write a Review</Button>
                     </Link>
                   </div>
@@ -444,7 +442,7 @@ const GarageDetails = () => {
                   className="w-full h-14 text-lg rounded-xl shadow-glow"
                 />
 
-                <Link to={`/garage/${encodeURIComponent(garage.name)}/review`}>
+                <Link to={`/garage/${garage.slug || slug}/review`}>
                   <Button variant="outline" size="lg" className="w-full gap-2 h-14 text-lg rounded-xl">
                     <PenSquare className="w-5 h-5" />
                     Write a Review
