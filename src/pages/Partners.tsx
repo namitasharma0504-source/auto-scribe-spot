@@ -540,7 +540,7 @@ const Partners = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="rounded-xl overflow-hidden shadow-lg">
-                  <img src={partnerWorkFromHome} alt="Partner working from home" className="w-full h-40 object-cover" />
+                  <img src={partnerWorkFromHome} alt="Partner working from home" className="w-full h-48 object-cover object-top" />
                 </div>
                 <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center">
                   <div className="text-3xl font-bold">₹50K+</div>
@@ -549,10 +549,10 @@ const Partners = () => {
               </div>
               <div className="space-y-4 mt-6">
                 <div className="rounded-xl overflow-hidden shadow-lg">
-                  <img src={partnerDataCollection} alt="Data collection in field" className="w-full h-40 object-cover" />
+                  <img src={partnerDataCollection} alt="Data collection in field" className="w-full h-48 object-cover object-top" />
                 </div>
                 <div className="rounded-xl overflow-hidden shadow-lg">
-                  <img src={partnerEarnings} alt="Partner celebrating earnings" className="w-full h-40 object-cover" />
+                  <img src={partnerEarnings} alt="Partner celebrating earnings" className="w-full h-48 object-cover object-top" />
                 </div>
               </div>
             </div>
