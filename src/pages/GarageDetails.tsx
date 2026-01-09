@@ -13,6 +13,7 @@ import { GarageMapPreview } from "@/components/GarageMapPreview";
 import { GetQuoteDialog } from "@/components/GetQuoteDialog";
 import { GarageOffers } from "@/components/GarageOffers";
 import { ClaimGarageDialog } from "@/components/ClaimGarageDialog";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -252,8 +253,29 @@ const GarageDetails = () => {
     });
   };
 
+  // Generate SEO data
+  const seoTitle = `${garage.name} - Reviews & Ratings | MeriGarage`;
+  const seoDescription = `Read ${garage.review_count || 0} verified reviews for ${garage.name} in ${garage.city || garage.state || 'India'}. Rating: ${garage.rating?.toFixed(1) || '5.0'}/5. Services: ${(garage.services || []).slice(0, 3).join(', ') || 'Auto repair'}. Get quotes and book now.`;
+  const canonicalUrl = `https://merigaragereviews.com/garage/${garage.slug || slug}`;
+  const ogImage = heroImage.startsWith('http') ? heroImage : `https://merigaragereviews.com${heroImage}`;
+  const seoKeywords = [
+    garage.name,
+    `${garage.name} reviews`,
+    `garage in ${garage.city}`,
+    `auto repair ${garage.city}`,
+    ...(garage.services || []).slice(0, 5),
+  ].join(', ');
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        canonicalUrl={canonicalUrl}
+        ogImage={ogImage}
+        ogType="profile"
+        keywords={seoKeywords}
+      />
       <Header />
       
       <main className="flex-grow">
