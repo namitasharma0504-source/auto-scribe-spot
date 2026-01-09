@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Share2, Heart, PenSquare, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -57,8 +57,15 @@ interface Review {
   customer_display_name: string | null;
 }
 
+// Helper to check if a string is a valid UUID
+const isUUID = (str: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 const GarageDetails = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [showAllTags, setShowAllTags] = useState(false);
   const [reviewSort, setReviewSort] = useState("recent");
   const [garage, setGarage] = useState<Garage | null>(null);
@@ -72,12 +79,37 @@ const GarageDetails = () => {
 
       setLoading(true);
       try {
-        // Fetch garage details by slug
-        const { data: garageData, error: garageError } = await supabase
-          .from('garages')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle();
+        let garageData = null;
+        let garageError = null;
+
+        // Check if the URL parameter is a UUID (old format) or slug (new format)
+        if (isUUID(slug)) {
+          // Fetch by ID and redirect to slug-based URL
+          const result = await supabase
+            .from('garages')
+            .select('*')
+            .eq('id', slug)
+            .maybeSingle();
+          
+          garageData = result.data;
+          garageError = result.error;
+
+          // If found, redirect to the slug-based URL
+          if (garageData?.slug) {
+            navigate(`/garage/${garageData.slug}`, { replace: true });
+            return;
+          }
+        } else {
+          // Fetch by slug (new format)
+          const result = await supabase
+            .from('garages')
+            .select('*')
+            .eq('slug', slug)
+            .maybeSingle();
+          
+          garageData = result.data;
+          garageError = result.error;
+        }
 
         if (garageError) {
           console.error('Error fetching garage:', garageError);
@@ -163,7 +195,7 @@ const GarageDetails = () => {
     };
 
     fetchGarageData();
-  }, [slug]);
+  }, [slug, navigate]);
 
   if (loading) {
     return (
