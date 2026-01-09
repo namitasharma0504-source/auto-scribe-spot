@@ -1,17 +1,10 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 import partnerWorkFromHome from "@/assets/partner-work-from-home.jpg";
 import partnerDataCollection from "@/assets/partner-data-collection.jpg";
 import partnerEarnings from "@/assets/partner-earnings.jpg";
@@ -24,7 +17,6 @@ import {
   Wallet, 
   CheckCircle2, 
   ArrowRight,
-  MapPin,
   Phone,
   Mail,
   Building2,
@@ -49,36 +41,6 @@ import {
   CalendarCheck,
   Banknote
 } from "lucide-react";
-
-const whyJoinOptions = [
-  { value: "flexible-income", label: "Looking for flexible income opportunity" },
-  { value: "automotive-passion", label: "Passionate about automotive industry" },
-  { value: "sales-experience", label: "Have sales experience, want to leverage it" },
-  { value: "local-network", label: "Have strong local network in my area" },
-  { value: "part-time-gig", label: "Need a part-time gig alongside studies/job" },
-  { value: "entrepreneurial", label: "Want to build an entrepreneurial career" },
-  { value: "other", label: "Other reason" },
-];
-
-const educationOptions = [
-  { value: "high-school", label: "High School (10th/12th)" },
-  { value: "undergraduate", label: "Undergraduate (Pursuing/Completed)" },
-  { value: "graduate", label: "Graduate" },
-  { value: "post-graduate", label: "Post Graduate" },
-  { value: "diploma", label: "Diploma/ITI" },
-  { value: "other", label: "Other" },
-];
-
-const occupationOptions = [
-  { value: "employed", label: "Employed (Full-time Job)" },
-  { value: "self-employed", label: "Self-Employed / Business Owner" },
-  { value: "freelancer", label: "Freelancer / Gig Worker" },
-  { value: "student", label: "Student" },
-  { value: "unemployed", label: "Unemployed / Looking for Work" },
-  { value: "homemaker", label: "Homemaker" },
-  { value: "retired", label: "Retired" },
-  { value: "other", label: "Other" },
-];
 
 const faqItems = [
   {
@@ -143,107 +105,6 @@ const testimonials = [
 ];
 
 const Partners = () => {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    state: "",
-    city: "",
-    customCity: "",
-    education: "",
-    occupation: "",
-    whyJoin: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showApplication, setShowApplication] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  // Handle #apply hash to auto-open application form
-  useEffect(() => {
-    if (location.hash === '#apply') {
-      setShowApplication(true);
-      // Scroll to the apply section after a short delay
-      setTimeout(() => {
-        const applySection = document.getElementById('apply');
-        if (applySection) {
-          applySection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    }
-  }, [location.hash]);
-
-  const cities = formData.state ? indiaDistricts[formData.state] || [] : [];
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (field === "state") {
-      setFormData(prev => ({ ...prev, city: "", customCity: "" }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.state || !formData.education || !formData.whyJoin) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      toast.error("Please enter a valid 10-digit Indian mobile number");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await supabase.from("partner_applications" as any).insert({
-        full_name: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        state: indiaStates.find(s => s.value === formData.state)?.label || formData.state,
-        city: formData.city === "other" ? formData.customCity.trim() : (cities.find(c => c.value === formData.city)?.label || formData.city),
-        education: educationOptions.find(e => e.value === formData.education)?.label || formData.education,
-        occupation: occupationOptions.find(o => o.value === formData.occupation)?.label || formData.occupation,
-        why_join: whyJoinOptions.find(w => w.value === formData.whyJoin)?.label || formData.whyJoin,
-      });
-
-      if (error) throw error;
-
-      toast.success("Application submitted successfully! We'll contact you soon.");
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        state: "",
-        city: "",
-        customCity: "",
-        education: "",
-        occupation: "",
-        whyJoin: "",
-      });
-      setShowApplication(false);
-
-      // Clear #apply so clicking footer "Apply Now" works again after cancel/submit
-      if (location.hash) {
-        navigate("/partners", { replace: true });
-      }
-    } catch (error: any) {
-      console.error("Error submitting application:", error);
-      toast.error("Failed to submit application. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -284,10 +145,12 @@ const Partners = () => {
             <Button 
               size="lg" 
               className="text-lg px-8"
-              onClick={() => setShowApplication(true)}
+              asChild
             >
-              Apply Now - It's Free
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <Link to="/partner-apply">
+                Apply Now
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -720,228 +583,25 @@ const Partners = () => {
         </div>
       </section>
 
-      {/* Application Form Section */}
+      {/* Application CTA Section */}
       <section id="apply" className="py-10 bg-card">
         <div className="container mx-auto px-4">
-          {!showApplication ? (
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
-              <p className="text-muted-foreground mb-6">
-                Join 500+ partners already earning with MeriGarage. Apply now - it's 100% free!
-              </p>
-              <Button 
-                size="lg" 
-                className="text-lg px-8"
-                onClick={() => setShowApplication(true)}
-              >
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
+            <p className="text-muted-foreground mb-6">
+              Join 500+ partners already earning with MeriGarage. Apply now - it's 100% free!
+            </p>
+            <Button 
+              size="lg" 
+              className="text-lg px-8"
+              asChild
+            >
+              <Link to="/partner-apply">
                 Apply for Partner Program
                 <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-          ) : (
-            <Card className="max-w-2xl mx-auto">
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-xl">Partner Application</CardTitle>
-                <CardDescription>
-                  Fill in your details - takes just 2 minutes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Personal Details */}
-                  <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Users className="w-4 h-4 text-primary" />
-                      Personal Details
-                    </h3>
-                    
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="fullName" className="text-sm">Full Name *</Label>
-                        <Input
-                          id="fullName"
-                          placeholder="Enter your full name"
-                          value={formData.fullName}
-                          onChange={(e) => handleInputChange("fullName", e.target.value)}
-                          maxLength={100}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-sm">Email Address *</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="your@email.com"
-                            className="pl-10"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange("email", e.target.value)}
-                            maxLength={255}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="phone" className="text-sm">Mobile Number *</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="phone"
-                            placeholder="10-digit mobile number"
-                            className="pl-10"
-                            value={formData.phone}
-                            onChange={(e) => handleInputChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                            maxLength={10}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="education" className="text-sm">Education *</Label>
-                        <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select education level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {educationOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      Location
-                    </h3>
-                    
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="state" className="text-sm">State *</Label>
-                        <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select your state" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {indiaStates.map((state) => (
-                              <SelectItem key={state.value} value={state.value}>
-                                {state.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="city" className="text-sm">City/District</Label>
-                        <Select 
-                          value={formData.city} 
-                          onValueChange={(value) => handleInputChange("city", value)}
-                          disabled={!formData.state}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={formData.state ? "Select your city" : "Select state first"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {cities.map((city) => (
-                              <SelectItem key={city.value} value={city.value}>
-                                {city.label}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="other">Other (Enter manually)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {formData.city === "other" && (
-                      <div className="space-y-1.5">
-                        <Label htmlFor="customCity" className="text-sm">Enter Your City/Village Name</Label>
-                        <Input
-                          id="customCity"
-                          placeholder="Enter your city or village name"
-                          value={formData.customCity}
-                          onChange={(e) => handleInputChange("customCity", e.target.value)}
-                          maxLength={100}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* About You */}
-                  <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Target className="w-4 h-4 text-primary" />
-                      About You
-                    </h3>
-                    
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="occupation" className="text-sm">Current Occupation *</Label>
-                        <Select value={formData.occupation} onValueChange={(value) => handleInputChange("occupation", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select occupation" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {occupationOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="whyJoin" className="text-sm">Why do you want to join? *</Label>
-                        <Select value={formData.whyJoin} onValueChange={(value) => handleInputChange("whyJoin", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a reason" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {whyJoinOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => {
-                        setShowApplication(false);
-                        if (location.hash) {
-                          navigate("/partners", { replace: true });
-                        }
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="flex-1"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Submitting..." : "Submit Application"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
