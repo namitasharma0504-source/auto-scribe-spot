@@ -51,6 +51,17 @@ const educationOptions = [
   { value: "other", label: "Other" },
 ];
 
+const occupationOptions = [
+  { value: "employed", label: "Employed (Full-time Job)" },
+  { value: "self-employed", label: "Self-Employed / Business Owner" },
+  { value: "freelancer", label: "Freelancer / Gig Worker" },
+  { value: "student", label: "Student" },
+  { value: "unemployed", label: "Unemployed / Looking for Work" },
+  { value: "homemaker", label: "Homemaker" },
+  { value: "retired", label: "Retired" },
+  { value: "other", label: "Other" },
+];
+
 const Partners = () => {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -60,9 +71,8 @@ const Partners = () => {
     city: "",
     customCity: "",
     education: "",
+    occupation: "",
     whyJoin: "",
-    garageNetwork: "",
-    estimatedGarages: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showApplication, setShowApplication] = useState(false);
@@ -107,9 +117,8 @@ const Partners = () => {
         state: indiaStates.find(s => s.value === formData.state)?.label || formData.state,
         city: formData.city === "other" ? formData.customCity.trim() : (cities.find(c => c.value === formData.city)?.label || formData.city),
         education: educationOptions.find(e => e.value === formData.education)?.label || formData.education,
+        occupation: occupationOptions.find(o => o.value === formData.occupation)?.label || formData.occupation,
         why_join: whyJoinOptions.find(w => w.value === formData.whyJoin)?.label || formData.whyJoin,
-        garage_network: formData.garageNetwork.trim(),
-        estimated_garages: formData.estimatedGarages.trim(),
       });
 
       if (error) throw error;
@@ -123,9 +132,8 @@ const Partners = () => {
         city: "",
         customCity: "",
         education: "",
+        occupation: "",
         whyJoin: "",
-        garageNetwork: "",
-        estimatedGarages: "",
       });
       setShowApplication(false);
     } catch (error: any) {
@@ -564,30 +572,19 @@ const Partners = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="garageNetwork">
-                        What is your network in garages of your city?
-                      </Label>
-                      <Textarea
-                        id="garageNetwork"
-                        placeholder="E.g., I know 5-10 garage owners personally, or I frequently visit garages in my area..."
-                        value={formData.garageNetwork}
-                        onChange={(e) => handleInputChange("garageNetwork", e.target.value)}
-                        maxLength={500}
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="estimatedGarages">
-                        How many garages do you think are there in your city?
-                      </Label>
-                      <Input
-                        id="estimatedGarages"
-                        placeholder="E.g., Around 100-150 garages"
-                        value={formData.estimatedGarages}
-                        onChange={(e) => handleInputChange("estimatedGarages", e.target.value)}
-                        maxLength={100}
-                      />
+                      <Label htmlFor="occupation">Current Occupation *</Label>
+                      <Select value={formData.occupation} onValueChange={(value) => handleInputChange("occupation", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your current occupation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {occupationOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
