@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Share2, Heart, PenSquare, Loader2 } from "lucide-react";
+import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Heart, PenSquare, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StarRating } from "@/components/StarRating";
@@ -14,6 +14,7 @@ import { GetQuoteDialog } from "@/components/GetQuoteDialog";
 import { GarageOffers } from "@/components/GarageOffers";
 import { ClaimGarageDialog } from "@/components/ClaimGarageDialog";
 import { SEOHead } from "@/components/SEOHead";
+import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -504,10 +505,12 @@ const GarageDetails = () => {
                 </Link>
                 
                 <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1 gap-2">
-                    <Share2 className="w-4 h-4" />
-                    Share
-                  </Button>
+                  <ShareDialog
+                    url={`/garage/${garage.slug || slug}`}
+                    title={garage.name}
+                    description={`Check out ${garage.name} - rated ${garage.rating?.toFixed(1) || '5.0'}/5 with ${garage.review_count || 0} reviews. ${(garage.services || []).slice(0, 3).join(', ')}`}
+                    className="flex-1"
+                  />
                   <Button variant="outline" className="flex-1 gap-2">
                     <Heart className="w-4 h-4" />
                     Save
