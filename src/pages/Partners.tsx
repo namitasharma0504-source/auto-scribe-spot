@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PartnerFAQSection } from "@/components/PartnerFAQSection";
 import partnerWorkFromHome from "@/assets/partner-work-from-home.jpg";
 import partnerDataCollection from "@/assets/partner-data-collection.jpg";
 import partnerEarnings from "@/assets/partner-earnings.jpg";
@@ -42,40 +42,6 @@ import {
   Banknote
 } from "lucide-react";
 
-const faqItems = [
-  {
-    question: "Who can become a MeriGarage Partner?",
-    answer: "Anyone above 18 years with a smartphone, basic internet, and willingness to work can join. Students, homemakers, job seekers, or anyone looking for flexible income are welcome. No prior experience required!"
-  },
-  {
-    question: "How much can I earn as a Partner?",
-    answer: "Earnings depend on your effort. Data collection tasks pay ₹15-50 per garage added. Reputation sales earn ₹500-2,000 commission per sale. GMS software sales can earn ₹5,000-15,000 per deal. Active partners earn ₹10,000-50,000+ monthly."
-  },
-  {
-    question: "When and how do I get paid?",
-    answer: "Data collection earnings are paid daily via UPI/bank transfer. Sales commissions are paid within 7 days of successful deal closure. We ensure transparent and timely payments."
-  },
-  {
-    question: "Do I need to invest any money to join?",
-    answer: "No! Joining the MeriGarage Partner Program is completely FREE. There's no registration fee, security deposit, or hidden charges. You only invest your time and effort."
-  },
-  {
-    question: "What training and support will I receive?",
-    answer: "You'll get comprehensive onboarding training, sales scripts, marketing materials, and access to our partner dashboard. Our support team is available via WhatsApp for any queries."
-  },
-  {
-    question: "Can I do this alongside my current job/studies?",
-    answer: "Absolutely! This is designed for flexible work. You choose your own hours - work 2 hours a day or 8 hours. Many of our partners are students or working professionals doing this part-time."
-  },
-  {
-    question: "What areas can I work in?",
-    answer: "You can work in your own city or nearby areas. We're expanding across India, so partners from all states and cities are welcome. The more garages in your area, the more earning potential!"
-  },
-  {
-    question: "How long does the selection process take?",
-    answer: "After you submit your application, our team reviews it within 2-3 business days. If shortlisted, you'll receive a call for a brief interview. Selected candidates can start within a week."
-  }
-];
 
 const testimonials = [
   {
@@ -560,28 +526,7 @@ const Partners = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-10 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Frequently Asked Questions</h2>
-            <p className="text-muted-foreground">Got questions? We've got answers</p>
-          </div>
-          <div className="max-w-3xl mx-auto">
-            <Accordion type="single" collapsible className="space-y-2">
-              {faqItems.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`} className="bg-card rounded-lg px-4 border">
-                  <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </div>
-      </section>
+      <PartnerFAQSection className="bg-background" />
 
       {/* Application CTA Section */}
       <section id="apply" className="py-10 bg-card">
