@@ -175,7 +175,7 @@ export function SearchBar({ variant = "hero", className }: SearchBarProps) {
   };
 
   const handleSelectGarage = (garage: GarageSuggestion) => {
-    navigate(`/garage/${garage.id}`);
+    navigate(`/garage/${encodeURIComponent(garage.name)}`);
     setIsOpen(false);
     setGarageName("");
     setHighlightedIndex(-1);
