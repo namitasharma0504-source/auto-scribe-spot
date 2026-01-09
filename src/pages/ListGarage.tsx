@@ -309,20 +309,35 @@ const ListGarage = () => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `garage-listings/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading photo to:', filePath);
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('garage-photos')
         .upload(filePath, photoFile);
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
+      
+      console.log('Upload successful:', uploadData);
       
       const { data: { publicUrl } } = supabase.storage
         .from('garage-photos')
         .getPublicUrl(filePath);
       
+      console.log('Public URL:', publicUrl);
       return publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photo:', error);
-      toast.error("Failed to upload photo");
+      // Provide more specific error message
+      if (error?.message?.includes('policy')) {
+        toast.error("Photo upload failed - please try again or contact support");
+      } else if (error?.message?.includes('size')) {
+        toast.error("Photo is too large. Please use an image under 5MB");
+      } else {
+        toast.error("Failed to upload photo. Your garage will be saved without a photo.");
+      }
       return null;
     } finally {
       setIsUploading(false);
@@ -402,9 +417,16 @@ const ListGarage = () => {
       // Get current user for tracking who submitted
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Upload photo first if selected
       let photoUrl = null;
+      let photoUploadFailed = false;
       if (photoFile) {
         photoUrl = await uploadPhoto();
+        if (!photoUrl) {
+          photoUploadFailed = true;
+          // Continue with submission but notify user
+          console.warn('Photo upload failed, continuing without photo');
+        }
       }
       
       const countryLabel = countries.find(c => c.value === formData.country)?.label || formData.country;
@@ -449,7 +471,11 @@ const ListGarage = () => {
       if (error) throw error;
       
       if (shouldAutoApprove) {
-        toast.success("Your garage has been listed successfully! It's now live on the platform.");
+        if (photoUploadFailed) {
+          toast.success("Your garage has been listed! Note: Photo upload failed - you can add photos later through the admin panel.");
+        } else {
+          toast.success("Your garage has been listed successfully! It's now live on the platform.");
+        }
       } else {
         toast.success("Your garage has been submitted for review. We'll notify you once it's approved.");
       }
