@@ -99,7 +99,8 @@ const Partners = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("partner_applications").insert({
+      // Using type assertion since the types may not be regenerated yet
+      const { error } = await supabase.from("partner_applications" as any).insert({
         full_name: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
