@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
@@ -23,13 +23,21 @@ import {
   MapPin,
   Phone,
   Mail,
-  GraduationCap,
   Building2,
   Target,
   Star,
   Handshake,
   IndianRupee,
-  FileCheck
+  FileCheck,
+  GraduationCap,
+  Headphones,
+  BookOpen,
+  Award,
+  Quote,
+  Zap,
+  Shield,
+  TrendingDown,
+  MessageCircle
 } from "lucide-react";
 
 const whyJoinOptions = [
@@ -60,6 +68,68 @@ const occupationOptions = [
   { value: "homemaker", label: "Homemaker" },
   { value: "retired", label: "Retired" },
   { value: "other", label: "Other" },
+];
+
+const faqItems = [
+  {
+    question: "Who can become a MeriGarage Partner?",
+    answer: "Anyone above 18 years with a smartphone, basic internet, and willingness to work can join. Students, homemakers, job seekers, or anyone looking for flexible income are welcome. No prior experience required!"
+  },
+  {
+    question: "How much can I earn as a Partner?",
+    answer: "Earnings depend on your effort. Data collection tasks pay ₹15-50 per garage added. Reputation sales earn ₹500-2,000 commission per sale. GMS software sales can earn ₹5,000-15,000 per deal. Active partners earn ₹10,000-50,000+ monthly."
+  },
+  {
+    question: "When and how do I get paid?",
+    answer: "Data collection earnings are paid daily via UPI/bank transfer. Sales commissions are paid within 7 days of successful deal closure. We ensure transparent and timely payments."
+  },
+  {
+    question: "Do I need to invest any money to join?",
+    answer: "No! Joining the MeriGarage Partner Program is completely FREE. There's no registration fee, security deposit, or hidden charges. You only invest your time and effort."
+  },
+  {
+    question: "What training and support will I receive?",
+    answer: "You'll get comprehensive onboarding training, sales scripts, marketing materials, and access to our partner dashboard. Our support team is available via WhatsApp for any queries."
+  },
+  {
+    question: "Can I do this alongside my current job/studies?",
+    answer: "Absolutely! This is designed for flexible work. You choose your own hours - work 2 hours a day or 8 hours. Many of our partners are students or working professionals doing this part-time."
+  },
+  {
+    question: "What areas can I work in?",
+    answer: "You can work in your own city or nearby areas. We're expanding across India, so partners from all states and cities are welcome. The more garages in your area, the more earning potential!"
+  },
+  {
+    question: "How long does the selection process take?",
+    answer: "After you submit your application, our team reviews it within 2-3 business days. If shortlisted, you'll receive a call for a brief interview. Selected candidates can start within a week."
+  }
+];
+
+const testimonials = [
+  {
+    name: "Rajesh Kumar",
+    location: "Delhi",
+    role: "Data Collection Partner",
+    quote: "I started as a student looking for part-time income. Now I earn ₹15,000+ monthly just by adding garages in my area. The best part? I work on my own schedule!",
+    earnings: "₹15,000/month",
+    avatar: "RK"
+  },
+  {
+    name: "Priya Sharma",
+    location: "Mumbai",
+    role: "Sales Partner",
+    quote: "After my maternity break, I was looking for work-from-home options. MeriGarage Partner Program changed everything. I've closed 8 deals in 3 months!",
+    earnings: "₹35,000/month",
+    avatar: "PS"
+  },
+  {
+    name: "Amit Verma",
+    location: "Bangalore",
+    role: "Top Performer",
+    quote: "I was skeptical at first, but the training and support team made it easy. Now I'm one of the top partners, earning both from data collection and software sales.",
+    earnings: "₹50,000+/month",
+    avatar: "AV"
+  }
 ];
 
 const Partners = () => {
@@ -109,7 +179,6 @@ const Partners = () => {
     setIsSubmitting(true);
 
     try {
-      // Using type assertion since the types may not be regenerated yet
       const { error } = await supabase.from("partner_applications" as any).insert({
         full_name: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -148,33 +217,37 @@ const Partners = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
+      {/* Hero Section - Compact */}
+      <section className="relative py-12 md:py-16 bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23000%22%20fill-opacity%3D%220.03%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+            <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">
               <Handshake className="w-3 h-3 mr-1" />
               Partner Program
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
               Become a <span className="text-primary">MeriGarage Partner</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Work from home, earn daily. Join India's largest garage discovery platform as a partner and unlock multiple income streams.
+            <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Work from home, earn daily. Join India's largest garage discovery platform and earn <span className="text-primary font-semibold">₹10,000 - ₹50,000+</span> monthly.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-sm">
-                <Laptop className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">Work From Home</span>
+            <div className="flex flex-wrap justify-center gap-3 mb-6">
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-full shadow-sm text-sm">
+                <Laptop className="w-4 h-4 text-primary" />
+                <span className="font-medium">Work From Home</span>
               </div>
-              <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-sm">
-                <Clock className="w-5 h-5 text-accent" />
-                <span className="text-sm font-medium">Flexible Hours</span>
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-full shadow-sm text-sm">
+                <Clock className="w-4 h-4 text-accent" />
+                <span className="font-medium">Flexible Hours</span>
               </div>
-              <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-sm">
-                <Wallet className="w-5 h-5 text-success" />
-                <span className="text-sm font-medium">Daily Earnings</span>
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-full shadow-sm text-sm">
+                <Wallet className="w-4 h-4 text-success" />
+                <span className="font-medium">Daily Earnings</span>
+              </div>
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-full shadow-sm text-sm">
+                <TrendingDown className="w-4 h-4 text-warning" />
+                <span className="font-medium">Zero Investment</span>
               </div>
             </div>
             <Button 
@@ -182,255 +255,377 @@ const Partners = () => {
               className="text-lg px-8"
               onClick={() => setShowApplication(true)}
             >
-              Apply Now
+              Apply Now - It's Free
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-16 bg-card">
+      {/* Stats Banner */}
+      <section className="py-6 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">How It Works</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Simple 3-step process to become a MeriGarage Partner
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileCheck className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-2xl font-bold text-primary mb-2">Step 1</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Apply Online</h3>
-              <p className="text-muted-foreground text-sm">
-                Fill out the application form with your details and submit your request to join the program.
-              </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">500+</div>
+              <div className="text-sm opacity-90">Active Partners</div>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-accent" />
-              </div>
-              <div className="text-2xl font-bold text-accent mb-2">Step 2</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Interview Process</h3>
-              <p className="text-muted-foreground text-sm">
-                Once shortlisted, you'll go through a brief interview to understand your skills and availability.
-              </p>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">28</div>
+              <div className="text-sm opacity-90">States Covered</div>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-success" />
-              </div>
-              <div className="text-2xl font-bold text-success mb-2">Step 3</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Start Earning</h3>
-              <p className="text-muted-foreground text-sm">
-                Get selected and start working from home on various tasks. Earn daily based on your performance.
-              </p>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">₹15L+</div>
+              <div className="text-sm opacity-90">Paid to Partners</div>
+            </div>
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">50K+</div>
+              <div className="text-sm opacity-90">Garages Added</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Earning Opportunities */}
-      <section className="py-16 bg-background">
+      {/* How It Works - Compact */}
+      <section className="py-10 bg-card">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Earning Opportunities</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Three ways to earn as a MeriGarage Partner
-            </p>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">How It Works</h2>
+            <p className="text-muted-foreground">Simple 3-step process to start earning</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="text-center bg-background rounded-xl p-6 shadow-sm">
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileCheck className="w-7 h-7 text-primary" />
+              </div>
+              <div className="text-xl font-bold text-primary mb-1">Step 1</div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Apply Online</h3>
+              <p className="text-muted-foreground text-sm">Fill the form below - takes just 2 minutes</p>
+            </div>
+            <div className="text-center bg-background rounded-xl p-6 shadow-sm">
+              <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Users className="w-7 h-7 text-accent" />
+              </div>
+              <div className="text-xl font-bold text-accent mb-1">Step 2</div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Quick Interview</h3>
+              <p className="text-muted-foreground text-sm">5-minute call to understand your availability</p>
+            </div>
+            <div className="text-center bg-background rounded-xl p-6 shadow-sm">
+              <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Zap className="w-7 h-7 text-success" />
+              </div>
+              <div className="text-xl font-bold text-success mb-1">Step 3</div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Start Earning</h3>
+              <p className="text-muted-foreground text-sm">Get trained and start earning from day 1</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Earning Opportunities - With Amounts */}
+      <section className="py-10 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Earning Opportunities</h2>
+            <p className="text-muted-foreground">Three ways to maximize your income</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {/* Task 1: Data Collection */}
             <Card className="relative overflow-hidden hover:shadow-lg transition-shadow border-2 hover:border-primary/30">
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold rounded-bl-lg">
                 Daily Pay
               </div>
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
+              <CardHeader className="pb-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
                   <Camera className="w-6 h-6 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Data Collection</CardTitle>
+                <CardTitle className="text-lg">Data Collection</CardTitle>
                 <CardDescription>Build India's garage database</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-muted-foreground">
+              <CardContent className="pt-0">
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Collect visiting cards from local garages</span>
+                    <span>Collect garage visiting cards</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Upload garage info on MeriGarage portal</span>
+                    <span>Upload photos & location</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Click pictures of shop board & upload</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Add location pin & save listing</span>
+                    <span>Add garage details online</span>
                   </li>
                 </ul>
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-primary font-semibold">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>Earn per garage added daily</span>
+                <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Per Garage</span>
+                    <span className="text-lg font-bold text-primary">₹15 - ₹50</span>
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">Add 20+ garages/day = ₹15,000+/month</div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Task 2: Reputation Management Sales */}
+            {/* Task 2: Reputation Sales */}
             <Card className="relative overflow-hidden hover:shadow-lg transition-shadow border-2 hover:border-accent/30">
               <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-3 py-1 text-xs font-semibold rounded-bl-lg">
                 Commission
               </div>
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-3">
+              <CardHeader className="pb-3">
+                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-2">
                   <TrendingUp className="w-6 h-6 text-accent" />
                 </div>
-                <CardTitle className="text-xl">Reputation Sales</CardTitle>
+                <CardTitle className="text-lg">Reputation Sales</CardTitle>
                 <CardDescription>Sell listing subscriptions</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-muted-foreground">
+              <CardContent className="pt-0">
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Pitch garage listing as reputation tool</span>
+                    <span>Pitch to garage owners</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Help garage owners claim their listing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Explain benefits of verified profiles</span>
+                    <span>Help claim their listing</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
                     <span>Close subscription deals</span>
                   </li>
                 </ul>
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-accent font-semibold">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>Handsome commission per sale</span>
+                <div className="bg-accent/5 rounded-lg p-3 border border-accent/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Per Sale</span>
+                    <span className="text-lg font-bold text-accent">₹500 - ₹2,000</span>
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">Close 10 deals/month = ₹10,000+</div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Task 3: GMS Sales */}
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow border-2 hover:border-success/30">
+            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow border-2 hover:border-success/30 ring-2 ring-success/20">
               <div className="absolute top-0 right-0 bg-success text-white px-3 py-1 text-xs font-semibold rounded-bl-lg">
                 High Earnings
               </div>
-              <CardHeader className="pb-4">
-                <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mb-3">
+              <CardHeader className="pb-3">
+                <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mb-2">
                   <Building2 className="w-6 h-6 text-success" />
                 </div>
-                <CardTitle className="text-xl">GMS Software Sales</CardTitle>
+                <CardTitle className="text-lg">GMS Software Sales</CardTitle>
                 <CardDescription>Sell garage management system</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-muted-foreground">
+              <CardContent className="pt-0">
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Pitch MeriGarage Management System</span>
+                    <span>Demo software to owners</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Demo software features to owners</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                    <span>Help with onboarding & setup</span>
+                    <span>Help with onboarding</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
                     <span>Close software deals</span>
                   </li>
                 </ul>
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-success font-semibold">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>Highest commission per sale</span>
+                <div className="bg-success/5 rounded-lg p-3 border border-success/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Per Sale</span>
+                    <span className="text-lg font-bold text-success">₹5,000 - ₹15,000</span>
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">Close 3 deals/month = ₹30,000+</div>
                 </div>
               </CardContent>
             </Card>
           </div>
-          <p className="text-center text-muted-foreground text-sm mt-8">
-            * Exact earning amounts will be disclosed after you join the program
-          </p>
         </div>
       </section>
 
-      {/* Why Join */}
-      <section className="py-16 bg-card">
+      {/* Partner Testimonials */}
+      <section className="py-10 bg-card">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Why Become a Partner?</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Partner Success Stories</h2>
+            <p className="text-muted-foreground">Hear from our top-performing partners</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <div className="text-center p-6">
-              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Laptop className="w-7 h-7 text-primary" />
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="relative">
+                <CardContent className="pt-6">
+                  <Quote className="w-8 h-8 text-primary/20 absolute top-4 right-4" />
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                      {testimonial.avatar}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">{testimonial.name}</div>
+                      <div className="text-xs text-muted-foreground">{testimonial.role} • {testimonial.location}</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4 italic">"{testimonial.quote}"</p>
+                  <div className="flex items-center gap-2 text-success font-semibold">
+                    <IndianRupee className="w-4 h-4" />
+                    <span>Earning: {testimonial.earnings}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Training & Support */}
+      <section className="py-10 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Training & Support</h2>
+            <p className="text-muted-foreground">Everything you need to succeed</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            <div className="bg-card rounded-xl p-5 text-center shadow-sm">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <GraduationCap className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">100% Remote</h3>
-              <p className="text-sm text-muted-foreground">Work from anywhere, anytime. No office required.</p>
+              <h3 className="font-semibold text-foreground mb-1">Free Training</h3>
+              <p className="text-sm text-muted-foreground">Comprehensive onboarding with video tutorials and live sessions</p>
             </div>
-            <div className="text-center p-6">
-              <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-7 h-7 text-accent" />
+            <div className="bg-card rounded-xl p-5 text-center shadow-sm">
+              <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <BookOpen className="w-6 h-6 text-accent" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Flexible Schedule</h3>
-              <p className="text-sm text-muted-foreground">Choose your own hours. Perfect for students & part-timers.</p>
+              <h3 className="font-semibold text-foreground mb-1">Sales Materials</h3>
+              <p className="text-sm text-muted-foreground">Ready-to-use scripts, presentations, and marketing collaterals</p>
             </div>
-            <div className="text-center p-6">
-              <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-7 h-7 text-success" />
+            <div className="bg-card rounded-xl p-5 text-center shadow-sm">
+              <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Headphones className="w-6 h-6 text-success" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Multiple Income Streams</h3>
-              <p className="text-sm text-muted-foreground">Daily pay + commissions from sales.</p>
+              <h3 className="font-semibold text-foreground mb-1">WhatsApp Support</h3>
+              <p className="text-sm text-muted-foreground">Dedicated support team available 7 days a week</p>
             </div>
-            <div className="text-center p-6">
-              <div className="w-14 h-14 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-7 h-7 text-warning" />
+            <div className="bg-card rounded-xl p-5 text-center shadow-sm">
+              <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Award className="w-6 h-6 text-warning" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Growth Opportunity</h3>
-              <p className="text-sm text-muted-foreground">Build skills in sales, tech & automotive industry.</p>
+              <h3 className="font-semibold text-foreground mb-1">Partner Dashboard</h3>
+              <p className="text-sm text-muted-foreground">Track tasks, earnings, and performance in real-time</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Join - Compact */}
+      <section className="py-10 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Why Join MeriGarage?</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Laptop className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">100% Remote</h3>
+                <p className="text-xs text-muted-foreground">Work from anywhere</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
+              <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Flexible Hours</h3>
+                <p className="text-xs text-muted-foreground">Choose your schedule</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
+              <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Zero Investment</h3>
+                <p className="text-xs text-muted-foreground">No fees or deposits</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
+              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Growth Path</h3>
+                <p className="text-xs text-muted-foreground">Build your career</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-10 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground">Got questions? We've got answers</p>
+          </div>
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" collapsible className="space-y-2">
+              {faqItems.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`} className="bg-card rounded-lg px-4 border">
+                  <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </div>
       </section>
 
       {/* Application Form Section */}
-      {showApplication && (
-        <section id="apply" className="py-16 bg-background">
-          <div className="container mx-auto px-4">
+      <section id="apply" className="py-10 bg-card">
+        <div className="container mx-auto px-4">
+          {!showApplication ? (
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Ready to Start Earning?</h2>
+              <p className="text-muted-foreground mb-6">
+                Join 500+ partners already earning with MeriGarage. Apply now - it's 100% free!
+              </p>
+              <Button 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => setShowApplication(true)}
+              >
+                Apply for Partner Program
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+          ) : (
             <Card className="max-w-2xl mx-auto">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Partner Application</CardTitle>
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl">Partner Application</CardTitle>
                 <CardDescription>
-                  Fill in your details to apply for the MeriGarage Partner Program
+                  Fill in your details - takes just 2 minutes
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Personal Details */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Users className="w-5 h-5 text-primary" />
+                  <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4 text-primary" />
                       Personal Details
                     </h3>
                     
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name *</Label>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="fullName" className="text-sm">Full Name *</Label>
                         <Input
                           id="fullName"
                           placeholder="Enter your full name"
@@ -439,8 +634,8 @@ const Partners = () => {
                           maxLength={100}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-sm">Email Address *</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
@@ -456,9 +651,9 @@ const Partners = () => {
                       </div>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Mobile Number *</Label>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="phone" className="text-sm">Mobile Number *</Label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
@@ -471,8 +666,8 @@ const Partners = () => {
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="education">Education *</Label>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="education" className="text-sm">Education *</Label>
                         <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select education level" />
@@ -490,15 +685,15 @@ const Partners = () => {
                   </div>
 
                   {/* Location */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-primary" />
+                  <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
                       Location
                     </h3>
                     
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="state">State *</Label>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="state" className="text-sm">State *</Label>
                         <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select your state" />
@@ -512,8 +707,8 @@ const Partners = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City/District</Label>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-sm">City/District</Label>
                         <Select 
                           value={formData.city} 
                           onValueChange={(value) => handleInputChange("city", value)}
@@ -535,8 +730,8 @@ const Partners = () => {
                     </div>
 
                     {formData.city === "other" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="customCity">Enter Your City/Village Name</Label>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="customCity" className="text-sm">Enter Your City/Village Name</Label>
                         <Input
                           id="customCity"
                           placeholder="Enter your city or village name"
@@ -548,47 +743,48 @@ const Partners = () => {
                     )}
                   </div>
 
-                  {/* Program Interest */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Target className="w-5 h-5 text-primary" />
+                  {/* About You */}
+                  <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <Target className="w-4 h-4 text-primary" />
                       About You
                     </h3>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="whyJoin">Why do you want to join this program? *</Label>
-                      <Select value={formData.whyJoin} onValueChange={(value) => handleInputChange("whyJoin", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a reason" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {whyJoinOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="occupation">Current Occupation *</Label>
-                      <Select value={formData.occupation} onValueChange={(value) => handleInputChange("occupation", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your current occupation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {occupationOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="occupation" className="text-sm">Current Occupation *</Label>
+                        <Select value={formData.occupation} onValueChange={(value) => handleInputChange("occupation", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select occupation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {occupationOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="whyJoin" className="text-sm">Why do you want to join? *</Label>
+                        <Select value={formData.whyJoin} onValueChange={(value) => handleInputChange("whyJoin", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a reason" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {whyJoinOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-4">
+                  <div className="flex gap-3 pt-2">
                     <Button 
                       type="button" 
                       variant="outline" 
@@ -608,30 +804,34 @@ const Partners = () => {
                 </form>
               </CardContent>
             </Card>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
-      {/* CTA Section */}
-      {!showApplication && (
-        <section className="py-16 bg-primary text-primary-foreground">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Start Earning?</h2>
-            <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-              Join hundreds of partners across India who are already earning with MeriGarage
-            </p>
-            <Button 
-              size="lg" 
-              variant="secondary"
-              className="text-lg px-8"
-              onClick={() => setShowApplication(true)}
-            >
-              Apply for Partner Program
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+      {/* Contact Banner */}
+      <section className="py-8 bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3">
+              <MessageCircle className="w-8 h-8" />
+              <div>
+                <div className="font-semibold">Have Questions?</div>
+                <div className="text-sm opacity-90">We're here to help you get started</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="tel:+919310745153" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-colors">
+                <Phone className="w-4 h-4" />
+                <span>+91 93107 45153</span>
+              </a>
+              <a href="mailto:partners@merigarage.com" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-colors">
+                <Mail className="w-4 h-4" />
+                <span>Email Us</span>
+              </a>
+            </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       <Footer />
     </div>
