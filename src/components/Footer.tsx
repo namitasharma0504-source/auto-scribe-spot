@@ -8,7 +8,7 @@ export const Footer = () => {
   return (
     <footer className="bg-card border-t border-border py-12">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
@@ -63,12 +63,18 @@ export const Footer = () => {
           </div>
           
           <div>
+            <h4 className="font-semibold text-foreground mb-4">Partners</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li><Link to="/partners" className="hover:text-primary transition-colors">Partner Program</Link></li>
+            </ul>
+          </div>
+          
+          <div>
             <h4 className="font-semibold text-foreground mb-4">Company</h4>
             <ul className="space-y-2 text-muted-foreground text-sm">
               <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
-              <li><Link to="/partners" className="hover:text-primary transition-colors">Become a Partner</Link></li>
               <li><Link to="/trust-safety" className="hover:text-primary transition-colors">Trust & Safety</Link></li>
               <li><Link to="/content-guidelines" className="hover:text-primary transition-colors">Content Guidelines</Link></li>
               <li>
