@@ -89,12 +89,15 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
   };
 
   const handleEditName = (review: Review) => {
+    if (isSaving) return;
     setEditingId(review.id);
     setEditName(review.customer_display_name || review.customer_name || "");
   };
 
   const handleSaveName = async (review: Review) => {
-    if (!editName.trim()) {
+    const nameToSave = editName.trim();
+
+    if (!nameToSave) {
       toast({
         title: "Error",
         description: "Name cannot be empty",
@@ -108,16 +111,14 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
       // Update the customer_display_name on the review itself (not the profile)
       const { error } = await supabase
         .from("user_reviews")
-        .update({ customer_display_name: editName.trim() })
+        .update({ customer_display_name: nameToSave })
         .eq("id", review.id);
 
       if (error) throw error;
 
       // Update local state
-      setReviews(prev =>
-        prev.map(r =>
-          r.id === review.id ? { ...r, customer_display_name: editName.trim() } : r
-        )
+      setReviews((prev) =>
+        prev.map((r) => (r.id === review.id ? { ...r, customer_display_name: nameToSave } : r))
       );
 
       toast({
@@ -234,6 +235,7 @@ export function GarageRecentReviews({ garageId, garageName }: GarageRecentReview
                       size="sm"
                       variant="ghost"
                       onClick={() => handleEditName(review)}
+                      disabled={isSaving}
                       className="h-6 w-6 p-0"
                     >
                       <Edit className="w-3 h-3 text-muted-foreground hover:text-primary" />
