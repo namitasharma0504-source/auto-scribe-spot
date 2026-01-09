@@ -11,6 +11,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
+import partnerWorkFromHome from "@/assets/partner-work-from-home.jpg";
+import partnerDataCollection from "@/assets/partner-data-collection.jpg";
+import partnerEarnings from "@/assets/partner-earnings.jpg";
 import { 
   Users, 
   Camera, 
@@ -37,7 +40,13 @@ import {
   Zap,
   Shield,
   TrendingDown,
-  MessageCircle
+  MessageCircle,
+  Heart,
+  Briefcase,
+  Globe,
+  BadgeCheck,
+  CalendarCheck,
+  Banknote
 } from "lucide-react";
 
 const whyJoinOptions = [
@@ -517,49 +526,150 @@ const Partners = () => {
         </div>
       </section>
 
-      {/* Why Join - Compact */}
+      {/* Why Join - Enhanced with Photos */}
       <section className="py-10 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Why Join MeriGarage?</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">More than just a gig - it's your pathway to financial freedom and professional growth</p>
           </div>
+          
+          {/* Photo + Benefits Grid */}
+          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-10">
+            {/* Left - Photo Showcase */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="rounded-xl overflow-hidden shadow-lg">
+                  <img src={partnerWorkFromHome} alt="Partner working from home" className="w-full h-40 object-cover" />
+                </div>
+                <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center">
+                  <div className="text-3xl font-bold">₹50K+</div>
+                  <div className="text-sm opacity-90">Top Partner Earnings</div>
+                </div>
+              </div>
+              <div className="space-y-4 mt-6">
+                <div className="rounded-xl overflow-hidden shadow-lg">
+                  <img src={partnerDataCollection} alt="Data collection in field" className="w-full h-40 object-cover" />
+                </div>
+                <div className="rounded-xl overflow-hidden shadow-lg">
+                  <img src={partnerEarnings} alt="Partner celebrating earnings" className="w-full h-40 object-cover" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Right - Benefits List */}
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-background rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Laptop className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">100% Work From Home</h3>
+                  <p className="text-sm text-muted-foreground">No commute, no office politics. Work from your home, a café, or anywhere with internet. Your laptop is your office.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4 p-4 bg-background rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Complete Schedule Freedom</h3>
+                  <p className="text-sm text-muted-foreground">Morning person? Night owl? Work 2 hours or 10 hours - you decide. Perfect alongside studies, job, or family responsibilities.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4 p-4 bg-background rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Banknote className="w-6 h-6 text-success" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Daily Payments + Commissions</h3>
+                  <p className="text-sm text-muted-foreground">Get paid daily for data tasks via UPI. Plus earn handsome commissions on every sale you close. No waiting for month-end!</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4 p-4 bg-background rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-warning" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Zero Investment Required</h3>
+                  <p className="text-sm text-muted-foreground">No registration fees, no security deposits, no hidden charges. Just your smartphone and dedication - that's all you need to start.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Additional Benefits Row */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Laptop className="w-5 h-5 text-primary" />
+            <div className="text-center p-4 bg-background rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <GraduationCap className="w-5 h-5 text-primary" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">100% Remote</h3>
-                <p className="text-xs text-muted-foreground">Work from anywhere</p>
-              </div>
+              <h3 className="font-semibold text-foreground text-sm mb-1">No Experience Needed</h3>
+              <p className="text-xs text-muted-foreground">We provide complete training from scratch</p>
             </div>
-            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
-              <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-accent" />
+            <div className="text-center p-4 bg-background rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Globe className="w-5 h-5 text-accent" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">Flexible Hours</h3>
-                <p className="text-xs text-muted-foreground">Choose your schedule</p>
-              </div>
+              <h3 className="font-semibold text-foreground text-sm mb-1">Pan-India Opportunity</h3>
+              <p className="text-xs text-muted-foreground">Work from any city, town or village in India</p>
             </div>
-            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
-              <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-success" />
+            <div className="text-center p-4 bg-background rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <BadgeCheck className="w-5 h-5 text-success" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">Zero Investment</h3>
-                <p className="text-xs text-muted-foreground">No fees or deposits</p>
-              </div>
+              <h3 className="font-semibold text-foreground text-sm mb-1">Certified Partner Status</h3>
+              <p className="text-xs text-muted-foreground">Get official MeriGarage partner certificate</p>
             </div>
-            <div className="flex items-start gap-3 p-4 bg-background rounded-lg">
-              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Target className="w-5 h-5 text-warning" />
+            <div className="text-center p-4 bg-background rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Briefcase className="w-5 h-5 text-warning" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">Growth Path</h3>
-                <p className="text-xs text-muted-foreground">Build your career</p>
-              </div>
+              <h3 className="font-semibold text-foreground text-sm mb-1">Career Growth Path</h3>
+              <p className="text-xs text-muted-foreground">Grow to Team Lead, City Head roles</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Who Can Join Banner */}
+      <section className="py-8 bg-gradient-to-r from-primary/10 via-accent/10 to-success/10">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-foreground mb-2">Perfect For</h3>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <GraduationCap className="w-4 h-4 mr-2" />
+              College Students
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <Heart className="w-4 h-4 mr-2" />
+              Homemakers
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <Briefcase className="w-4 h-4 mr-2" />
+              Working Professionals
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <Target className="w-4 h-4 mr-2" />
+              Job Seekers
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <Clock className="w-4 h-4 mr-2" />
+              Retired Professionals
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <Users className="w-4 h-4 mr-2" />
+              Freelancers
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2 text-sm">
+              <CalendarCheck className="w-4 h-4 mr-2" />
+              Part-time Workers
+            </Badge>
           </div>
         </div>
       </section>
