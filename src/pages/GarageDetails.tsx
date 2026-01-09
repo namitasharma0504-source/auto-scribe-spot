@@ -57,7 +57,7 @@ interface Review {
 }
 
 const GarageDetails = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [showAllTags, setShowAllTags] = useState(false);
   const [reviewSort, setReviewSort] = useState("recent");
   const [garage, setGarage] = useState<Garage | null>(null);
@@ -65,17 +65,20 @@ const GarageDetails = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Decode the slug to get the garage name
+  const garageName = slug ? decodeURIComponent(slug) : '';
+
   useEffect(() => {
     const fetchGarageData = async () => {
-      if (!id) return;
+      if (!garageName) return;
 
       setLoading(true);
       try {
-        // Fetch garage details
+        // Fetch garage details by name
         const { data: garageData, error: garageError } = await supabase
           .from('garages')
           .select('*')
-          .eq('id', id)
+          .eq('name', garageName)
           .maybeSingle();
 
         if (garageError) {
@@ -84,12 +87,12 @@ const GarageDetails = () => {
           setGarage(garageData);
         }
 
-        // Fetch garage photos
-        const { data: photosData, error: photosError } = await supabase
+        // Fetch garage photos using garage id from fetched data
+        const { data: photosData, error: photosError } = garageData ? await supabase
           .from('garage_photos')
           .select('*')
-          .eq('garage_id', id)
-          .order('display_order', { ascending: true });
+          .eq('garage_id', garageData.id)
+          .order('display_order', { ascending: true }) : { data: null, error: null };
 
         if (photosError) {
           console.error('Error fetching photos:', photosError);
@@ -162,7 +165,7 @@ const GarageDetails = () => {
     };
 
     fetchGarageData();
-  }, [id]);
+  }, [garageName]);
 
   if (loading) {
     return (
@@ -309,7 +312,7 @@ const GarageDetails = () => {
               </div>
 
               {/* Special Offers */}
-              {id && <GarageOffers garageId={id} />}
+              {garage.id && <GarageOffers garageId={garage.id} />}
 
               {/* Activity Stats */}
               <div className="bg-card rounded-2xl p-6 shadow-md border border-border mb-8">
@@ -394,7 +397,7 @@ const GarageDetails = () => {
                 {reviews.length === 0 ? (
                   <div className="text-center py-8 bg-card rounded-2xl border border-border">
                     <p className="text-muted-foreground mb-4">No reviews yet. Be the first to review!</p>
-                    <Link to={`/garage/${id}/review`}>
+                    <Link to={`/garage/${encodeURIComponent(garage.name)}/review`}>
                       <Button>Write a Review</Button>
                     </Link>
                   </div>
@@ -441,7 +444,7 @@ const GarageDetails = () => {
                   className="w-full h-14 text-lg rounded-xl shadow-glow"
                 />
 
-                <Link to={`/garage/${id}/review`}>
+                <Link to={`/garage/${encodeURIComponent(garage.name)}/review`}>
                   <Button variant="outline" size="lg" className="w-full gap-2 h-14 text-lg rounded-xl">
                     <PenSquare className="w-5 h-5" />
                     Write a Review

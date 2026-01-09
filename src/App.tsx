@@ -45,8 +45,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<SearchResults />} />
-            <Route path="/garage/:id" element={<GarageDetails />} />
-            <Route path="/garage/:id/review" element={<WriteReview />} />
+            <Route path="/garage/:slug" element={<GarageDetails />} />
+            <Route path="/garage/:slug/review" element={<WriteReview />} />
             <Route path="/submit-review" element={<SubmitReview />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/auth" element={<Auth />} />

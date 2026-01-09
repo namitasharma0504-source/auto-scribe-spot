@@ -125,8 +125,8 @@ export function SmartSearch({
   }, [query, escapeIlikePattern]);
 
   const handleSelect = useCallback((suggestion: Suggestion) => {
-    if (suggestion.type === "garage" && suggestion.id) {
-      navigate(`/garage/${suggestion.id}`);
+    if (suggestion.type === "garage") {
+      navigate(`/garage/${encodeURIComponent(suggestion.name)}`);
     } else if (suggestion.type === "city") {
       navigate(`/search?city=${encodeURIComponent(suggestion.name.toLowerCase())}`);
     }

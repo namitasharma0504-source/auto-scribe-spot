@@ -61,7 +61,7 @@ export function GarageCard({
   return (
     <>
       <Card className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
-        <Link to={`/garage/${id}`}>
+        <Link to={`/garage/${encodeURIComponent(name)}`}>
           <div className="relative h-48 overflow-hidden bg-muted" onClick={allPhotos.length > 1 ? handlePhotoClick : undefined}>
             {mainPhoto && !imageError ? (
               <img
@@ -88,7 +88,7 @@ export function GarageCard({
         </Link>
         
         <CardContent className="p-5">
-          <Link to={`/garage/${id}`}>
+          <Link to={`/garage/${encodeURIComponent(name)}`}>
             <div className="flex items-start justify-between gap-2 mb-2">
               <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {name}
@@ -153,7 +153,7 @@ export function GarageCard({
               size="sm"
               className="flex-1"
             />
-            <Link to={`/garage/${id}`} className="flex-1">
+            <Link to={`/garage/${encodeURIComponent(name)}`} className="flex-1">
               <Button variant="outline" size="sm" className="w-full gap-1">
                 More Details
                 <ArrowRight className="w-3 h-3" />
