@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,21 @@ const Partners = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showApplication, setShowApplication] = useState(false);
+  const location = useLocation();
+
+  // Handle #apply hash to auto-open application form
+  useEffect(() => {
+    if (location.hash === '#apply') {
+      setShowApplication(true);
+      // Scroll to the apply section after a short delay
+      setTimeout(() => {
+        const applySection = document.getElementById('apply');
+        if (applySection) {
+          applySection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location.hash]);
 
   const cities = formData.state ? indiaDistricts[formData.state] || [] : [];
 
