@@ -453,10 +453,9 @@ export type Database = {
           created_at: string
           education: string
           email: string
-          estimated_garages: string | null
           full_name: string
-          garage_network: string | null
           id: string
+          occupation: string | null
           phone: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -471,10 +470,9 @@ export type Database = {
           created_at?: string
           education: string
           email: string
-          estimated_garages?: string | null
           full_name: string
-          garage_network?: string | null
           id?: string
+          occupation?: string | null
           phone: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -489,10 +487,9 @@ export type Database = {
           created_at?: string
           education?: string
           email?: string
-          estimated_garages?: string | null
           full_name?: string
-          garage_network?: string | null
           id?: string
+          occupation?: string | null
           phone?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
