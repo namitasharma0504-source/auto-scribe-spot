@@ -105,13 +105,39 @@ const PartnerApply = () => {
     setIsSubmitting(true);
 
     try {
+      const normalizedEmail = formData.email.trim().toLowerCase();
+      const normalizedPhone = formData.phone.trim();
+
+      // Check for duplicate email or phone
+      const { data: existingApplications, error: checkError } = await supabase
+        .from("partner_applications")
+        .select("email, phone")
+        .or(`email.eq.${normalizedEmail},phone.eq.${normalizedPhone}`)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingApplications && existingApplications.length > 0) {
+        const existing = existingApplications[0];
+        if (existing.email === normalizedEmail) {
+          toast.error("An application with this email already exists. Please use a different email.");
+          setIsSubmitting(false);
+          return;
+        }
+        if (existing.phone === normalizedPhone) {
+          toast.error("An application with this phone number already exists. Please use a different number.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const stateName = indiaStates.find(s => s.value === formData.state)?.label || formData.state;
       const cityName = formData.city === "other" ? formData.customCity.trim() : (cities.find(c => c.value === formData.city)?.label || formData.city);
 
-      const { error } = await supabase.from("partner_applications" as any).insert({
+      const { error } = await supabase.from("partner_applications").insert({
         full_name: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
+        email: normalizedEmail,
+        phone: normalizedPhone,
         state: stateName,
         city: cityName,
         education: educationOptions.find(e => e.value === formData.education)?.label || formData.education,
@@ -126,8 +152,8 @@ const PartnerApply = () => {
         await supabase.functions.invoke("send-partner-confirmation", {
           body: {
             fullName: formData.fullName.trim(),
-            email: formData.email.trim().toLowerCase(),
-            phone: formData.phone.trim(),
+            email: normalizedEmail,
+            phone: normalizedPhone,
             state: stateName,
             city: cityName,
           },
@@ -140,7 +166,7 @@ const PartnerApply = () => {
       // Store data for success page
       setSubmittedData({
         name: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: normalizedEmail,
       });
       setIsSubmitted(true);
     } catch (error: any) {
