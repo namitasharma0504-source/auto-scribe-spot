@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
+import { PartnerApplicationSuccess } from "@/components/PartnerApplicationSuccess";
 import { 
   Users, 
   ArrowRight,
@@ -69,6 +70,8 @@ const PartnerApply = () => {
     whyJoin: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState({ name: "", email: "" });
 
   const cities = formData.state ? indiaDistricts[formData.state] || [] : [];
 
@@ -102,12 +105,15 @@ const PartnerApply = () => {
     setIsSubmitting(true);
 
     try {
+      const stateName = indiaStates.find(s => s.value === formData.state)?.label || formData.state;
+      const cityName = formData.city === "other" ? formData.customCity.trim() : (cities.find(c => c.value === formData.city)?.label || formData.city);
+
       const { error } = await supabase.from("partner_applications" as any).insert({
         full_name: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
-        state: indiaStates.find(s => s.value === formData.state)?.label || formData.state,
-        city: formData.city === "other" ? formData.customCity.trim() : (cities.find(c => c.value === formData.city)?.label || formData.city),
+        state: stateName,
+        city: cityName,
         education: educationOptions.find(e => e.value === formData.education)?.label || formData.education,
         occupation: occupationOptions.find(o => o.value === formData.occupation)?.label || formData.occupation,
         why_join: whyJoinOptions.find(w => w.value === formData.whyJoin)?.label || formData.whyJoin,
@@ -115,19 +121,28 @@ const PartnerApply = () => {
 
       if (error) throw error;
 
-      toast.success("Application submitted successfully! We'll contact you soon.");
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        state: "",
-        city: "",
-        customCity: "",
-        education: "",
-        occupation: "",
-        whyJoin: "",
+      // Send confirmation email
+      try {
+        await supabase.functions.invoke("send-partner-confirmation", {
+          body: {
+            fullName: formData.fullName.trim(),
+            email: formData.email.trim().toLowerCase(),
+            phone: formData.phone.trim(),
+            state: stateName,
+            city: cityName,
+          },
+        });
+      } catch (emailError) {
+        console.error("Error sending confirmation email:", emailError);
+        // Don't fail the submission if email fails
+      }
+
+      // Store data for success page
+      setSubmittedData({
+        name: formData.fullName.trim(),
+        email: formData.email.trim().toLowerCase(),
       });
-      navigate("/partners");
+      setIsSubmitted(true);
     } catch (error: any) {
       console.error("Error submitting application:", error);
       toast.error("Failed to submit application. Please try again.");
@@ -135,6 +150,20 @@ const PartnerApply = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show success page after submission
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <PartnerApplicationSuccess 
+          applicantName={submittedData.name} 
+          email={submittedData.email} 
+        />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
