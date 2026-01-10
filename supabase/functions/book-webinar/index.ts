@@ -55,11 +55,15 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       // Check if application exists - REQUIRED for booking
-      const { data: application, error: lookupError } = await supabase
+      // Use .limit(1) to handle potential duplicates gracefully
+      const { data: applications, error: lookupError } = await supabase
         .from("partner_applications")
         .select("id, full_name, webinar_slot")
         .eq("email", normalizedEmail)
-        .maybeSingle();
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      const application = applications?.[0] || null;
 
       if (lookupError) {
         console.error("Error looking up application:", lookupError);
@@ -103,16 +107,19 @@ serve(async (req: Request): Promise<Response> => {
 
     // Lookup action - kept for backward compatibility
     if (action === "lookup") {
-      const { data: application, error } = await supabase
+      const { data: applications, error } = await supabase
         .from("partner_applications")
         .select("id, full_name, email, webinar_slot, webinar_booked_at")
         .eq("email", normalizedEmail)
-        .maybeSingle();
+        .order("created_at", { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error("Error looking up application:", error);
         throw new Error("Failed to lookup application");
       }
+
+      const application = applications?.[0] || null;
 
       if (!application) {
         return new Response(
