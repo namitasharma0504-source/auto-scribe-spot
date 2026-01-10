@@ -110,16 +110,20 @@ serve(async (req: Request): Promise<Response> => {
               <div class="step">
                 <div class="step-number">1</div>
                 <div>
-                  <strong>Application Review</strong><br>
-                  <span style="color: #666;">Our team will review your application within the next few days.</span>
+                  <strong>Book Your Webinar Slot</strong><br>
+                  <span style="color: #666;">Choose a convenient time for your orientation webinar.</span>
+                  <br><br>
+                  <a href="https://auto-scribe-spot.lovable.app/webinar" class="button" style="margin-top: 0;">
+                    📅 Book Webinar Slot
+                  </a>
                 </div>
               </div>
               
               <div class="step">
                 <div class="step-number">2</div>
                 <div>
-                  <strong>Partner Webinar Invite</strong><br>
-                  <span style="color: #666;">Selected candidates will receive an invitation to our Partner Orientation Webinar planned in the coming weeks.</span>
+                  <strong>Attend Partner Orientation</strong><br>
+                  <span style="color: #666;">Join our live webinar to learn about earning opportunities and get all your questions answered.</span>
                 </div>
               </div>
               

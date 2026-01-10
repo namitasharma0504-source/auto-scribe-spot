@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.meta-ads]
 verify_jwt = true
+
+[functions.book-webinar]
+verify_jwt = false
+
+[functions.send-partner-confirmation]
+verify_jwt = false

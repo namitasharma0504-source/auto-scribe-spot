@@ -30,6 +30,7 @@ import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import Partners from "./pages/Partners";
 import PartnerApply from "./pages/PartnerApply";
+import Webinar from "./pages/Webinar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/blog/:slug" element={<BlogArticle />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/partner-apply" element={<PartnerApply />} />
+            <Route path="/webinar" element={<Webinar />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

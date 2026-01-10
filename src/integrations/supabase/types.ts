@@ -465,6 +465,8 @@ export type Database = {
           state: string
           status: string
           updated_at: string
+          webinar_booked_at: string | null
+          webinar_slot: string | null
           why_join: string
         }
         Insert: {
@@ -482,6 +484,8 @@ export type Database = {
           state: string
           status?: string
           updated_at?: string
+          webinar_booked_at?: string | null
+          webinar_slot?: string | null
           why_join: string
         }
         Update: {
@@ -499,6 +503,8 @@ export type Database = {
           state?: string
           status?: string
           updated_at?: string
+          webinar_booked_at?: string | null
+          webinar_slot?: string | null
           why_join?: string
         }
         Relationships: []

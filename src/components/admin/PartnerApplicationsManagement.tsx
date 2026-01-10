@@ -30,6 +30,7 @@ import {
   MessageSquare,
   Calendar,
   Eye,
+  Video,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -47,6 +48,8 @@ interface PartnerApplication {
   admin_notes: string | null;
   created_at: string;
   reviewed_at: string | null;
+  webinar_slot: string | null;
+  webinar_booked_at: string | null;
 }
 
 export const PartnerApplicationsManagement = () => {
@@ -186,6 +189,17 @@ export const PartnerApplicationsManagement = () => {
                 <Badge variant="outline" className="gap-1">
                   <Briefcase className="w-3 h-3" />
                   {application.occupation}
+                </Badge>
+              )}
+              {application.webinar_slot ? (
+                <Badge className="gap-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
+                  <Video className="w-3 h-3" />
+                  Webinar: {application.webinar_slot === "2026-01-17" ? "17 Jan" : "18 Jan"}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 text-muted-foreground">
+                  <Video className="w-3 h-3" />
+                  No webinar booked
                 </Badge>
               )}
             </div>
@@ -412,6 +426,30 @@ export const PartnerApplicationsManagement = () => {
                   Why they want to join
                 </p>
                 <p className="text-sm">{selectedApplication.why_join}</p>
+              </div>
+
+              {/* Webinar Booking */}
+              <div className={`p-3 rounded-lg ${selectedApplication.webinar_slot ? "bg-purple-500/10 border border-purple-500/30" : "bg-muted/50"}`}>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                  <Video className="w-3 h-3" />
+                  Webinar Booking
+                </p>
+                {selectedApplication.webinar_slot ? (
+                  <div>
+                    <p className="font-medium text-sm text-purple-600">
+                      {selectedApplication.webinar_slot === "2026-01-17" 
+                        ? "Friday, 17th January 2026, 4-5 PM" 
+                        : "Saturday, 18th January 2026, 4-5 PM"}
+                    </p>
+                    {selectedApplication.webinar_booked_at && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Booked on {format(new Date(selectedApplication.webinar_booked_at), "dd MMM yyyy, h:mm a")}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Not booked yet</p>
+                )}
               </div>
 
               {/* Application Date */}
