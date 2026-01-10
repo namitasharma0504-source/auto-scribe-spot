@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Calendar, Clock, CalendarCheck, Sparkles, Mail, PartyPopper } from "lucide-react";
+import { Calendar, Clock, CalendarCheck, Sparkles, Mail, PartyPopper, AlertCircle } from "lucide-react";
 import confetti from "canvas-confetti";
+import { Link } from "react-router-dom";
 
 const WEBINAR_SLOTS = [
   {
@@ -32,12 +33,11 @@ const Webinar = () => {
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookedSlot, setBookedSlot] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const triggerConfetti = () => {
     const duration = 3000;
     const animationEnd = Date.now() + duration;
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
     const interval = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
@@ -64,15 +64,17 @@ const Webinar = () => {
   };
 
   const handleBookSlot = async (slotId: string) => {
+    setEmailError(null);
+    
     if (!email.trim()) {
-      toast.error("Please enter your email address");
+      setEmailError("Please enter your email address");
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      toast.error("Please enter a valid email address");
+      setEmailError("Please enter a valid email address");
       return;
     }
 
@@ -87,7 +89,11 @@ const Webinar = () => {
       if (error) throw error;
 
       if (!data.success) {
-        toast.error(data.error || "Failed to book slot");
+        if (data.notFound) {
+          setEmailError("No partner application found with this email. Please apply first before booking a webinar slot.");
+        } else {
+          toast.error(data.error || "Failed to book slot");
+        }
         return;
       }
 
@@ -187,15 +193,36 @@ const Webinar = () => {
               <Card className="bg-card">
                 <CardContent className="p-6">
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Enter your email to book a slot
+                    Enter the email you used for your partner application
                   </label>
                   <Input
                     type="email"
                     placeholder="your.email@example.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="text-base"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError(null);
+                    }}
+                    className={`text-base ${emailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {emailError && (
+                    <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
+                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm">
+                          <p>{emailError}</p>
+                          {emailError.includes("apply first") && (
+                            <Link 
+                              to="/partner-apply" 
+                              className="inline-block mt-2 font-medium underline hover:no-underline"
+                            >
+                              Apply now →
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground mt-2">
                     We'll send the webinar joining details to this email
                   </p>
