@@ -29,7 +29,75 @@ serve(async (req: Request): Promise<Response> => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Lookup action - find application by email
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Book action - update or create webinar booking
+    if (action === "book") {
+      if (!slot) {
+        return new Response(
+          JSON.stringify({ error: "Slot is required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      if (!VALID_SLOTS.includes(slot)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid slot selected" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Check if application exists
+      const { data: application, error: lookupError } = await supabase
+        .from("partner_applications")
+        .select("id, webinar_slot")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (lookupError) {
+        console.error("Error looking up application:", lookupError);
+        throw new Error("Failed to lookup application");
+      }
+
+      if (application) {
+        // Update existing application's webinar slot
+        const { error: updateError } = await supabase
+          .from("partner_applications")
+          .update({
+            webinar_slot: slot,
+            webinar_booked_at: new Date().toISOString(),
+          })
+          .eq("id", application.id);
+
+        if (updateError) {
+          console.error("Error updating webinar slot:", updateError);
+          throw new Error("Failed to book webinar slot");
+        }
+
+        console.log(`Webinar slot ${slot} booked for existing application: ${normalizedEmail}`);
+      } else {
+        // No existing application - allow standalone webinar booking
+        // Just log the booking (could also create a minimal entry if needed)
+        console.log(`Webinar slot ${slot} requested by: ${normalizedEmail} (no existing application)`);
+        
+        // For now, we'll return success even without an application
+        // The user may have come from a different channel
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, slot }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Lookup action - kept for backward compatibility
     if (action === "lookup") {
       const { data: application, error } = await supabase
         .from("partner_applications")
@@ -60,63 +128,6 @@ serve(async (req: Request): Promise<Response> => {
             webinar_booked_at: application.webinar_booked_at,
           },
         }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // Book action - update webinar slot
-    if (action === "book") {
-      if (!slot) {
-        return new Response(
-          JSON.stringify({ error: "Slot is required" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      if (!VALID_SLOTS.includes(slot)) {
-        return new Response(
-          JSON.stringify({ error: "Invalid slot selected" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      // Find the application
-      const { data: application, error: lookupError } = await supabase
-        .from("partner_applications")
-        .select("id")
-        .eq("email", normalizedEmail)
-        .maybeSingle();
-
-      if (lookupError) {
-        console.error("Error looking up application:", lookupError);
-        throw new Error("Failed to lookup application");
-      }
-
-      if (!application) {
-        return new Response(
-          JSON.stringify({ error: "Application not found" }),
-          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
-      // Update the webinar slot
-      const { error: updateError } = await supabase
-        .from("partner_applications")
-        .update({
-          webinar_slot: slot,
-          webinar_booked_at: new Date().toISOString(),
-        })
-        .eq("id", application.id);
-
-      if (updateError) {
-        console.error("Error updating webinar slot:", updateError);
-        throw new Error("Failed to book webinar slot");
-      }
-
-      console.log(`Webinar slot ${slot} booked for ${normalizedEmail}`);
-
-      return new Response(
-        JSON.stringify({ success: true, slot }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
