@@ -12,17 +12,17 @@ import { Link } from "react-router-dom";
 
 const WEBINAR_SLOTS = [
   {
-    id: "2026-01-17",
-    date: new Date(2026, 0, 17, 16, 0),
+    id: "2026-01-16",
+    date: new Date(2026, 0, 16, 16, 0),
     dayName: "Friday",
-    displayDate: "17th January 2026",
+    displayDate: "16th January 2026",
     time: "4:00 PM - 5:00 PM",
   },
   {
-    id: "2026-01-18",
-    date: new Date(2026, 0, 18, 16, 0),
-    dayName: "Saturday",
-    displayDate: "18th January 2026",
+    id: "2026-01-19",
+    date: new Date(2026, 0, 19, 16, 0),
+    dayName: "Monday",
+    displayDate: "19th January 2026",
     time: "4:00 PM - 5:00 PM",
   },
 ];

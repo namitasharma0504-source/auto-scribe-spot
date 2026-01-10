@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_SLOTS = ["2026-01-17", "2026-01-18"];
+const VALID_SLOTS = ["2026-01-16", "2026-01-19"];
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
