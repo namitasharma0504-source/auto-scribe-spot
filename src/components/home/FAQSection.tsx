@@ -81,17 +81,23 @@ export function FAQSection() {
   }, []);
 
   return (
-    <section className="py-8 md:py-10 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-3">
+    <section className="py-12 md:py-16 bg-gradient-to-b from-secondary/30 via-secondary/50 to-secondary/70 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 shadow-sm">
             <HelpCircle className="w-4 h-4" />
             Got Questions?
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
             Frequently Asked Questions
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
             Find answers to common questions about finding garages, writing reviews, and using MeriGarage
           </p>
         </div>
@@ -102,14 +108,14 @@ export function FAQSection() {
               <AccordionItem
                 key={index}
                 value={`faq-${index}`}
-                className="bg-card border border-border rounded-xl px-6 data-[state=open]:shadow-md transition-shadow"
+                className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl px-6 data-[state=open]:shadow-lg data-[state=open]:border-primary/20 transition-all duration-300 hover:border-primary/10"
               >
-                <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className="font-medium text-foreground pr-4">
+                <AccordionTrigger className="text-left hover:no-underline py-5">
+                  <span className="font-medium text-foreground pr-4 text-base">
                     {faq.question}
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4">
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -117,13 +123,19 @@ export function FAQSection() {
           </Accordion>
         </div>
 
-        <div className="text-center mt-8">
-          <p className="text-sm text-muted-foreground">
-            Still have questions?{" "}
-            <a href="/contact" className="text-primary hover:underline font-medium">
-              Contact us
+        <div className="text-center mt-10 pt-8 border-t border-border/30">
+          <div className="inline-flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+            <p className="text-muted-foreground">
+              Still have questions?
+            </p>
+            <a 
+              href="/contact" 
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Contact Us
             </a>
-          </p>
+          </div>
         </div>
       </div>
     </section>
