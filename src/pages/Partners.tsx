@@ -218,7 +218,7 @@ const Partners = () => {
                   </li>
                 </ul>
                 <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-                  <span className="text-lg font-bold text-primary">Earn upto ₹30K/month</span>
+                  <span className="text-lg font-bold text-primary">Earn upto ₹10-15K/month</span>
                 </div>
               </CardContent>
             </Card>
@@ -251,7 +251,7 @@ const Partners = () => {
                   </li>
                 </ul>
                 <div className="bg-accent/5 rounded-lg p-3 border border-accent/20 text-center">
-                  <span className="text-lg font-bold text-accent">Earn upto ₹30K/month</span>
+                  <span className="text-lg font-bold text-accent">Earn upto ₹20-30K/month</span>
                 </div>
               </CardContent>
             </Card>
@@ -284,7 +284,7 @@ const Partners = () => {
                   </li>
                 </ul>
                 <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
-                  <span className="text-lg font-bold text-success">Earn upto ₹30K/month</span>
+                  <span className="text-lg font-bold text-success">Earn upto ₹50K/month</span>
                 </div>
               </CardContent>
             </Card>
