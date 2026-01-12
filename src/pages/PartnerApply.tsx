@@ -127,7 +127,9 @@ const PartnerApply = () => {
           return;
         }
         if (existing.phone === normalizedPhone) {
-          toast.error("An application with this phone number already exists. Please use a different number.");
+          toast.info("Your application is already submitted! Please check your email for next steps.", {
+            duration: 6000,
+          });
           setIsSubmitting(false);
           return;
         }
