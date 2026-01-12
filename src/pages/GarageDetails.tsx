@@ -18,6 +18,7 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 
 interface Garage {
   id: string;
@@ -235,7 +236,7 @@ const GarageDetails = () => {
 
   const heroImage = photos.length > 0 
     ? photos[0].photo_url 
-    : garage.photo_url || "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=1200&h=600&fit=crop";
+    : garage.photo_url || defaultGaragePlaceholder;
 
   const services = garage.services || [];
   const displayedTags = showAllTags ? services : services.slice(0, 4);
