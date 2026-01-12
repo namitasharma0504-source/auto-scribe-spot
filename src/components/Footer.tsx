@@ -65,7 +65,7 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Partners</h4>
             <ul className="space-y-2 text-muted-foreground text-sm">
-              <li><Link to="/partners" className="hover:text-primary transition-colors">Partner Program</Link></li>
+              <li><Link to="/partners" onClick={() => window.scrollTo(0, 0)} className="hover:text-primary transition-colors">Partner Program</Link></li>
               <li><Link to="/partner-apply" className="hover:text-primary transition-colors">Apply Now</Link></li>
             </ul>
           </div>
