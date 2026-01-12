@@ -120,7 +120,9 @@ const PartnerApply = () => {
       if (existingApplications && existingApplications.length > 0) {
         const existing = existingApplications[0];
         if (existing.email === normalizedEmail) {
-          toast.error("An application with this email already exists. Please use a different email.");
+          toast.info("Your application is already submitted! Please check your email for next steps.", {
+            duration: 6000,
+          });
           setIsSubmitting(false);
           return;
         }
