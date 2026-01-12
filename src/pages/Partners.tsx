@@ -217,12 +217,8 @@ const Partners = () => {
                     <span>Add garage details online</span>
                   </li>
                 </ul>
-                <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Per Garage</span>
-                    <span className="text-lg font-bold text-primary">₹15 - ₹50</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">Add 20+ garages/day = ₹15,000+/month</div>
+                <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
+                  <span className="text-lg font-bold text-primary">Earn upto ₹30K/month</span>
                 </div>
               </CardContent>
             </Card>
@@ -254,12 +250,8 @@ const Partners = () => {
                     <span>Close subscription deals</span>
                   </li>
                 </ul>
-                <div className="bg-accent/5 rounded-lg p-3 border border-accent/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Per Sale</span>
-                    <span className="text-lg font-bold text-accent">₹500 - ₹2,000</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">Close 10 deals/month = ₹10,000+</div>
+                <div className="bg-accent/5 rounded-lg p-3 border border-accent/20 text-center">
+                  <span className="text-lg font-bold text-accent">Earn upto ₹30K/month</span>
                 </div>
               </CardContent>
             </Card>
@@ -291,12 +283,8 @@ const Partners = () => {
                     <span>Close software deals</span>
                   </li>
                 </ul>
-                <div className="bg-success/5 rounded-lg p-3 border border-success/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Per Sale</span>
-                    <span className="text-lg font-bold text-success">₹5,000 - ₹15,000</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">Close 3 deals/month = ₹30,000+</div>
+                <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
+                  <span className="text-lg font-bold text-success">Earn upto ₹30K/month</span>
                 </div>
               </CardContent>
             </Card>
