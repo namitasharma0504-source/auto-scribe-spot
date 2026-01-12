@@ -370,6 +370,20 @@ const Index = () => {
               </div>
             </Suspense>
           )}
+          
+          {/* View All Garages CTA */}
+          <div className="mt-10 text-center">
+            <Link to="/search">
+              <Button size="lg" className="text-lg px-10 h-14 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 gap-3">
+                <Search className="w-5 h-5" />
+                View All Garages
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <p className="text-sm text-muted-foreground mt-3">
+              Browse 5,000+ verified garages across India
+            </p>
+          </div>
         </div>
       </section>
 
