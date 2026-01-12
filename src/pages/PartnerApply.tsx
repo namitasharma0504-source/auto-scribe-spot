@@ -108,31 +108,38 @@ const PartnerApply = () => {
       const normalizedEmail = formData.email.trim().toLowerCase();
       const normalizedPhone = formData.phone.trim();
 
-      // Check for duplicate email or phone
-      const { data: existingApplications, error: checkError } = await supabase
+      // Check for duplicate email
+      const { data: emailCheck, error: emailCheckError } = await supabase
         .from("partner_applications")
-        .select("email, phone")
-        .or(`email.eq.${normalizedEmail},phone.eq.${normalizedPhone}`)
+        .select("email")
+        .eq("email", normalizedEmail)
         .limit(1);
 
-      if (checkError) throw checkError;
+      if (emailCheckError) throw emailCheckError;
 
-      if (existingApplications && existingApplications.length > 0) {
-        const existing = existingApplications[0];
-        if (existing.email === normalizedEmail) {
-          toast.info("Your application is already submitted! Please check your email for next steps.", {
-            duration: 6000,
-          });
-          setIsSubmitting(false);
-          return;
-        }
-        if (existing.phone === normalizedPhone) {
-          toast.info("Your application is already submitted! Please check your email for next steps.", {
-            duration: 6000,
-          });
-          setIsSubmitting(false);
-          return;
-        }
+      if (emailCheck && emailCheck.length > 0) {
+        toast.info("Your application is already submitted! Please check your email for next steps.", {
+          duration: 6000,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check for duplicate phone
+      const { data: phoneCheck, error: phoneCheckError } = await supabase
+        .from("partner_applications")
+        .select("phone")
+        .eq("phone", normalizedPhone)
+        .limit(1);
+
+      if (phoneCheckError) throw phoneCheckError;
+
+      if (phoneCheck && phoneCheck.length > 0) {
+        toast.info("Your application is already submitted! Please check your email for next steps.", {
+          duration: 6000,
+        });
+        setIsSubmitting(false);
+        return;
       }
 
       const stateName = indiaStates.find(s => s.value === formData.state)?.label || formData.state;
