@@ -8,6 +8,7 @@ import { GarageActivityStats, GarageActivityData } from "./GarageActivityStats";
 import { GarageMapPreview } from "./GarageMapPreview";
 import { GetQuoteDialog } from "./GetQuoteDialog";
 import { GaragePhotoGallery, PhotoIndicator } from "./GaragePhotoGallery";
+import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -49,9 +50,9 @@ export function GarageCard({
   const [imageError, setImageError] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   
-  // Use photos array if available, otherwise fall back to single imageUrl
+  // Use photos array if available, otherwise fall back to single imageUrl or default placeholder
   const allPhotos = photos.length > 0 ? photos : (imageUrl ? [imageUrl] : []);
-  const mainPhoto = allPhotos[0] || imageUrl;
+  const mainPhoto = allPhotos[0] || imageUrl || defaultGaragePlaceholder;
 
   const handlePhotoClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,20 +67,12 @@ export function GarageCard({
       <Card className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
         <Link to={`/garage/${garageSlug}`}>
           <div className="relative h-48 overflow-hidden bg-muted" onClick={allPhotos.length > 1 ? handlePhotoClick : undefined}>
-            {mainPhoto && !imageError ? (
-              <img
-                src={mainPhoto}
-                alt={name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <span className="text-5xl font-bold text-primary/40">
-                  {name.charAt(0)}
-                </span>
-              </div>
-            )}
+            <img
+              src={imageError ? defaultGaragePlaceholder : mainPhoto}
+              alt={name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImageError(true)}
+            />
             <div className="absolute top-3 right-3 bg-card/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
               <div className="flex items-center gap-1.5">
                 <StarRating rating={1} maxRating={1} size="sm" />
