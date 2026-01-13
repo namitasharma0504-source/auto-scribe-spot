@@ -33,6 +33,7 @@ import Partners from "./pages/Partners";
 import PartnerApply from "./pages/PartnerApply";
 import PartnerAuth from "./pages/PartnerAuth";
 import PartnerDashboard from "./pages/PartnerDashboard";
+import PartnerProfile from "./pages/PartnerProfile";
 import Webinar from "./pages/Webinar";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/partner-apply" element={<PartnerApply />} />
             <Route path="/partner-login" element={<PartnerAuth />} />
             <Route path="/partner-dashboard" element={<PartnerDashboard />} />
+            <Route path="/partner-profile" element={<PartnerProfile />} />
             <Route path="/webinar" element={<Webinar />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

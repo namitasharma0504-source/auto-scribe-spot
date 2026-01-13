@@ -387,6 +387,12 @@ export default function PartnerDashboard() {
                 Add Listing
               </Button>
             </Link>
+            <Link to="/partner-profile">
+              <Button variant="outline" className="gap-2">
+                <Users className="w-4 h-4" />
+                Profile
+              </Button>
+            </Link>
             <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
               <Home className="w-4 h-4" />
             </Button>
