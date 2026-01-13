@@ -74,6 +74,63 @@ export type Database = {
         }
         Relationships: []
       }
+      disputes: {
+        Row: {
+          admin_response: string | null
+          created_at: string | null
+          gin: string | null
+          id: string
+          listing_id: string | null
+          outcome: string | null
+          partner_id: string
+          reason: string
+          resolution_date: string | null
+          status: string | null
+          supporting_evidence: string[] | null
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string | null
+          gin?: string | null
+          id?: string
+          listing_id?: string | null
+          outcome?: string | null
+          partner_id: string
+          reason: string
+          resolution_date?: string | null
+          status?: string | null
+          supporting_evidence?: string[] | null
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string | null
+          gin?: string | null
+          id?: string
+          listing_id?: string | null
+          outcome?: string | null
+          partner_id?: string
+          reason?: string
+          resolution_date?: string | null
+          status?: string | null
+          supporting_evidence?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "partner_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garage_claim_requests: {
         Row: {
           admin_notes: string | null
@@ -376,10 +433,12 @@ export type Database = {
           location_link: string | null
           name: string
           owner_id: string | null
+          partner_id: string | null
           phone: string | null
           photo_url: string | null
           pricing: string | null
           rating: number | null
+          referral_source: string | null
           response_time: string | null
           review_count: number | null
           services: string[] | null
@@ -406,10 +465,12 @@ export type Database = {
           location_link?: string | null
           name: string
           owner_id?: string | null
+          partner_id?: string | null
           phone?: string | null
           photo_url?: string | null
           pricing?: string | null
           rating?: number | null
+          referral_source?: string | null
           response_time?: string | null
           review_count?: number | null
           services?: string[] | null
@@ -436,10 +497,12 @@ export type Database = {
           location_link?: string | null
           name?: string
           owner_id?: string | null
+          partner_id?: string | null
           phone?: string | null
           photo_url?: string | null
           pricing?: string | null
           rating?: number | null
+          referral_source?: string | null
           response_time?: string | null
           review_count?: number | null
           services?: string[] | null
@@ -511,6 +574,265 @@ export type Database = {
           why_join?: string
         }
         Relationships: []
+      }
+      partner_feedback: {
+        Row: {
+          created_at: string | null
+          earning_potential_rating: number | null
+          ease_of_use_rating: number | null
+          id: string
+          overall_rating: number | null
+          partner_id: string
+          payment_transparency_rating: number | null
+          suggestions: string | null
+          support_quality_rating: number | null
+          written_feedback: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          earning_potential_rating?: number | null
+          ease_of_use_rating?: number | null
+          id?: string
+          overall_rating?: number | null
+          partner_id: string
+          payment_transparency_rating?: number | null
+          suggestions?: string | null
+          support_quality_rating?: number | null
+          written_feedback?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          earning_potential_rating?: number | null
+          ease_of_use_rating?: number | null
+          id?: string
+          overall_rating?: number | null
+          partner_id?: string
+          payment_transparency_rating?: number | null
+          suggestions?: string | null
+          support_quality_rating?: number | null
+          written_feedback?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_feedback_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_listings: {
+        Row: {
+          approved_at: string | null
+          base_earning: number | null
+          created_at: string | null
+          gin: string | null
+          gms_earning: number | null
+          gms_payment_id: string | null
+          gms_upsell: boolean | null
+          id: string
+          listing_id: string | null
+          partner_id: string
+          payout_date: string | null
+          payout_status: string | null
+          payout_transaction_id: string | null
+          rejection_reason: string | null
+          reputation_earning: number | null
+          reputation_payment_id: string | null
+          reputation_upsell: boolean | null
+          status: string | null
+          submitted_at: string | null
+          total_earning: number | null
+        }
+        Insert: {
+          approved_at?: string | null
+          base_earning?: number | null
+          created_at?: string | null
+          gin?: string | null
+          gms_earning?: number | null
+          gms_payment_id?: string | null
+          gms_upsell?: boolean | null
+          id?: string
+          listing_id?: string | null
+          partner_id: string
+          payout_date?: string | null
+          payout_status?: string | null
+          payout_transaction_id?: string | null
+          rejection_reason?: string | null
+          reputation_earning?: number | null
+          reputation_payment_id?: string | null
+          reputation_upsell?: boolean | null
+          status?: string | null
+          submitted_at?: string | null
+          total_earning?: number | null
+        }
+        Update: {
+          approved_at?: string | null
+          base_earning?: number | null
+          created_at?: string | null
+          gin?: string | null
+          gms_earning?: number | null
+          gms_payment_id?: string | null
+          gms_upsell?: boolean | null
+          id?: string
+          listing_id?: string | null
+          partner_id?: string
+          payout_date?: string | null
+          payout_status?: string | null
+          payout_transaction_id?: string | null
+          rejection_reason?: string | null
+          reputation_earning?: number | null
+          reputation_payment_id?: string | null
+          reputation_upsell?: boolean | null
+          status?: string | null
+          submitted_at?: string | null
+          total_earning?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_listings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "garages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_listings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          aadhaar_document: string | null
+          aadhaar_number: string | null
+          account_holder_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          bank_verified: boolean | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          ifsc_code: string | null
+          kyc_status: string | null
+          last_login: string | null
+          pan_document: string | null
+          pan_number: string | null
+          phone: string
+          profile_photo: string | null
+          status: string | null
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          aadhaar_document?: string | null
+          aadhaar_number?: string | null
+          account_holder_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          bank_verified?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id: string
+          ifsc_code?: string | null
+          kyc_status?: string | null
+          last_login?: string | null
+          pan_document?: string | null
+          pan_number?: string | null
+          phone: string
+          profile_photo?: string | null
+          status?: string | null
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          aadhaar_document?: string | null
+          aadhaar_number?: string | null
+          account_holder_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          bank_verified?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          ifsc_code?: string | null
+          kyc_status?: string | null
+          last_login?: string | null
+          pan_document?: string | null
+          pan_number?: string | null
+          phone?: string
+          profile_photo?: string | null
+          status?: string | null
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          data_collection_count: number | null
+          data_collection_earnings: number | null
+          gms_earnings: number | null
+          gms_sales_count: number | null
+          id: string
+          partner_id: string
+          payout_date: string
+          processed_at: string | null
+          reputation_earnings: number | null
+          reputation_sales_count: number | null
+          status: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          data_collection_count?: number | null
+          data_collection_earnings?: number | null
+          gms_earnings?: number | null
+          gms_sales_count?: number | null
+          id?: string
+          partner_id: string
+          payout_date: string
+          processed_at?: string | null
+          reputation_earnings?: number | null
+          reputation_sales_count?: number | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          data_collection_count?: number | null
+          data_collection_earnings?: number | null
+          gms_earnings?: number | null
+          gms_sales_count?: number | null
+          id?: string
+          partner_id?: string
+          payout_date?: string
+          processed_at?: string | null
+          reputation_earnings?: number | null
+          reputation_sales_count?: number | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -732,6 +1054,8 @@ export type Database = {
     }
     Functions: {
       generate_garage_slug: { Args: { garage_name: string }; Returns: string }
+      generate_gin: { Args: never; Returns: string }
+      generate_partner_id: { Args: never; Returns: string }
       get_public_reviews: {
         Args: never
         Returns: {
