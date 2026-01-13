@@ -448,19 +448,27 @@ const ListGarage = () => {
       }
       
       // Validation-based auto-approval logic
-      // Auto-approve if all required fields are valid
       const isValidPhone = /^[\d\s\-+()]{8,15}$/.test(formData.phone.trim());
       const isValidAddress = formData.address.trim().length >= 10;
       const hasServices = formData.services.length > 0;
       const hasValidName = formData.garageName.trim().length >= 2;
-      
-      // Auto-approve if all validations pass
       const shouldAutoApprove = isValidPhone && isValidAddress && hasServices && hasValidName;
 
-      // If listing as owner, set owner_id
       const isOwner = listingType === "owner";
+      const isPartner = listingType === "partner";
       
-      const { error } = await supabase
+      // For partners, get their partner record
+      let partnerId: string | null = null;
+      if (isPartner) {
+        const { data: partnerData } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        partnerId = partnerData?.id || null;
+      }
+      
+      const { data: garageData, error } = await supabase
         .from('garages')
         .insert({
           name: formData.garageName.trim(),
@@ -477,9 +485,13 @@ const ListGarage = () => {
           submitted_by: user.id,
           owner_id: isOwner ? user.id : null,
           listing_type: listingType,
+          partner_id: partnerId,
+          referral_source: isPartner ? 'partner' : 'direct',
           rating: 5.0,
           review_count: 0
-        });
+        })
+        .select('id')
+        .single();
       
       if (error) throw error;
 
@@ -488,6 +500,25 @@ const ListGarage = () => {
         await supabase
           .from('user_roles')
           .upsert({ user_id: user.id, role: 'garage_owner' }, { onConflict: 'user_id,role' });
+      }
+      
+      // If partner, create partner_listings entry with GIN and base earning
+      if (isPartner && partnerId && garageData?.id) {
+        const { error: listingError } = await supabase
+          .from('partner_listings')
+          .insert({
+            partner_id: partnerId,
+            listing_id: garageData.id,
+            status: 'pending',
+            base_earning: 20,
+            total_earning: 20,
+            payout_status: 'pending',
+            submitted_at: new Date().toISOString(),
+          });
+        
+        if (listingError) {
+          console.error('Error creating partner listing:', listingError);
+        }
       }
       
       if (shouldAutoApprove) {
@@ -504,10 +535,9 @@ const ListGarage = () => {
       if (listingType === "owner") {
         navigate("/garage-dashboard");
       } else if (listingType === "partner") {
-        // Partner listing - redirect to list another garage
-        navigate("/list-garage");
+        toast.success("Listing submitted! Earn ₹20 when approved. You can now upsell services.");
+        navigate("/partner-dashboard");
       } else {
-        // Customer listing a garage they visited - redirect home
         navigate("/");
       }
     } catch (error) {
