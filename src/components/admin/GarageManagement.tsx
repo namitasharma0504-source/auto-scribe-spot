@@ -113,6 +113,7 @@ interface Garage {
   photo_url: string | null;
   submitted_by: string | null;
   listing_type: string | null;
+  partner_id: string | null;
   approval_notes: string | null;
   created_at: string;
   // Joined data
@@ -127,12 +128,19 @@ interface GaragePhoto {
   created_at: string;
 }
 
+interface Partner {
+  id: string;
+  full_name: string;
+  username: string;
+}
+
 export function GarageManagement() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [garages, setGarages] = useState<Garage[]>([]);
   const [garagePhotos, setGaragePhotos] = useState<GaragePhoto[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
@@ -146,10 +154,26 @@ export function GarageManagement() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
+  const [partnerFilter, setPartnerFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchGarages();
+    fetchPartners();
   }, []);
+
+  const fetchPartners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("partners")
+        .select("id, full_name, username")
+        .order("full_name", { ascending: true });
+
+      if (error) throw error;
+      setPartners(data || []);
+    } catch (error: any) {
+      console.error("Error fetching partners:", error);
+    }
+  };
 
   const fetchGarages = async () => {
     setIsLoading(true);
@@ -705,9 +729,17 @@ export function GarageManagement() {
     const matchesListingType = listingTypeFilter === "all" || 
       (listingTypeFilter === "admin" && (!garage.listing_type || garage.listing_type === "admin")) ||
       garage.listing_type === listingTypeFilter;
+
+    const matchesPartner = partnerFilter === "all" || garage.partner_id === partnerFilter;
     
-    return matchesSearch && matchesListingType;
+    return matchesSearch && matchesListingType && matchesPartner;
   });
+
+  // Count garages per partner for the filter dropdown
+  const partnerGarageCounts = partners.reduce((acc, partner) => {
+    acc[partner.id] = garages.filter(g => g.partner_id === partner.id).length;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-6">
@@ -736,7 +768,13 @@ export function GarageManagement() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
+          <Select value={listingTypeFilter} onValueChange={(val) => {
+            setListingTypeFilter(val);
+            // Reset partner filter if not filtering by partners
+            if (val !== "partner") {
+              setPartnerFilter("all");
+            }
+          }}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
@@ -748,6 +786,28 @@ export function GarageManagement() {
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
+          
+          {/* Partner Filter - Show when filtering by partners or always for convenience */}
+          <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+            <SelectTrigger className="w-[200px]">
+              <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Filter by Partner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Partners</SelectItem>
+              {partners.map((partner) => (
+                <SelectItem key={partner.id} value={partner.id}>
+                  <div className="flex items-center justify-between w-full gap-2">
+                    <span className="truncate">{partner.full_name}</span>
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {partnerGarageCounts[partner.id] || 0}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Button variant="outline" onClick={fetchGarages} className="gap-2">
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
