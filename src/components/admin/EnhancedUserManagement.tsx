@@ -15,7 +15,9 @@ import {
   Briefcase,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  IndianRupee,
+  TrendingUp
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,11 +76,18 @@ interface PartnerAccount {
   created_at: string | null;
 }
 
+interface PartnerEarnings {
+  partner_id: string;
+  total_earned: number;
+  pending_payout: number;
+}
+
 export function EnhancedUserManagement() {
   const { toast } = useToast();
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [partners, setPartners] = useState<PartnerAccount[]>([]);
+  const [partnerEarnings, setPartnerEarnings] = useState<PartnerEarnings[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [partnerSearchQuery, setPartnerSearchQuery] = useState("");
@@ -95,19 +104,46 @@ export function EnhancedUserManagement() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const [rolesResult, profilesResult, partnersResult] = await Promise.all([
+      const [rolesResult, profilesResult, partnersResult, listingsResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
         supabase.from("profiles").select("user_id, full_name"),
-        supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false })
+        supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
+        supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status")
       ]);
 
       if (rolesResult.error) throw rolesResult.error;
       if (profilesResult.error) throw profilesResult.error;
       if (partnersResult.error) throw partnersResult.error;
+      if (listingsResult.error) throw listingsResult.error;
 
       setUserRoles(rolesResult.data || []);
       setProfiles(profilesResult.data || []);
       setPartners(partnersResult.data || []);
+
+      // Calculate earnings per partner
+      const earningsMap = new Map<string, { total: number; pending: number }>();
+      (listingsResult.data || []).forEach((listing) => {
+        if (!listing.partner_id) return;
+        const current = earningsMap.get(listing.partner_id) || { total: 0, pending: 0 };
+        const earning = listing.total_earning || 0;
+        
+        // Count approved listings for total earned
+        if (listing.status === "approved") {
+          current.total += earning;
+          // Pending payout = approved but not yet paid
+          if (listing.payout_status !== "paid") {
+            current.pending += earning;
+          }
+        }
+        earningsMap.set(listing.partner_id, current);
+      });
+
+      const earnings: PartnerEarnings[] = Array.from(earningsMap.entries()).map(([partner_id, data]) => ({
+        partner_id,
+        total_earned: data.total,
+        pending_payout: data.pending,
+      }));
+      setPartnerEarnings(earnings);
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
@@ -287,6 +323,22 @@ export function EnhancedUserManagement() {
     active: "bg-green-500/10 text-green-600 border-green-500/30",
     inactive: "bg-gray-500/10 text-gray-600 border-gray-500/30",
     suspended: "bg-red-500/10 text-red-600 border-red-500/30",
+  };
+
+  const getPartnerEarnings = (partnerId: string): PartnerEarnings => {
+    return partnerEarnings.find((e) => e.partner_id === partnerId) || {
+      partner_id: partnerId,
+      total_earned: 0,
+      pending_payout: 0,
+    };
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
@@ -595,75 +647,109 @@ export function EnhancedUserManagement() {
                       <TableRow>
                         <TableHead>Partner ID</TableHead>
                         <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
+                        <TableHead>Contact</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>KYC</TableHead>
+                        <TableHead className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            Total Earned
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Clock className="w-3 h-3" />
+                            Pending
+                          </div>
+                        </TableHead>
                         <TableHead>Joined</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredPartners.map((partner) => (
-                        <TableRow key={partner.id}>
-                          <TableCell>
-                            <code className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded font-mono">
-                              {partner.id}
-                            </code>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{partner.full_name}</p>
-                              <p className="text-xs text-muted-foreground">@{partner.username}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {partner.email ? (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Mail className="w-3 h-3 text-muted-foreground" />
-                                <span className="truncate max-w-[150px]">{partner.email}</span>
+                      {filteredPartners.map((partner) => {
+                        const earnings = getPartnerEarnings(partner.id);
+                        return (
+                          <TableRow key={partner.id}>
+                            <TableCell>
+                              <code className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded font-mono">
+                                {partner.id}
+                              </code>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{partner.full_name}</p>
+                                <p className="text-xs text-muted-foreground">@{partner.username}</p>
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {partner.phone ? (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Phone className="w-3 h-3 text-muted-foreground" />
-                                {partner.phone}
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {partner.email && (
+                                  <div className="flex items-center gap-1 text-xs">
+                                    <Mail className="w-3 h-3 text-muted-foreground" />
+                                    <span className="truncate max-w-[120px]">{partner.email}</span>
+                                  </div>
+                                )}
+                                {partner.phone && (
+                                  <div className="flex items-center gap-1 text-xs">
+                                    <Phone className="w-3 h-3 text-muted-foreground" />
+                                    {partner.phone}
+                                  </div>
+                                )}
+                                {!partner.email && !partner.phone && (
+                                  <span className="text-muted-foreground text-sm">-</span>
+                                )}
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={statusColors[partner.status || "inactive"]}
-                            >
-                              {partner.status === "active" && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {partner.status === "inactive" && <XCircle className="w-3 h-3 mr-1" />}
-                              {partner.status || "inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={kycStatusColors[partner.kyc_status || "pending"]}
-                            >
-                              {partner.kyc_status === "verified" && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {partner.kyc_status === "pending" && <Clock className="w-3 h-3 mr-1" />}
-                              {partner.kyc_status || "pending"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {partner.created_at 
-                              ? format(new Date(partner.created_at), "dd MMM yyyy")
-                              : "-"
-                            }
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={statusColors[partner.status || "inactive"]}
+                              >
+                                {partner.status === "active" && <CheckCircle className="w-3 h-3 mr-1" />}
+                                {partner.status === "inactive" && <XCircle className="w-3 h-3 mr-1" />}
+                                {partner.status || "inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={kycStatusColors[partner.kyc_status || "pending"]}
+                              >
+                                {partner.kyc_status === "verified" && <CheckCircle className="w-3 h-3 mr-1" />}
+                                {partner.kyc_status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                                {partner.kyc_status || "pending"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <IndianRupee className="w-3 h-3 text-emerald-600" />
+                                <span className={`font-semibold ${earnings.total_earned > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                                  {earnings.total_earned > 0 
+                                    ? formatCurrency(earnings.total_earned).replace("₹", "")
+                                    : "0"
+                                  }
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {earnings.pending_payout > 0 ? (
+                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                                  <IndianRupee className="w-3 h-3 mr-0.5" />
+                                  {formatCurrency(earnings.pending_payout).replace("₹", "")}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {partner.created_at 
+                                ? format(new Date(partner.created_at), "dd MMM yyyy")
+                                : "-"
+                              }
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
