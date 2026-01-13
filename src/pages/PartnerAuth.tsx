@@ -26,31 +26,28 @@ export default function PartnerAuth() {
 
   useEffect(() => {
     if (user) {
-      // Check if user has an approved partner application
-      const checkPartnerStatus = async () => {
-        const { data: application } = await supabase
-          .from("partner_applications")
-          .select("status, email")
-          .eq("email", user.email)
-          .single();
+      // Check if user has partner role
+      const checkPartnerRole = async () => {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "partner")
+          .maybeSingle();
 
-        if (application?.status === "approved") {
+        if (roleData) {
           toast({
             title: "Welcome, Partner!",
             description: "Redirecting to your dashboard.",
           });
-          // For now redirect to list-garage since partners list garages
+          // Redirect partners to list-garage page
           navigate("/list-garage");
-        } else if (application) {
-          setError(`Your partner application is ${application.status}. Please wait for approval.`);
-          // Sign out if not approved
-          await supabase.auth.signOut();
         } else {
-          setError("No partner application found for this email. Please apply first.");
+          setError("You don't have partner access. Please contact admin.");
           await supabase.auth.signOut();
         }
       };
-      checkPartnerStatus();
+      checkPartnerRole();
     }
   }, [user, navigate, toast]);
 
@@ -78,25 +75,6 @@ export default function PartnerAuth() {
     setIsLoading(true);
     setError(null);
 
-    // First check if email has an approved partner application
-    const { data: application } = await supabase
-      .from("partner_applications")
-      .select("status")
-      .eq("email", email)
-      .single();
-
-    if (!application) {
-      setIsLoading(false);
-      setError("No partner application found for this email. Please apply first.");
-      return;
-    }
-
-    if (application.status !== "approved") {
-      setIsLoading(false);
-      setError(`Your partner application is ${application.status}. Please wait for approval.`);
-      return;
-    }
-
     const { error: signInError } = await signIn(email, password);
 
     if (signInError) {
@@ -109,13 +87,14 @@ export default function PartnerAuth() {
         variant: "destructive",
       });
     }
+    // Role check happens in useEffect after successful sign-in
   };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await signInWithGoogle(`${window.location.origin}/list-garage`);
+    const { error } = await signInWithGoogle(`${window.location.origin}/partner-login`);
 
     if (error) {
       setIsLoading(false);
@@ -137,7 +116,7 @@ export default function PartnerAuth() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Partner Login</CardTitle>
-          <CardDescription>Sign in to access your partner dashboard</CardDescription>
+          <CardDescription>Sign in with credentials provided by MeriGarage</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -229,7 +208,7 @@ export default function PartnerAuth() {
 
           <div className="mt-6 space-y-3">
             <p className="text-center text-sm text-muted-foreground">
-              Not a partner yet?{" "}
+              Want to become a partner?{" "}
               <a href="/partner-apply" className="text-emerald-600 hover:underline font-medium">
                 Apply Now
               </a>

@@ -47,7 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface UserRole {
   id: string;
   user_id: string;
-  role: "admin" | "customer" | "garage_owner";
+  role: "admin" | "customer" | "garage_owner" | "partner";
 }
 
 interface Profile {
@@ -68,7 +68,7 @@ export function EnhancedUserManagement() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner">("admin");
+  const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
   const [showPassword, setShowPassword] = useState(false);
 
   const fetchUsers = async () => {
@@ -196,7 +196,7 @@ export function EnhancedUserManagement() {
     }
   };
 
-  const handleChangeRole = async (roleId: string, userId: string, newRole: "admin" | "customer" | "garage_owner") => {
+  const handleChangeRole = async (roleId: string, userId: string, newRole: "admin" | "customer" | "garage_owner" | "partner") => {
     try {
       // Delete existing role and create new one
       const { error: deleteError } = await supabase
@@ -232,12 +232,14 @@ export function EnhancedUserManagement() {
     admin: "bg-red-500/10 text-red-600 border-red-500/30",
     customer: "bg-blue-500/10 text-blue-600 border-blue-500/30",
     garage_owner: "bg-green-500/10 text-green-600 border-green-500/30",
+    partner: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
   };
 
   const roleIcons = {
     admin: ShieldCheck,
     customer: Users,
     garage_owner: Shield,
+    partner: Users,
   };
 
   const filteredRoles = userRoles.filter(role => {
@@ -337,6 +339,7 @@ export function EnhancedUserManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
                       <SelectItem value="customer">Customer</SelectItem>
                       <SelectItem value="garage_owner">Garage Owner</SelectItem>
                     </SelectContent>
@@ -461,6 +464,7 @@ export function EnhancedUserManagement() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="partner">Partner</SelectItem>
                               <SelectItem value="customer">Customer</SelectItem>
                               <SelectItem value="garage_owner">Garage Owner</SelectItem>
                             </SelectContent>

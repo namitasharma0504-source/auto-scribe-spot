@@ -35,7 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface UserRole {
   id: string;
   user_id: string;
-  role: "admin" | "customer" | "garage_owner";
+  role: "admin" | "customer" | "garage_owner" | "partner";
   email?: string;
 }
 
@@ -52,7 +52,7 @@ export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner">("admin");
+  const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -148,16 +148,18 @@ export function UserManagement() {
     }
   };
 
-  const roleColors = {
+  const roleColors: Record<string, string> = {
     admin: "bg-red-500/10 text-red-600 border-red-500/30",
     customer: "bg-blue-500/10 text-blue-600 border-blue-500/30",
     garage_owner: "bg-green-500/10 text-green-600 border-green-500/30",
+    partner: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
   };
 
-  const roleIcons = {
+  const roleIcons: Record<string, any> = {
     admin: ShieldCheck,
     customer: Users,
     garage_owner: Shield,
+    partner: Users,
   };
 
   const filteredRoles = userRoles.filter(role => {
@@ -217,6 +219,7 @@ export function UserManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
                       <SelectItem value="customer">Customer</SelectItem>
                       <SelectItem value="garage_owner">Garage Owner</SelectItem>
                     </SelectContent>
