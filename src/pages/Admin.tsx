@@ -19,7 +19,8 @@ import {
   FileText,
   Handshake,
   ClipboardList,
-  Scale
+  Scale,
+  Trophy
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import { PartnerApplicationsManagement } from "@/components/admin/PartnerApplica
 import { PartnerManagement } from "@/components/admin/PartnerManagement";
 import { PartnerListingsManagement } from "@/components/admin/PartnerListingsManagement";
 import { PartnerDisputesManagement } from "@/components/admin/PartnerDisputesManagement";
+import { PartnerLeaderboard } from "@/components/admin/PartnerLeaderboard";
 import {
   Dialog,
   DialogContent,
@@ -579,6 +581,10 @@ export default function Admin() {
               <ClipboardList className="w-4 h-4" />
               Partner Listings
             </TabsTrigger>
+            <TabsTrigger value="partner-leaderboard" className="gap-2">
+              <Trophy className="w-4 h-4" />
+              Leaderboard
+            </TabsTrigger>
             <TabsTrigger value="partner-applications" className="gap-2">
               <Users className="w-4 h-4" />
               Applications
@@ -834,6 +840,10 @@ export default function Admin() {
                 <PartnerListingsManagement />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="partner-leaderboard">
+            <PartnerLeaderboard />
           </TabsContent>
 
           <TabsContent value="partner-applications">
