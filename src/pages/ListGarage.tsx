@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle } from "lucide-react";
+import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle, User, Store } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 import { cn } from "@/lib/utils";
 
@@ -108,9 +110,11 @@ const otherCountryStates: Record<string, { value: string; label: string }[]> = {
 
 const ListGarage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [listingType, setListingType] = useState<"owner" | "customer" | "">("");
   const [formData, setFormData] = useState({
     garageName: "",
     phone: "",
@@ -414,8 +418,12 @@ const ListGarage = () => {
     setIsSubmitting(true);
     
     try {
-      // Get current user for tracking who submitted
-      const { data: { user } } = await supabase.auth.getUser();
+      // User is guaranteed to be logged in (ProtectedRoute)
+      if (!user) {
+        toast.error("Please sign in to list a garage");
+        navigate("/auth");
+        return;
+      }
       
       // Upload photo first if selected
       let photoUrl = null;
@@ -448,6 +456,9 @@ const ListGarage = () => {
       
       // Auto-approve if all validations pass
       const shouldAutoApprove = isValidPhone && isValidAddress && hasServices && hasValidName;
+
+      // If listing as owner, set owner_id
+      const isOwner = listingType === "owner";
       
       const { error } = await supabase
         .from('garages')
@@ -463,23 +474,38 @@ const ListGarage = () => {
           services: formData.services,
           is_verified: false,
           is_approved: shouldAutoApprove,
-          submitted_by: user?.id || null,
+          submitted_by: user.id,
+          owner_id: isOwner ? user.id : null,
           rating: 5.0,
           review_count: 0
         });
       
       if (error) throw error;
+
+      // If owner, add garage_owner role
+      if (isOwner) {
+        await supabase
+          .from('user_roles')
+          .upsert({ user_id: user.id, role: 'garage_owner' }, { onConflict: 'user_id,role' });
+      }
       
       if (shouldAutoApprove) {
         if (photoUploadFailed) {
-          toast.success("Your garage has been listed! Note: Photo upload failed - you can add photos later through the admin panel.");
+          toast.success("Your garage has been listed! Note: Photo upload failed - you can add photos later.");
         } else {
           toast.success("Your garage has been listed successfully! It's now live on the platform.");
         }
       } else {
         toast.success("Your garage has been submitted for review. We'll notify you once it's approved.");
       }
-      navigate("/");
+
+      // Redirect based on listing type
+      if (isOwner) {
+        navigate("/garage-dashboard");
+      } else {
+        // Customer listing a garage they visited - redirect to write review
+        navigate("/");
+      }
     } catch (error) {
       console.error('Error submitting garage:', error);
       toast.error("Failed to submit garage. Please try again.");
@@ -511,12 +537,78 @@ const ListGarage = () => {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Building2 className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">List Your Garage</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">List a Garage</h1>
             <p className="text-muted-foreground">
-              Join thousands of garages and start collecting reviews from your customers
+              Add a garage to our platform and help fellow car owners find trusted mechanics
             </p>
           </div>
 
+          {/* Listing Type Selection */}
+          {!listingType && (
+            <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border space-y-6 mb-6">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold mb-2">Who are you?</h2>
+                <p className="text-sm text-muted-foreground mb-6">Help us understand how to best serve you</p>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setListingType("owner")}
+                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group"
+                >
+                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Store className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-foreground">I'm a Garage Owner</h3>
+                    <p className="text-sm text-muted-foreground mt-1">I want to list my own garage and manage it</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setListingType("customer")}
+                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group"
+                >
+                  <div className="w-14 h-14 bg-secondary/50 rounded-full flex items-center justify-center group-hover:bg-secondary transition-colors">
+                    <User className="w-7 h-7 text-secondary-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-foreground">I'm a Customer</h3>
+                    <p className="text-sm text-muted-foreground mt-1">I visited a garage and want to list it</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Back to selection button */}
+          {listingType && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setListingType("")}
+              className="mb-4 gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Change selection
+            </Button>
+          )}
+
+          {listingType && (
+            <div className="mb-6">
+              <Badge variant={listingType === "owner" ? "default" : "secondary"} className="text-sm py-1 px-3">
+                {listingType === "owner" ? (
+                  <><Store className="w-3.5 h-3.5 mr-1.5" /> Listing as Garage Owner</>
+                ) : (
+                  <><User className="w-3.5 h-3.5 mr-1.5" /> Listing as Customer</>
+                )}
+              </Badge>
+            </div>
+          )}
+
+          {listingType && (
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border space-y-6">
             {/* Garage Name */}
             <div className="space-y-2" data-error={!!errors.garageName}>
@@ -894,6 +986,7 @@ const ListGarage = () => {
               {isSubmitting ? "Submitting..." : isUploading ? "Uploading Photo..." : "Submit Your Garage"}
             </Button>
           </form>
+          )}
         </div>
       </main>
 

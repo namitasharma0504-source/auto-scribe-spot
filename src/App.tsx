@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import SearchResults from "./pages/SearchResults";
 import GarageDetails from "./pages/GarageDetails";
@@ -61,7 +62,7 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/list-garage" element={<ListGarage />} />
+            <Route path="/list-garage" element={<ProtectedRoute><ListGarage /></ProtectedRoute>} />
             <Route path="/trust-safety" element={<TrustSafety />} />
             <Route path="/content-guidelines" element={<ContentGuidelines />} />
             <Route path="/advertise" element={<Advertise />} />
