@@ -114,7 +114,7 @@ const ListGarage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [listingType, setListingType] = useState<"owner" | "customer" | "">("");
+  const [listingType, setListingType] = useState<"owner" | "customer" | "partner" | "">("");
   const [formData, setFormData] = useState({
     garageName: "",
     phone: "",
@@ -476,6 +476,7 @@ const ListGarage = () => {
           is_approved: shouldAutoApprove,
           submitted_by: user.id,
           owner_id: isOwner ? user.id : null,
+          listing_type: listingType,
           rating: 5.0,
           review_count: 0
         });
@@ -500,10 +501,13 @@ const ListGarage = () => {
       }
 
       // Redirect based on listing type
-      if (isOwner) {
+      if (listingType === "owner") {
         navigate("/garage-dashboard");
+      } else if (listingType === "partner") {
+        // Partner listing - redirect to list another garage
+        navigate("/list-garage");
       } else {
-        // Customer listing a garage they visited - redirect to write review
+        // Customer listing a garage they visited - redirect home
         navigate("/");
       }
     } catch (error) {
@@ -551,7 +555,7 @@ const ListGarage = () => {
                 <p className="text-sm text-muted-foreground mb-6">Help us understand how to best serve you</p>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => setListingType("owner")}
@@ -579,6 +583,20 @@ const ListGarage = () => {
                     <p className="text-sm text-muted-foreground mt-1">I visited a garage and want to list it</p>
                   </div>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setListingType("partner")}
+                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
+                >
+                  <div className="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                    <Building2 className="w-7 h-7 text-blue-600" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-foreground">I'm a Channel Partner</h3>
+                    <p className="text-sm text-muted-foreground mt-1">I'm a MeriGarage partner listing garages</p>
+                  </div>
+                </button>
               </div>
             </div>
           )}
@@ -598,9 +616,17 @@ const ListGarage = () => {
 
           {listingType && (
             <div className="mb-6">
-              <Badge variant={listingType === "owner" ? "default" : "secondary"} className="text-sm py-1 px-3">
+              <Badge 
+                variant={listingType === "owner" ? "default" : "secondary"} 
+                className={cn(
+                  "text-sm py-1 px-3",
+                  listingType === "partner" && "bg-blue-500 hover:bg-blue-600 text-white"
+                )}
+              >
                 {listingType === "owner" ? (
                   <><Store className="w-3.5 h-3.5 mr-1.5" /> Listing as Garage Owner</>
+                ) : listingType === "partner" ? (
+                  <><Building2 className="w-3.5 h-3.5 mr-1.5" /> Listing as Channel Partner</>
                 ) : (
                   <><User className="w-3.5 h-3.5 mr-1.5" /> Listing as Customer</>
                 )}

@@ -372,6 +372,7 @@ export type Database = {
           is_certified: boolean | null
           is_recommended: boolean | null
           is_verified: boolean | null
+          listing_type: string | null
           location_link: string | null
           name: string
           owner_id: string | null
@@ -401,6 +402,7 @@ export type Database = {
           is_certified?: boolean | null
           is_recommended?: boolean | null
           is_verified?: boolean | null
+          listing_type?: string | null
           location_link?: string | null
           name: string
           owner_id?: string | null
@@ -430,6 +432,7 @@ export type Database = {
           is_certified?: boolean | null
           is_recommended?: boolean | null
           is_verified?: boolean | null
+          listing_type?: string | null
           location_link?: string | null
           name?: string
           owner_id?: string | null
