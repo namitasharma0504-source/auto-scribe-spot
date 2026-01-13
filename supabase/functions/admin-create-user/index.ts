@@ -126,6 +126,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // If role is 'partner', also create entry in partners table
+    if (role === "partner") {
+      // Generate a username from email
+      const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") + 
+        Math.floor(Math.random() * 1000);
+      
+      const { error: partnerError } = await supabaseAdmin
+        .from("partners")
+        .insert({
+          id: `MG${new Date().getFullYear()}P${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`,
+          user_id: newUser.user.id,
+          username: username,
+          full_name: fullName || email.split("@")[0],
+          email: email,
+          phone: "",
+          status: "active",
+          kyc_status: "pending",
+        });
+
+      if (partnerError) {
+        console.error("Error creating partner profile:", partnerError);
+      } else {
+        console.log(`Partner profile created for ${email}`);
+      }
+    }
+
     console.log(`User ${email} created successfully with role ${role}`);
 
     return new Response(
