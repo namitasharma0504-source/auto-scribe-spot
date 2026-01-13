@@ -31,6 +31,7 @@ import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import Partners from "./pages/Partners";
 import PartnerApply from "./pages/PartnerApply";
+import PartnerAuth from "./pages/PartnerAuth";
 import Webinar from "./pages/Webinar";
 import NotFound from "./pages/NotFound";
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/blog/:slug" element={<BlogArticle />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/partner-apply" element={<PartnerApply />} />
+            <Route path="/partner-login" element={<PartnerAuth />} />
             <Route path="/webinar" element={<Webinar />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
