@@ -609,6 +609,53 @@ export function EnhancedUserManagement() {
 
         {/* Partner Accounts Tab */}
         <TabsContent value="partners" className="space-y-4">
+          {/* Platform-Wide Earnings Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Partners</p>
+                    <p className="text-2xl font-bold text-emerald-600">{partners.length}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-emerald-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Platform-Wide Earnings</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatCurrency(partnerEarnings.reduce((sum, e) => sum + e.total_earned, 0))}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 to-yellow-500/10">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {formatCurrency(partnerEarnings.reduce((sum, e) => sum + e.pending_payout, 0))}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-yellow-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
