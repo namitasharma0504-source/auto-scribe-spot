@@ -304,7 +304,7 @@ export default function PartnerDashboard() {
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fuchsia-500"></div>
       </div>
     );
   }
@@ -376,7 +376,7 @@ export default function PartnerDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-emerald-600 border-emerald-600">
+              <Badge variant="outline" className="text-fuchsia-500 border-fuchsia-500">
                 Partner ID: {partner.id}
               </Badge>
               {partner.kyc_status === "verified" && (
@@ -393,7 +393,7 @@ export default function PartnerDashboard() {
           <div className="flex gap-2 mt-4 md:mt-0 flex-wrap">
             <Button 
               onClick={() => setShowStartTask(true)}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              className="gap-2 bg-fuchsia-500 hover:bg-fuchsia-600"
             >
               <Play className="w-4 h-4" />
               Start Task
@@ -443,28 +443,28 @@ export default function PartnerDashboard() {
         )}
 
         {/* Today's Quick Stats */}
-        <Card className="mb-6 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
+        <Card className="mb-6 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white">
           <CardContent className="py-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <p className="text-emerald-100 text-sm">Today's Earnings</p>
+                <p className="text-fuchsia-100 text-sm">Today's Earnings</p>
                 <p className="text-4xl font-bold">₹{todayEarning}</p>
-                <p className="text-emerald-200 text-sm mt-1">
+                <p className="text-fuchsia-200 text-sm mt-1">
                   {todayListings.length} listings submitted today
                 </p>
               </div>
               <div className="flex gap-4">
                 <div className="text-center px-4 py-2 bg-white/10 rounded-lg">
                   <p className="text-2xl font-bold">{listings.length}</p>
-                  <p className="text-xs text-emerald-100">Total Listings</p>
+                  <p className="text-xs text-fuchsia-100">Total Listings</p>
                 </div>
                 <div className="text-center px-4 py-2 bg-white/10 rounded-lg">
                   <p className="text-2xl font-bold">{listings.filter(l => l.reputation_upsell).length}</p>
-                  <p className="text-xs text-emerald-100">Rep Sales</p>
+                  <p className="text-xs text-fuchsia-100">Rep Sales</p>
                 </div>
                 <div className="text-center px-4 py-2 bg-white/10 rounded-lg">
                   <p className="text-2xl font-bold">{listings.filter(l => l.gms_upsell).length}</p>
-                  <p className="text-xs text-emerald-100">GMS Sales</p>
+                  <p className="text-xs text-fuchsia-100">GMS Sales</p>
                 </div>
               </div>
             </div>
@@ -476,7 +476,7 @@ export default function PartnerDashboard() {
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatDialog("earnings")}>
             <CardContent className="pt-6">
               <div className="flex flex-col">
-                <IndianRupee className="w-8 h-8 mb-2 text-emerald-600" />
+                <IndianRupee className="w-8 h-8 mb-2 text-fuchsia-500" />
                 <p className="text-muted-foreground text-sm">Total Earnings</p>
                 <p className="text-3xl font-bold text-foreground">₹{totalEarnings.toFixed(0)}</p>
                 <p className="text-muted-foreground/60 text-xs mt-1">All time</p>
@@ -487,7 +487,7 @@ export default function PartnerDashboard() {
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatDialog("listings")}>
             <CardContent className="pt-6">
               <div className="flex flex-col">
-                <Building2 className="w-8 h-8 mb-2 text-emerald-600" />
+                <Building2 className="w-8 h-8 mb-2 text-fuchsia-500" />
                 <p className="text-muted-foreground text-sm">Total Listings</p>
                 <p className="text-3xl font-bold text-foreground">{listings.length}</p>
                 <p className="text-muted-foreground/60 text-xs mt-1">{approvedListings} approved</p>
@@ -541,8 +541,8 @@ export default function PartnerDashboard() {
                 <div className="space-y-4 py-4">
                   {selectedDayData.earning ? (
                     <>
-                      <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
-                        <p className="text-3xl font-bold text-emerald-600">
+                      <div className="text-center p-4 bg-fuchsia-500/10 rounded-lg">
+                        <p className="text-3xl font-bold text-fuchsia-500">
                           ₹{(selectedDayData.earning.dataCollection + selectedDayData.earning.reputationSales + selectedDayData.earning.gmsSales).toLocaleString()}
                         </p>
                         <p className="text-sm text-muted-foreground">Total Earned</p>
@@ -550,7 +550,7 @@ export default function PartnerDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between p-3 bg-muted/50 rounded-lg">
                           <span className="flex items-center gap-2">
-                            <Database className="w-4 h-4 text-emerald-600" />
+                            <Database className="w-4 h-4 text-fuchsia-500" />
                             Data Collection ({selectedDayData.earning.listingsCount})
                           </span>
                           <span className="font-semibold">₹{selectedDayData.earning.dataCollection}</span>
@@ -592,9 +592,9 @@ export default function PartnerDashboard() {
                   <DialogDescription>Your complete earnings breakdown</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6 py-4">
-                  <div className="text-center p-6 bg-emerald-500/10 rounded-lg">
-                    <IndianRupee className="w-12 h-12 mx-auto mb-2 text-emerald-600" />
-                    <p className="text-4xl font-bold text-emerald-600">₹{totalEarnings.toFixed(2)}</p>
+                  <div className="text-center p-6 bg-fuchsia-500/10 rounded-lg">
+                    <IndianRupee className="w-12 h-12 mx-auto mb-2 text-fuchsia-500" />
+                    <p className="text-4xl font-bold text-fuchsia-500">₹{totalEarnings.toFixed(2)}</p>
                     <p className="text-muted-foreground">Total Earnings</p>
                   </div>
                   <div className="space-y-3">
@@ -643,7 +643,7 @@ export default function PartnerDashboard() {
                       <p>• GMS Software Sale: ₹1,800 per sale (30% of ₹6,000)</p>
                     </div>
                   </div>
-                  <Button onClick={() => { setStatDialog(null); setShowStartTask(true); }} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={() => { setStatDialog(null); setShowStartTask(true); }} className="w-full gap-2 bg-fuchsia-500 hover:bg-fuchsia-600">
                     <Plus className="w-4 h-4" /> Add New Listing
                   </Button>
                 </div>
@@ -732,7 +732,7 @@ export default function PartnerDashboard() {
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
                   <h3 className="text-lg font-semibold mb-2">No listings yet</h3>
                   <p className="text-muted-foreground mb-4">Start adding garages to earn money!</p>
-                  <Button onClick={() => setShowStartTask(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={() => setShowStartTask(true)} className="bg-fuchsia-500 hover:bg-fuchsia-600">
                     <Play className="w-4 h-4 mr-2" /> Start Your First Task
                   </Button>
                 </CardContent>
@@ -742,7 +742,7 @@ export default function PartnerDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Your Garage Listings</span>
-                    <Button onClick={() => setShowStartTask(true)} size="sm" className="gap-1 bg-emerald-600 hover:bg-emerald-700">
+                    <Button onClick={() => setShowStartTask(true)} size="sm" className="gap-1 bg-fuchsia-500 hover:bg-fuchsia-600">
                       <Plus className="w-4 h-4" /> Add New
                     </Button>
                   </CardTitle>
@@ -795,7 +795,7 @@ export default function PartnerDashboard() {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium text-emerald-600">
+                            <TableCell className="font-medium text-fuchsia-500">
                               ₹{(listing.total_earning || 0).toFixed(0)}
                             </TableCell>
                             <TableCell>{getPayoutStatusBadge(listing.payout_status)}</TableCell>
@@ -818,7 +818,7 @@ export default function PartnerDashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="ghost" 
-                                  className="text-emerald-600 hover:text-emerald-700 h-7 px-2"
+                                  className="text-fuchsia-500 hover:text-fuchsia-600 h-7 px-2"
                                   onClick={() => {
                                     setSelectedListing(listing);
                                     setShowUpsell(true);
@@ -876,7 +876,7 @@ export default function PartnerDashboard() {
                             <TableCell className="font-medium">
                               {format(new Date(payout.payout_date), "dd MMM yyyy")}
                             </TableCell>
-                            <TableCell className="font-bold text-emerald-600">
+                            <TableCell className="font-bold text-fuchsia-500">
                               ₹{payout.amount.toFixed(2)}
                             </TableCell>
                             <TableCell className="font-mono text-sm">
@@ -996,15 +996,15 @@ export default function PartnerDashboard() {
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-emerald-600" />
+              <Award className="w-5 h-5 text-fuchsia-500" />
               Tips to Maximize Earnings
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+              <div className="p-4 rounded-lg bg-fuchsia-500/5 border border-fuchsia-500/20">
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Database className="w-4 h-4 text-emerald-600" />
+                  <Database className="w-4 h-4 text-fuchsia-500" />
                   Data Collection (₹20)
                 </h4>
                 <p className="text-sm text-muted-foreground">
