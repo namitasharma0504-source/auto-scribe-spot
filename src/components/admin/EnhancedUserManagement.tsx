@@ -288,7 +288,7 @@ export function EnhancedUserManagement() {
     admin: "bg-red-500/10 text-red-600 border-red-500/30",
     customer: "bg-blue-500/10 text-blue-600 border-blue-500/30",
     garage_owner: "bg-green-500/10 text-green-600 border-green-500/30",
-    partner: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+    partner: "bg-purple-500/10 text-purple-600 border-purple-500/30",
   };
 
   const roleIcons = {
@@ -356,14 +356,14 @@ export function EnhancedUserManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <Card className="border-purple-500/30 bg-purple-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Partners</p>
-                <p className="text-2xl font-bold text-emerald-600">{partners.length}</p>
+                <p className="text-2xl font-bold text-purple-600">{partners.length}</p>
               </div>
-              <Briefcase className="w-8 h-8 text-emerald-500" />
+              <Briefcase className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -611,15 +611,15 @@ export function EnhancedUserManagement() {
         <TabsContent value="partners" className="space-y-4">
           {/* Platform-Wide Earnings Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+            <Card className="border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Partners</p>
-                    <p className="text-2xl font-bold text-emerald-600">{partners.length}</p>
+                    <p className="text-2xl font-bold text-purple-600">{partners.length}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <Briefcase className="w-6 h-6 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
               </CardContent>
@@ -669,7 +669,7 @@ export function EnhancedUserManagement() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-emerald-500" />
+                <Briefcase className="w-5 h-5 text-purple-500" />
                 Partner Accounts ({filteredPartners.length})
               </CardTitle>
             </CardHeader>
@@ -718,7 +718,7 @@ export function EnhancedUserManagement() {
                         return (
                           <TableRow key={partner.id}>
                             <TableCell>
-                              <code className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded font-mono">
+                              <code className="text-xs bg-purple-500/10 text-purple-600 px-2 py-1 rounded font-mono">
                                 {partner.id}
                               </code>
                             </TableCell>
@@ -769,8 +769,8 @@ export function EnhancedUserManagement() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
-                                <IndianRupee className="w-3 h-3 text-emerald-600" />
-                                <span className={`font-semibold ${earnings.total_earned > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                                <IndianRupee className="w-3 h-3 text-purple-600" />
+                                <span className={`font-semibold ${earnings.total_earned > 0 ? "text-purple-600" : "text-muted-foreground"}`}>
                                   {earnings.total_earned > 0 
                                     ? formatCurrency(earnings.total_earned).replace("₹", "")
                                     : "0"
