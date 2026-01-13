@@ -40,8 +40,8 @@ export default function PartnerAuth() {
             title: "Welcome, Partner!",
             description: "Redirecting to your dashboard.",
           });
-          // Redirect partners to list-garage page
-          navigate("/list-garage");
+          // Redirect partners to their dashboard
+          navigate("/partner-dashboard");
         } else {
           setError("You don't have partner access. Please contact admin.");
           await supabase.auth.signOut();
