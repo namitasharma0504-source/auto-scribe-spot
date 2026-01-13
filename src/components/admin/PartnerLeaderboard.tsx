@@ -9,14 +9,26 @@ import {
   IndianRupee,
   RefreshCw,
   Sparkles,
+  Calendar,
+  CalendarDays,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { format, subDays, subMonths, subYears, startOfDay, endOfDay } from "date-fns";
+
+type DateRangePreset = "week" | "month" | "quarter" | "year" | "all" | "custom";
+
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
 
 interface PartnerStats {
   id: string;
@@ -47,9 +59,52 @@ const getRankBgClass = (rank: number) => {
   return "bg-muted/30";
 };
 
+const getPresetDateRange = (preset: DateRangePreset): DateRange => {
+  const now = new Date();
+  switch (preset) {
+    case "week":
+      return { from: subDays(now, 7), to: now };
+    case "month":
+      return { from: subMonths(now, 1), to: now };
+    case "quarter":
+      return { from: subMonths(now, 3), to: now };
+    case "year":
+      return { from: subYears(now, 1), to: now };
+    case "all":
+    default:
+      return { from: undefined, to: undefined };
+  }
+};
+
+const presetLabels: Record<DateRangePreset, string> = {
+  week: "Last 7 Days",
+  month: "Last 30 Days",
+  quarter: "Last 3 Months",
+  year: "Last Year",
+  all: "All Time",
+  custom: "Custom Range",
+};
+
 export function PartnerLeaderboard() {
   const [partners, setPartners] = useState<PartnerStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [datePreset, setDatePreset] = useState<DateRangePreset>("all");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const handlePresetChange = (preset: DateRangePreset) => {
+    setDatePreset(preset);
+    if (preset !== "custom") {
+      setDateRange(getPresetDateRange(preset));
+    }
+  };
+
+  const handleCustomDateSelect = (range: DateRange | undefined) => {
+    if (range) {
+      setDateRange(range);
+      setDatePreset("custom");
+    }
+  };
 
   const fetchLeaderboardData = async () => {
     setIsLoading(true);
@@ -62,10 +117,20 @@ export function PartnerLeaderboard() {
 
       if (partnersError) throw partnersError;
 
-      // Fetch all listings for stats
-      const { data: listingsData, error: listingsError } = await supabase
+      // Build listings query with date filter
+      let listingsQuery = supabase
         .from("partner_listings")
-        .select("partner_id, status, reputation_upsell, gms_upsell, total_earning, payout_status");
+        .select("partner_id, status, reputation_upsell, gms_upsell, total_earning, payout_status, submitted_at");
+
+      // Apply date filter if set
+      if (dateRange.from) {
+        listingsQuery = listingsQuery.gte("submitted_at", startOfDay(dateRange.from).toISOString());
+      }
+      if (dateRange.to) {
+        listingsQuery = listingsQuery.lte("submitted_at", endOfDay(dateRange.to).toISOString());
+      }
+
+      const { data: listingsData, error: listingsError } = await listingsQuery;
 
       if (listingsError) throw listingsError;
 
@@ -114,7 +179,7 @@ export function PartnerLeaderboard() {
 
   useEffect(() => {
     fetchLeaderboardData();
-  }, []);
+  }, [dateRange]);
 
   const topByListings = [...partners]
     .sort((a, b) => b.approved_listings - a.approved_listings)
@@ -187,7 +252,7 @@ export function PartnerLeaderboard() {
   return (
     <div className="space-y-6">
       {/* Header with Refresh */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">
             <Trophy className="w-5 h-5 text-white" />
@@ -197,11 +262,74 @@ export function PartnerLeaderboard() {
             <p className="text-sm text-muted-foreground">Top performing partners</p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchLeaderboardData} className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" onClick={fetchLeaderboardData} size="sm" className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {/* Date Range Filters */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CalendarDays className="w-4 h-4" />
+              <span>Time Period:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(["week", "month", "quarter", "year", "all"] as DateRangePreset[]).map((preset) => (
+                <Button
+                  key={preset}
+                  variant={datePreset === preset ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePresetChange(preset)}
+                  className="text-xs"
+                >
+                  {presetLabels[preset]}
+                </Button>
+              ))}
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={datePreset === "custom" ? "default" : "outline"}
+                    size="sm"
+                    className="gap-2 text-xs"
+                  >
+                    <Calendar className="w-3 h-3" />
+                    {datePreset === "custom" && dateRange.from && dateRange.to
+                      ? `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d")}`
+                      : "Custom"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-background" align="end">
+                  <CalendarComponent
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange.from}
+                    selected={dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined}
+                    onSelect={(range) => {
+                      handleCustomDateSelect(range as DateRange);
+                      if (range?.from && range?.to) {
+                        setIsCalendarOpen(false);
+                      }
+                    }}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            {datePreset !== "all" && (
+              <Badge variant="secondary" className="ml-auto text-xs">
+                {dateRange.from && dateRange.to
+                  ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`
+                  : presetLabels[datePreset]}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
