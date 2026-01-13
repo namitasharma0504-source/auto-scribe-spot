@@ -39,6 +39,7 @@ import { ClaimManagement } from "@/components/admin/ClaimManagement";
 import { LeadsManagement } from "@/components/admin/LeadsManagement";
 import { BlogManagement } from "@/components/admin/BlogManagement";
 import { PartnerApplicationsManagement } from "@/components/admin/PartnerApplicationsManagement";
+import { PartnerManagement } from "@/components/admin/PartnerManagement";
 import {
   Dialog,
   DialogContent,
@@ -566,9 +567,13 @@ export default function Admin() {
               <FileText className="w-4 h-4" />
               Blog
             </TabsTrigger>
-            <TabsTrigger value="partners" className="gap-2">
+            <TabsTrigger value="partner-management" className="gap-2">
               <Handshake className="w-4 h-4" />
               Partners
+            </TabsTrigger>
+            <TabsTrigger value="partner-applications" className="gap-2">
+              <Users className="w-4 h-4" />
+              Applications
             </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
@@ -785,11 +790,28 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="partners">
+          <TabsContent value="partner-management">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Handshake className="w-5 h-5" />
+                  Partner Management
+                </CardTitle>
+                <CardDescription>
+                  View all partners, their KYC status, listings, and process payouts.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PartnerManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="partner-applications">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
                   Partner Applications
                 </CardTitle>
                 <CardDescription>
