@@ -136,6 +136,30 @@ export default function GarageAuth() {
     setCustomerEmailError(null);
     
     try {
+      // Check if email already has a role assigned
+      const { data: roleCheck } = await supabase
+        .rpc('check_email_role_conflict', { check_email: email });
+      
+      if (roleCheck && roleCheck[0]?.has_conflict) {
+        const existingRole = roleCheck[0].existing_role;
+        const roleLabels: Record<string, string> = {
+          'customer': 'Customer',
+          'garage_owner': 'Garage Owner',
+          'partner': 'Partner',
+          'admin': 'Admin'
+        };
+        setCustomerEmailError(
+          `This email is already registered as a ${roleLabels[existingRole] || existingRole}. Please use a different email.`
+        );
+        toast({
+          title: "Email Already Registered",
+          description: `This email is registered as a ${roleLabels[existingRole] || existingRole}. Use a different email.`,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/garage-dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -151,12 +175,6 @@ export default function GarageAuth() {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          setCustomerEmailError(
-            "This email is already registered. If you have a customer account with this email, please use a different email to create a garage account."
-          );
-          throw error;
-        }
         throw error;
       }
 
