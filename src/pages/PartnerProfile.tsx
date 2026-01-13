@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   User, Phone, Mail, Camera, FileText, CreditCard, Building2,
   CheckCircle, XCircle, Clock, Upload, Save, ArrowLeft, AlertTriangle,
-  RefreshCw, Eye, Trash2
+  RefreshCw, Eye, Trash2, Search
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { indianBanks } from "@/data/indianBanks";
 
 interface Partner {
   id: string;
@@ -54,6 +55,12 @@ export default function PartnerProfile() {
   const [panDocumentUrl, setPanDocumentUrl] = useState<string | null>(null);
   const [aadhaarDocumentUrl, setAadhaarDocumentUrl] = useState<string | null>(null);
   
+  // Bank search dropdown state
+  const [bankSearchOpen, setBankSearchOpen] = useState(false);
+  const [bankSearchQuery, setBankSearchQuery] = useState("");
+  const bankInputRef = useRef<HTMLInputElement>(null);
+  const bankDropdownRef = useRef<HTMLDivElement>(null);
+  
   // Form states
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -75,6 +82,27 @@ export default function PartnerProfile() {
       fetchPartnerData();
     }
   }, [user, authLoading, navigate]);
+
+  // Close bank dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        bankDropdownRef.current && 
+        !bankDropdownRef.current.contains(event.target as Node) &&
+        bankInputRef.current &&
+        !bankInputRef.current.contains(event.target as Node)
+      ) {
+        setBankSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filter banks based on search query
+  const filteredBanks = indianBanks.filter(bank =>
+    bank.toLowerCase().includes(bankSearchQuery.toLowerCase())
+  );
 
   const fetchPartnerData = async () => {
     if (!user) return;
@@ -769,18 +797,57 @@ export default function PartnerProfile() {
                       placeholder="Name as per bank records"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label htmlFor="bankName">Bank Name</Label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                       <Input
+                        ref={bankInputRef}
                         id="bankName"
                         value={bankName}
-                        onChange={(e) => setBankName(e.target.value)}
-                        placeholder="e.g., State Bank of India"
+                        onChange={(e) => {
+                          setBankName(e.target.value);
+                          setBankSearchQuery(e.target.value);
+                          setBankSearchOpen(true);
+                        }}
+                        onFocus={() => {
+                          setBankSearchOpen(true);
+                          setBankSearchQuery(bankName);
+                        }}
+                        placeholder="Search or type bank name..."
                         className="pl-10"
+                        autoComplete="off"
                       />
                     </div>
+                    {bankSearchOpen && (
+                      <div 
+                        ref={bankDropdownRef}
+                        className="absolute z-50 w-full mt-1 max-h-60 overflow-auto rounded-md border bg-popover shadow-lg"
+                      >
+                        {filteredBanks.length > 0 ? (
+                          filteredBanks.slice(0, 10).map((bank) => (
+                            <div
+                              key={bank}
+                              className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-sm"
+                              onClick={() => {
+                                setBankName(bank);
+                                setBankSearchOpen(false);
+                                setBankSearchQuery("");
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-muted-foreground" />
+                                {bank}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            No banks found. You can type a custom bank name.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="accountNumber">Account Number</Label>
