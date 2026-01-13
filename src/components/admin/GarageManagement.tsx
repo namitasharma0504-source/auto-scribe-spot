@@ -937,7 +937,8 @@ export function GarageManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Uploaded By</TableHead>
+                    <TableHead>Listed By</TableHead>
+                    <TableHead>Submitter</TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead>Reviews</TableHead>
                     <TableHead>Status</TableHead>
@@ -978,31 +979,35 @@ export function GarageManagement() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {/* User Code Badge */}
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "text-xs w-fit font-mono",
-                              garage.listing_type === "owner" && "bg-primary/10 text-primary border-primary/30",
-                              garage.listing_type === "partner" && "bg-blue-500/10 text-blue-600 border-blue-500/30",
-                              garage.listing_type === "customer" && "bg-secondary/30 text-secondary-foreground border-secondary",
-                              (!garage.listing_type || garage.listing_type === "admin") && "bg-purple-500/10 text-purple-600 border-purple-500/30"
-                            )}
-                          >
-                            {garage.listing_type === "owner" && <Store className="w-3 h-3 mr-1" />}
-                            {garage.listing_type === "partner" && <Users className="w-3 h-3 mr-1" />}
-                            {garage.listing_type === "customer" && <User className="w-3 h-3 mr-1" />}
-                            {(!garage.listing_type || garage.listing_type === "admin") && <Building2 className="w-3 h-3 mr-1" />}
-                            {getUserCode(garage.listing_type, garage.submitted_by)}
-                          </Badge>
-                          {/* Submitter Name */}
-                          {garage.submitter_email && (
-                            <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={garage.submitter_email}>
-                              {garage.submitter_email}
-                            </span>
+                        {/* Listed By Badge - OID/PID/CID/Admin */}
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs w-fit font-mono font-semibold",
+                            garage.listing_type === "owner" && "bg-green-500/10 text-green-600 border-green-500/30",
+                            garage.listing_type === "partner" && "bg-blue-500/10 text-blue-600 border-blue-500/30",
+                            garage.listing_type === "customer" && "bg-orange-500/10 text-orange-600 border-orange-500/30",
+                            (!garage.listing_type || garage.listing_type === "admin") && "bg-purple-500/10 text-purple-600 border-purple-500/30"
                           )}
-                        </div>
+                        >
+                          {garage.listing_type === "owner" && <Store className="w-3 h-3 mr-1" />}
+                          {garage.listing_type === "partner" && <Users className="w-3 h-3 mr-1" />}
+                          {garage.listing_type === "customer" && <User className="w-3 h-3 mr-1" />}
+                          {(!garage.listing_type || garage.listing_type === "admin") && <Building2 className="w-3 h-3 mr-1" />}
+                          {garage.listing_type === "owner" ? "OID" : 
+                           garage.listing_type === "partner" ? "PID" : 
+                           garage.listing_type === "customer" ? "CID" : "Admin"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {/* Submitter Name/ID */}
+                        {garage.submitter_email ? (
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px] block" title={garage.submitter_email}>
+                            {garage.submitter_email}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
