@@ -66,7 +66,7 @@ export function EarningsCalendar({ earnings, onDayClick }: EarningsCalendarProps
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-emerald-600" />
+            <CalendarIcon className="w-5 h-5 text-fuchsia-500" />
             Earnings Calendar
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ export function EarningsCalendar({ earnings, onDayClick }: EarningsCalendarProps
         </div>
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm text-muted-foreground">Monthly Total:</span>
-          <Badge className="bg-emerald-600 text-white px-3 py-1">
+          <Badge className="bg-fuchsia-500 text-white px-3 py-1">
             <IndianRupee className="w-3 h-3 mr-1" />
             {monthTotal.toLocaleString()}
           </Badge>
@@ -125,23 +125,23 @@ export function EarningsCalendar({ earnings, onDayClick }: EarningsCalendarProps
                 onClick={() => onDayClick?.(day, earning)}
                 className={`
                   h-16 p-1 rounded-lg border text-left transition-all hover:shadow-md
-                  ${isToday ? "border-emerald-500 bg-emerald-500/5" : "border-border"}
-                  ${hasEarning ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-card"}
-                  ${earning?.isPaid ? "ring-2 ring-green-400" : ""}
+                  ${isToday ? "border-fuchsia-500 bg-fuchsia-500/5" : "border-border"}
+                  ${hasEarning ? "bg-fuchsia-50 dark:bg-fuchsia-900/20" : "bg-card"}
+                  ${earning?.isPaid ? "ring-2 ring-fuchsia-400" : ""}
                 `}
               >
-                <span className={`text-xs font-medium ${isToday ? "text-emerald-600" : "text-muted-foreground"}`}>
+                <span className={`text-xs font-medium ${isToday ? "text-fuchsia-500" : "text-muted-foreground"}`}>
                   {format(day, "d")}
                 </span>
                 {hasEarning && (
                   <div className="mt-1">
-                    <span className="text-xs font-bold text-emerald-600 block">
+                    <span className="text-xs font-bold text-fuchsia-500 block">
                       ₹{total.toLocaleString()}
                     </span>
                     {earning && (
                       <div className="flex gap-0.5 mt-0.5">
                         {earning.listingsCount > 0 && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" title={`${earning.listingsCount} listings`} />
+                          <span className="w-2 h-2 rounded-full bg-fuchsia-500" title={`${earning.listingsCount} listings`} />
                         )}
                         {earning.reputationCount > 0 && (
                           <span className="w-2 h-2 rounded-full bg-purple-500" title={`${earning.reputationCount} reputation sales`} />
@@ -161,7 +161,7 @@ export function EarningsCalendar({ earnings, onDayClick }: EarningsCalendarProps
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-emerald-500" />
+            <span className="w-3 h-3 rounded-full bg-fuchsia-500" />
             Data Collection
           </div>
           <div className="flex items-center gap-1">
@@ -173,7 +173,7 @@ export function EarningsCalendar({ earnings, onDayClick }: EarningsCalendarProps
             GMS Software
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded ring-2 ring-green-400" />
+            <span className="w-3 h-3 rounded ring-2 ring-fuchsia-400" />
             Paid
           </div>
         </div>
