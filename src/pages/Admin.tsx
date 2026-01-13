@@ -18,7 +18,8 @@ import {
   MessageSquare,
   FileText,
   Handshake,
-  ClipboardList
+  ClipboardList,
+  Scale
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import { BlogManagement } from "@/components/admin/BlogManagement";
 import { PartnerApplicationsManagement } from "@/components/admin/PartnerApplicationsManagement";
 import { PartnerManagement } from "@/components/admin/PartnerManagement";
 import { PartnerListingsManagement } from "@/components/admin/PartnerListingsManagement";
+import { PartnerDisputesManagement } from "@/components/admin/PartnerDisputesManagement";
 import {
   Dialog,
   DialogContent,
@@ -581,6 +583,10 @@ export default function Admin() {
               <Users className="w-4 h-4" />
               Applications
             </TabsTrigger>
+            <TabsTrigger value="partner-disputes" className="gap-2">
+              <Scale className="w-4 h-4" />
+              Disputes
+            </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
               Customers
@@ -843,6 +849,23 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <PartnerApplicationsManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="partner-disputes">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scale className="w-5 h-5" />
+                  Partner Disputes
+                </CardTitle>
+                <CardDescription>
+                  Review and resolve disputes submitted by partners on rejected listings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PartnerDisputesManagement />
               </CardContent>
             </Card>
           </TabsContent>
