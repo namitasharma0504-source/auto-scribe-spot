@@ -1053,6 +1053,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_email_role_conflict: {
+        Args: { check_email: string }
+        Returns: {
+          existing_role: string
+          has_conflict: boolean
+        }[]
+      }
       generate_garage_slug: { Args: { garage_name: string }; Returns: string }
       generate_gin: { Args: never; Returns: string }
       generate_partner_id: { Args: never; Returns: string }

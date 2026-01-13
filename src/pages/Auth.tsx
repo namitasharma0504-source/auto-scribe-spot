@@ -110,34 +110,43 @@ export default function Auth() {
     setIsLoading(true);
     setGarageEmailError(null);
     
-    const { error } = await signUp(email, password, fullName);
-
-    if (error) {
-      setIsLoading(false);
-      if (error.message.includes("already registered")) {
-        // Check if this email belongs to a garage owner
-        const { data } = await supabase.auth.signInWithPassword({
-          email,
-          password: "dummy_check_12345",
-        });
-        
-        // If the error is about existing account, check garage_owners
+    try {
+      // Check if email already has a role assigned
+      const { data: roleCheck } = await supabase
+        .rpc('check_email_role_conflict', { check_email: email });
+      
+      if (roleCheck && roleCheck[0]?.has_conflict) {
+        const existingRole = roleCheck[0].existing_role;
+        const roleLabels: Record<string, string> = {
+          'customer': 'Customer',
+          'garage_owner': 'Garage Owner',
+          'partner': 'Partner',
+          'admin': 'Admin'
+        };
         setGarageEmailError(
-          "This email is already registered. If you have a garage account, please use Garage Login instead. Otherwise, try signing in."
+          `This email is already registered as a ${roleLabels[existingRole] || existingRole}. Please use a different email or sign in with your existing account.`
         );
         toast({
-          title: "Account Exists",
-          description: "This email is already registered. Please sign in instead.",
+          title: "Email Already Registered",
+          description: `This email is registered as a ${roleLabels[existingRole] || existingRole}. Use a different email.`,
           variant: "destructive",
         });
-      } else {
+        setIsLoading(false);
+        return;
+      }
+
+      const { error } = await signUp(email, password, fullName);
+
+      if (error) {
+        setIsLoading(false);
         toast({
           title: "Sign Up Failed",
           description: error.message,
           variant: "destructive",
         });
+        return;
       }
-    } else {
+
       // After successful signup, add customer role
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (newUser) {
@@ -152,8 +161,11 @@ export default function Auth() {
         description: "Welcome to GarageReviews! You are now signed in.",
       });
       navigate("/dashboard");
+    } catch (err) {
+      console.error("Signup error:", err);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
