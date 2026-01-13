@@ -127,6 +127,11 @@ export function PartnerManagement() {
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutTransactionId, setPayoutTransactionId] = useState("");
   const [isProcessingPayout, setIsProcessingPayout] = useState(false);
+  
+  // Listing approval states
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectingListingId, setRejectingListingId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     fetchPartners();
@@ -341,6 +346,79 @@ export function PartnerManagement() {
       });
     } finally {
       setIsProcessingPayout(false);
+    }
+  };
+
+  // Approve partner listing
+  const handleApproveListing = async (listingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("partner_listings")
+        .update({ 
+          status: "approved", 
+          approved_at: new Date().toISOString(),
+          rejection_reason: null 
+        })
+        .eq("id", listingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Listing Approved",
+        description: "The partner will earn ₹20 for this listing.",
+      });
+
+      // Refresh partner details
+      if (selectedPartner) {
+        fetchPartnerDetails(selectedPartner);
+      }
+    } catch (error: any) {
+      console.error("Error approving listing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to approve listing",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Reject partner listing
+  const handleRejectListing = async () => {
+    if (!rejectingListingId) return;
+    
+    try {
+      const { error } = await supabase
+        .from("partner_listings")
+        .update({ 
+          status: "rejected", 
+          rejection_reason: rejectionReason || "Listing does not meet quality standards",
+          base_earning: 0,
+          total_earning: 0,
+        })
+        .eq("id", rejectingListingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Listing Rejected",
+        description: "The partner has been notified of the rejection.",
+      });
+
+      setIsRejectDialogOpen(false);
+      setRejectingListingId(null);
+      setRejectionReason("");
+
+      // Refresh partner details
+      if (selectedPartner) {
+        fetchPartnerDetails(selectedPartner);
+      }
+    } catch (error: any) {
+      console.error("Error rejecting listing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject listing",
+        variant: "destructive",
+      });
     }
   };
 
@@ -762,6 +840,34 @@ export function PartnerManagement() {
               </TabsContent>
 
               <TabsContent value="listings" className="mt-4">
+                {/* Listing Stats */}
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  <div className="p-3 rounded-lg bg-yellow-500/10 text-center">
+                    <p className="text-lg font-bold text-yellow-600">
+                      {selectedPartner.listings.filter(l => l.status === "pending" || !l.status).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Pending</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-green-500/10 text-center">
+                    <p className="text-lg font-bold text-green-600">
+                      {selectedPartner.listings.filter(l => l.status === "approved").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Approved</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-red-500/10 text-center">
+                    <p className="text-lg font-bold text-red-600">
+                      {selectedPartner.listings.filter(l => l.status === "rejected").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Rejected</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-500/10 text-center">
+                    <p className="text-lg font-bold text-emerald-600">
+                      ₹{selectedPartner.listings.reduce((sum, l) => sum + (l.total_earning || 0), 0).toFixed(0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Total Earned</p>
+                  </div>
+                </div>
+                
                 {selectedPartner.listings.length === 0 ? (
                   <div className="text-center py-8">
                     <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -779,6 +885,7 @@ export function PartnerManagement() {
                           <TableHead>Earnings</TableHead>
                           <TableHead>Payout</TableHead>
                           <TableHead>Submitted</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -803,20 +910,25 @@ export function PartnerManagement() {
                               >
                                 {listing.status || "pending"}
                               </Badge>
+                              {listing.rejection_reason && (
+                                <p className="text-xs text-red-500 mt-1 max-w-[150px] truncate" title={listing.rejection_reason}>
+                                  {listing.rejection_reason}
+                                </p>
+                              )}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
                                 {listing.reputation_upsell && (
-                                  <Badge variant="outline" className="text-xs">Rep</Badge>
+                                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">Rep ₹450</Badge>
                                 )}
                                 {listing.gms_upsell && (
-                                  <Badge variant="outline" className="text-xs">GMS</Badge>
+                                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">GMS ₹1.8K</Badge>
                                 )}
                                 {!listing.reputation_upsell && !listing.gms_upsell && "-"}
                               </div>
                             </TableCell>
                             <TableCell className="font-medium text-green-600">
-                              ₹{(listing.total_earning || 0).toFixed(2)}
+                              ₹{(listing.total_earning || 0).toFixed(0)}
                             </TableCell>
                             <TableCell>
                               <Badge 
@@ -833,6 +945,42 @@ export function PartnerManagement() {
                               {listing.submitted_at 
                                 ? new Date(listing.submitted_at).toLocaleDateString() 
                                 : "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(listing.status === "pending" || !listing.status) && (
+                                <div className="flex gap-1 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                    onClick={() => handleApproveListing(listing.id)}
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                    onClick={() => {
+                                      setRejectingListingId(listing.id);
+                                      setIsRejectDialogOpen(true);
+                                    }}
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
+                              {listing.status === "rejected" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                  onClick={() => handleApproveListing(listing.id)}
+                                  title="Re-approve this listing"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -950,6 +1098,49 @@ export function PartnerManagement() {
                 <CheckCircle className="w-4 h-4" />
               )}
               Confirm Payout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Listing Dialog */}
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-500" />
+              Reject Listing
+            </DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting this listing. The partner will see this reason.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Rejection Reason</label>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g., Incomplete information, duplicate listing, invalid location..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsRejectDialogOpen(false);
+              setRejectingListingId(null);
+              setRejectionReason("");
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleRejectListing}
+              className="gap-2"
+            >
+              <XCircle className="w-4 h-4" />
+              Reject Listing
             </Button>
           </DialogFooter>
         </DialogContent>

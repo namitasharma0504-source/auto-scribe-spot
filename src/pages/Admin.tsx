@@ -17,7 +17,8 @@ import {
   ArrowRight,
   MessageSquare,
   FileText,
-  Handshake
+  Handshake,
+  ClipboardList
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { LeadsManagement } from "@/components/admin/LeadsManagement";
 import { BlogManagement } from "@/components/admin/BlogManagement";
 import { PartnerApplicationsManagement } from "@/components/admin/PartnerApplicationsManagement";
 import { PartnerManagement } from "@/components/admin/PartnerManagement";
+import { PartnerListingsManagement } from "@/components/admin/PartnerListingsManagement";
 import {
   Dialog,
   DialogContent,
@@ -571,6 +573,10 @@ export default function Admin() {
               <Handshake className="w-4 h-4" />
               Partners
             </TabsTrigger>
+            <TabsTrigger value="partner-listings" className="gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Partner Listings
+            </TabsTrigger>
             <TabsTrigger value="partner-applications" className="gap-2">
               <Users className="w-4 h-4" />
               Applications
@@ -803,6 +809,23 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <PartnerManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="partner-listings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5" />
+                  Partner Listings Review
+                </CardTitle>
+                <CardDescription>
+                  Approve or reject garage listings submitted by partners. Each approved listing earns ₹20.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PartnerListingsManagement />
               </CardContent>
             </Card>
           </TabsContent>
