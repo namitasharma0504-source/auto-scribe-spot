@@ -49,6 +49,11 @@ export default function PartnerProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   
+  // Signed URLs for viewing private bucket documents
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [panDocumentUrl, setPanDocumentUrl] = useState<string | null>(null);
+  const [aadhaarDocumentUrl, setAadhaarDocumentUrl] = useState<string | null>(null);
+  
   // Form states
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -109,6 +114,9 @@ export default function PartnerProfile() {
         setAccountNumber(partnerData.account_number || "");
         setIfscCode(partnerData.ifsc_code || "");
         setAccountHolderName(partnerData.account_holder_name || "");
+        
+        // Fetch signed URLs for documents
+        await fetchSignedUrls(partnerData);
       }
     } catch (error) {
       console.error("Error fetching partner:", error);
@@ -119,6 +127,38 @@ export default function PartnerProfile() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSignedUrls = async (partnerData: Partner) => {
+    // Fetch profile photo signed URL
+    if (partnerData.profile_photo) {
+      const { data } = await supabase.storage
+        .from("partner-documents")
+        .createSignedUrl(partnerData.profile_photo, 3600); // 1 hour expiry
+      if (data?.signedUrl) {
+        setProfilePhotoUrl(data.signedUrl);
+      }
+    }
+    
+    // Fetch PAN document signed URL
+    if (partnerData.pan_document) {
+      const { data } = await supabase.storage
+        .from("partner-documents")
+        .createSignedUrl(partnerData.pan_document, 3600);
+      if (data?.signedUrl) {
+        setPanDocumentUrl(data.signedUrl);
+      }
+    }
+    
+    // Fetch Aadhaar document signed URL
+    if (partnerData.aadhaar_document) {
+      const { data } = await supabase.storage
+        .from("partner-documents")
+        .createSignedUrl(partnerData.aadhaar_document, 3600);
+      if (data?.signedUrl) {
+        setAadhaarDocumentUrl(data.signedUrl);
+      }
     }
   };
 
@@ -297,6 +337,17 @@ export default function PartnerProfile() {
 
       setPartner(prev => prev ? { ...prev, [updateField]: documentPath } : null);
       
+      // Refresh signed URL for the uploaded document
+      const { data: signedData } = await supabase.storage
+        .from("partner-documents")
+        .createSignedUrl(documentPath, 3600);
+      
+      if (signedData?.signedUrl) {
+        if (documentType === "profile") setProfilePhotoUrl(signedData.signedUrl);
+        else if (documentType === "pan") setPanDocumentUrl(signedData.signedUrl);
+        else if (documentType === "aadhaar") setAadhaarDocumentUrl(signedData.signedUrl);
+      }
+      
       toast({
         title: "Document Uploaded",
         description: `Your ${documentType.toUpperCase()} document has been uploaded.`,
@@ -415,14 +466,13 @@ export default function PartnerProfile() {
                 {/* Profile Photo */}
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/30">
-                    {partner.profile_photo ? (
+                    {profilePhotoUrl ? (
                       <img 
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/partner-documents/${partner.profile_photo}`} 
+                        src={profilePhotoUrl} 
                         alt="Profile" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = "";
-                          e.currentTarget.className = "hidden";
+                          e.currentTarget.style.display = "none";
                         }}
                       />
                     ) : (
@@ -579,6 +629,16 @@ export default function PartnerProfile() {
                             )}
                           </div>
                         </Label>
+                        {panDocumentUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(panDocumentUrl, '_blank')}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
                         <input
                           id="pan-upload"
                           type="file"
@@ -634,6 +694,16 @@ export default function PartnerProfile() {
                             )}
                           </div>
                         </Label>
+                        {aadhaarDocumentUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(aadhaarDocumentUrl, '_blank')}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
                         <input
                           id="aadhaar-upload"
                           type="file"
