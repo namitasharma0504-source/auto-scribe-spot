@@ -145,6 +145,7 @@ export function GarageManagement() {
   const [customService, setCustomService] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchGarages();
@@ -684,11 +685,29 @@ export function GarageManagement() {
     }
   };
 
-  const filteredGarages = garages.filter(garage =>
-    garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (garage.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (garage.state || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Helper to get user code based on listing type
+  const getUserCode = (listingType: string | null, submittedBy: string | null) => {
+    if (!listingType || listingType === "admin" || !submittedBy) return "Admin";
+    const shortId = submittedBy.slice(0, 6).toUpperCase();
+    switch (listingType) {
+      case "owner": return `OID-${shortId}`;
+      case "customer": return `CID-${shortId}`;
+      case "partner": return `PID-${shortId}`;
+      default: return "Admin";
+    }
+  };
+
+  const filteredGarages = garages.filter(garage => {
+    const matchesSearch = garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (garage.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (garage.state || "").toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesListingType = listingTypeFilter === "all" || 
+      (listingTypeFilter === "admin" && (!garage.listing_type || garage.listing_type === "admin")) ||
+      garage.listing_type === listingTypeFilter;
+    
+    return matchesSearch && matchesListingType;
+  });
 
   return (
     <div className="space-y-6">
@@ -717,6 +736,18 @@ export function GarageManagement() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
+          <Select value={listingTypeFilter} onValueChange={setListingTypeFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="owner">OID - Owners</SelectItem>
+              <SelectItem value="customer">CID - Customers</SelectItem>
+              <SelectItem value="partner">PID - Partners</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" onClick={fetchGarages} className="gap-2">
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
@@ -948,31 +979,24 @@ export function GarageManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          {/* User Type Badge */}
-                          {garage.listing_type ? (
-                            <Badge 
-                              variant="outline" 
-                              className={cn(
-                                "text-xs w-fit",
-                                garage.listing_type === "owner" && "bg-primary/10 text-primary border-primary/30",
-                                garage.listing_type === "partner" && "bg-blue-500/10 text-blue-600 border-blue-500/30",
-                                garage.listing_type === "customer" && "bg-secondary/30 text-secondary-foreground border-secondary",
-                                garage.listing_type === "admin" && "bg-purple-500/10 text-purple-600 border-purple-500/30"
-                              )}
-                            >
-                              {garage.listing_type === "owner" && <Store className="w-3 h-3 mr-1" />}
-                              {garage.listing_type === "partner" && <Users className="w-3 h-3 mr-1" />}
-                              {garage.listing_type === "customer" && <User className="w-3 h-3 mr-1" />}
-                              {garage.listing_type === "admin" && <Building2 className="w-3 h-3 mr-1" />}
-                              {garage.listing_type.charAt(0).toUpperCase() + garage.listing_type.slice(1)}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs w-fit bg-purple-500/10 text-purple-600 border-purple-500/30">
-                              <Building2 className="w-3 h-3 mr-1" />
-                              Admin
-                            </Badge>
-                          )}
-                          {/* Submitter Info */}
+                          {/* User Code Badge */}
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs w-fit font-mono",
+                              garage.listing_type === "owner" && "bg-primary/10 text-primary border-primary/30",
+                              garage.listing_type === "partner" && "bg-blue-500/10 text-blue-600 border-blue-500/30",
+                              garage.listing_type === "customer" && "bg-secondary/30 text-secondary-foreground border-secondary",
+                              (!garage.listing_type || garage.listing_type === "admin") && "bg-purple-500/10 text-purple-600 border-purple-500/30"
+                            )}
+                          >
+                            {garage.listing_type === "owner" && <Store className="w-3 h-3 mr-1" />}
+                            {garage.listing_type === "partner" && <Users className="w-3 h-3 mr-1" />}
+                            {garage.listing_type === "customer" && <User className="w-3 h-3 mr-1" />}
+                            {(!garage.listing_type || garage.listing_type === "admin") && <Building2 className="w-3 h-3 mr-1" />}
+                            {getUserCode(garage.listing_type, garage.submitted_by)}
+                          </Badge>
+                          {/* Submitter Name */}
                           {garage.submitter_email && (
                             <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={garage.submitter_email}>
                               {garage.submitter_email}
