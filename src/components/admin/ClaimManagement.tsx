@@ -221,21 +221,22 @@ export function ClaimManagement() {
           onConflict: "user_id,role" 
         });
 
-      // Create garage_owners record
+      // Create/update garage_owners record (subscription_active defaults to false)
       await supabase
         .from("garage_owners")
         .upsert({
           user_id: claim.claimant_user_id,
           garage_id: claim.garage_id,
           business_name: claim.garage?.name,
-          contact_phone: claim.claimant_phone
+          contact_phone: claim.claimant_phone,
+          subscription_active: false // Admin must enable after payment
         }, {
           onConflict: "user_id"
         });
 
       toast({
         title: "Claim Approved!",
-        description: `${claim.claimant_name} is now the owner of ${claim.garage?.name}. They can login to manage their garage.`,
+        description: `${claim.claimant_name} is now the owner of ${claim.garage?.name}. Enable subscription in "Garage Owners" tab to grant dashboard access.`,
       });
 
       setActionDialog(null);
