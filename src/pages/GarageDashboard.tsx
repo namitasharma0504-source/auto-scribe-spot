@@ -389,53 +389,70 @@ export default function GarageDashboard() {
         return;
       }
 
+      // Check if owner has an approved claim (has garage_id)
+      if (!owner.garage_id) {
+        toast({
+          title: "Dashboard Access Pending",
+          description: "Please claim your garage to access the dashboard.",
+          variant: "destructive",
+        });
+        navigate("/garage-account");
+        return;
+      }
+
       setGarageOwner(owner);
 
-      // Get garage if exists
-      if (owner.garage_id) {
-        const { data: garageData } = await supabase
-          .from("garages")
-          .select("*")
-          .eq("id", owner.garage_id)
-          .single();
+      // Get garage
+      const { data: garageData } = await supabase
+        .from("garages")
+        .select("*")
+        .eq("id", owner.garage_id)
+        .single();
 
-        if (garageData) {
-          setGarage(garageData);
-          setFormData({
-            name: garageData.name || "",
-            phone: garageData.phone || "",
-            address: garageData.address || "",
-            state: garageData.state || "",
-            city: garageData.city || "",
-            country: garageData.country || "India",
-            location_link: garageData.location_link || "",
-            photo_url: garageData.photo_url || "",
-            services: garageData.services || [],
-            pricing: garageData.pricing || "",
-            special_offers: garageData.special_offers || "",
-          });
-          setBadgeData({
-            is_verified: garageData.is_verified || false,
-            is_certified: garageData.is_certified || false,
-            is_recommended: garageData.is_recommended || false,
-            has_discounts: garageData.has_discounts || false,
-            response_time: garageData.response_time || "",
-            walk_in_welcome: garageData.walk_in_welcome ?? true,
-          });
+      if (!garageData) {
+        toast({
+          title: "Garage Not Found",
+          description: "Your linked garage could not be found.",
+          variant: "destructive",
+        });
+        navigate("/garage-account");
+        return;
+      }
 
-          // Fetch verification request status
-          const { data: verRequest } = await supabase
-            .from("verification_requests")
-            .select("*")
-            .eq("garage_id", garageData.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+      setGarage(garageData);
+      setFormData({
+        name: garageData.name || "",
+        phone: garageData.phone || "",
+        address: garageData.address || "",
+        state: garageData.state || "",
+        city: garageData.city || "",
+        country: garageData.country || "India",
+        location_link: garageData.location_link || "",
+        photo_url: garageData.photo_url || "",
+        services: garageData.services || [],
+        pricing: garageData.pricing || "",
+        special_offers: garageData.special_offers || "",
+      });
+      setBadgeData({
+        is_verified: garageData.is_verified || false,
+        is_certified: garageData.is_certified || false,
+        is_recommended: garageData.is_recommended || false,
+        has_discounts: garageData.has_discounts || false,
+        response_time: garageData.response_time || "",
+        walk_in_welcome: garageData.walk_in_welcome ?? true,
+      });
 
-          if (verRequest) {
-            setVerificationRequest(verRequest);
-          }
-        }
+      // Fetch verification request status
+      const { data: verRequest } = await supabase
+        .from("verification_requests")
+        .select("*")
+        .eq("garage_id", garageData.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (verRequest) {
+        setVerificationRequest(verRequest);
       }
 
       setIsLoading(false);

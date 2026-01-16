@@ -38,7 +38,8 @@ export default function GarageAuth() {
           .single();
         
         if (garageOwner) {
-          navigate("/garage-dashboard");
+          // Redirect to garage account page (not dashboard - dashboard requires approved claim)
+          navigate("/garage-account");
         } else {
           // User is logged in but not a garage owner - show message
           setCustomerEmailError(
@@ -112,9 +113,9 @@ export default function GarageAuth() {
 
       toast({
         title: "Welcome Back!",
-        description: "You have successfully signed in to your garage dashboard.",
+        description: "You have successfully signed in.",
       });
-      navigate("/garage-dashboard");
+      navigate("/garage-account");
     } catch (error: any) {
       toast({
         title: "Sign In Failed",
@@ -160,7 +161,7 @@ export default function GarageAuth() {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/garage-dashboard`;
+      const redirectUrl = `${window.location.origin}/garage-account`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -202,9 +203,9 @@ export default function GarageAuth() {
 
         toast({
           title: "Account Created!",
-          description: "Welcome to MeriGarage! You can now set up your garage profile.",
+          description: "Welcome to MeriGarage! Claim your garage to get dashboard access.",
         });
-        navigate("/garage-dashboard");
+        navigate("/garage-account");
       }
     } catch (error: any) {
       if (error.message.includes("already registered")) {
@@ -270,8 +271,8 @@ export default function GarageAuth() {
         .single();
       
       if (existingGarageOwner) {
-        // Already a garage owner, redirect to dashboard
-        navigate("/garage-dashboard");
+        // Already a garage owner, redirect to account page
+        navigate("/garage-account");
         return;
       }
       
@@ -326,9 +327,9 @@ export default function GarageAuth() {
       
       toast({
         title: "Account Created!",
-        description: "Welcome to MeriGarage! Please update your garage details.",
+        description: "Welcome to MeriGarage! Claim your garage to get dashboard access.",
       });
-      navigate("/garage-dashboard");
+      navigate("/garage-account");
     };
     
     handleOAuthCallback();
