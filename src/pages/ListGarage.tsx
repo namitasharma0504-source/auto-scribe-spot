@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle, User, Store } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -110,12 +110,16 @@ const otherCountryStates: Record<string, { value: string; label: string }[]> = {
 
 const ListGarage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [listingType, setListingType] = useState<"owner" | "customer" | "partner" | "">("");
   const [isLoadingRole, setIsLoadingRole] = useState(true);
+  
+  // Get prefilled data from navigation state (from GarageAccount)
+  const prefillData = (location.state as { prefill?: { businessName?: string; phone?: string } })?.prefill;
 
   // Auto-detect user role from signup to skip role selection
   useEffect(() => {
@@ -151,9 +155,10 @@ const ListGarage = () => {
     
     fetchUserRole();
   }, [user]);
+  
   const [formData, setFormData] = useState({
-    garageName: "",
-    phone: "",
+    garageName: prefillData?.businessName || "",
+    phone: prefillData?.phone || "",
     address: "",
     country: "",
     state: "",

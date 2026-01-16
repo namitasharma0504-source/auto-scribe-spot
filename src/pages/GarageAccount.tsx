@@ -439,7 +439,14 @@ export default function GarageAccount() {
                   <Button 
                     variant="outline" 
                     className="h-auto py-4 px-6 justify-start"
-                    onClick={() => navigate("/list-garage")}
+                    onClick={() => navigate("/list-garage", { 
+                      state: { 
+                        prefill: {
+                          businessName: garageOwner?.business_name || "",
+                          phone: garageOwner?.contact_phone || ""
+                        }
+                      }
+                    })}
                   >
                     <Plus className="w-5 h-5 mr-3" />
                     <div className="text-left">
