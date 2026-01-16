@@ -19,7 +19,8 @@ import {
   Users,
   Settings,
   ArrowUpDown,
-  Calendar,
+  Calendar as CalendarIcon,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { GarageAllReviews } from "./GarageAllReviews";
@@ -28,14 +29,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -57,6 +64,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -132,6 +140,13 @@ export function GarageManagement() {
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  
+  // Subscription dialog state
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const [subscriptionOwner, setSubscriptionOwner] = useState<GarageOwner | null>(null);
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState<Date | undefined>(undefined);
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState<Date | undefined>(undefined);
+  const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false);
 
   useEffect(() => {
     fetchGarages();
@@ -157,28 +172,87 @@ export function GarageManagement() {
     return garageOwners.find(o => o.garage_id === garageId) || null;
   };
 
-  const handleQuickSubscriptionToggle = async (ownerId: string, currentStatus: boolean) => {
+  const handleOpenSubscriptionDialog = (owner: GarageOwner, isActivating: boolean) => {
+    setSubscriptionOwner(owner);
+    if (isActivating) {
+      // Default to today and 1 year from now
+      const today = new Date();
+      const oneYearLater = new Date();
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+      setSubscriptionStartDate(today);
+      setSubscriptionEndDate(oneYearLater);
+    } else {
+      // For deactivation, use existing dates if available
+      setSubscriptionStartDate(owner.subscription_date ? new Date(owner.subscription_date) : undefined);
+      setSubscriptionEndDate(owner.subscription_end_date ? new Date(owner.subscription_end_date) : undefined);
+    }
+    setIsSubscriptionDialogOpen(true);
+  };
+
+  const handleSubscriptionUpdate = async (activate: boolean) => {
+    if (!subscriptionOwner) return;
+    
+    setIsUpdatingSubscription(true);
     try {
+      const updateData: any = {
+        subscription_active: activate,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (activate && subscriptionStartDate && subscriptionEndDate) {
+        updateData.subscription_date = subscriptionStartDate.toISOString();
+        updateData.subscription_end_date = subscriptionEndDate.toISOString();
+      }
+
       const { error } = await supabase
         .from("garage_owners")
-        .update({
-          subscription_active: !currentStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", ownerId);
+        .update(updateData)
+        .eq("id", subscriptionOwner.id);
 
       if (error) throw error;
 
       toast({
-        title: !currentStatus ? "Subscription Activated" : "Subscription Deactivated",
-        description: !currentStatus 
-          ? "Owner now has dashboard access" 
+        title: activate ? "Subscription Activated" : "Subscription Deactivated",
+        description: activate 
+          ? `Dashboard access granted until ${format(subscriptionEndDate!, "dd MMM yyyy")}` 
           : "Owner dashboard access revoked",
       });
 
       fetchGarageOwners();
+      setIsSubscriptionDialogOpen(false);
+      setSubscriptionOwner(null);
     } catch (error: any) {
-      console.error("Error toggling subscription:", error);
+      console.error("Error updating subscription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingSubscription(false);
+    }
+  };
+
+  const handleQuickDeactivate = async (owner: GarageOwner) => {
+    try {
+      const { error } = await supabase
+        .from("garage_owners")
+        .update({
+          subscription_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", owner.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Subscription Deactivated",
+        description: "Owner dashboard access revoked",
+      });
+
+      fetchGarageOwners();
+    } catch (error: any) {
+      console.error("Error deactivating subscription:", error);
       toast({
         title: "Error",
         description: "Failed to update subscription status",
@@ -825,7 +899,7 @@ export function GarageManagement() {
                           onClick={() => toggleSort("created_at")}
                         >
                           <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                            <CalendarIcon className="w-3 h-3" />
                             Listed On
                             <ArrowUpDown className="w-3 h-3" />
                           </div>
@@ -943,19 +1017,27 @@ export function GarageManagement() {
                                 );
                               }
                               return (
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    checked={owner.subscription_active}
-                                    onCheckedChange={() => handleQuickSubscriptionToggle(owner.id, owner.subscription_active)}
-                                    className="data-[state=checked]:bg-green-500"
-                                  />
-                                  <span className={cn(
-                                    "text-xs",
-                                    owner.subscription_active ? "text-green-600" : "text-muted-foreground"
-                                  )}>
-                                    {owner.subscription_active ? "Active" : "Inactive"}
-                                  </span>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={cn(
+                                    "h-7 px-3 text-xs font-medium",
+                                    owner.subscription_active 
+                                      ? "bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/20" 
+                                      : "bg-red-500/10 text-red-600 border-red-500/30 hover:bg-red-500/20"
+                                  )}
+                                  onClick={() => {
+                                    if (owner.subscription_active) {
+                                      // Direct deactivation
+                                      handleQuickDeactivate(owner);
+                                    } else {
+                                      // Open dialog to set dates
+                                      handleOpenSubscriptionDialog(owner, true);
+                                    }
+                                  }}
+                                >
+                                  {owner.subscription_active ? "Active" : "Inactive"}
+                                </Button>
                               );
                             })()}
                           </TableCell>
@@ -1095,6 +1177,107 @@ export function GarageManagement() {
         onRefresh={handleRefreshAll}
         garageOwners={garageOwners}
       />
+
+      {/* Subscription Activation Dialog */}
+      <Dialog open={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Activate Subscription</DialogTitle>
+            <DialogDescription>
+              Set the subscription period for this garage owner. Dashboard access will be granted for the selected dates.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Subscription Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !subscriptionStartDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {subscriptionStartDate ? format(subscriptionStartDate, "PPP") : <span>Pick a start date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={subscriptionStartDate}
+                    onSelect={setSubscriptionStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label>Subscription End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !subscriptionEndDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {subscriptionEndDate ? format(subscriptionEndDate, "PPP") : <span>Pick an end date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={subscriptionEndDate}
+                    onSelect={setSubscriptionEndDate}
+                    disabled={(date) => subscriptionStartDate ? date < subscriptionStartDate : false}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            {subscriptionStartDate && subscriptionEndDate && (
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                <p className="font-medium">Subscription Summary</p>
+                <p className="text-muted-foreground mt-1">
+                  Duration: {Math.ceil((subscriptionEndDate.getTime() - subscriptionStartDate.getTime()) / (1000 * 60 * 60 * 24))} days
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSubscriptionDialogOpen(false);
+                setSubscriptionOwner(null);
+              }}
+              disabled={isUpdatingSubscription}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleSubscriptionUpdate(true)}
+              disabled={!subscriptionStartDate || !subscriptionEndDate || isUpdatingSubscription}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isUpdatingSubscription ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Activate Subscription"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
