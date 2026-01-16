@@ -353,7 +353,10 @@ export type Database = {
           created_at: string
           garage_id: string | null
           id: string
+          listing_date: string | null
+          signup_date: string | null
           subscription_active: boolean
+          subscription_date: string | null
           updated_at: string
           user_id: string
         }
@@ -363,7 +366,10 @@ export type Database = {
           created_at?: string
           garage_id?: string | null
           id?: string
+          listing_date?: string | null
+          signup_date?: string | null
           subscription_active?: boolean
+          subscription_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -373,7 +379,10 @@ export type Database = {
           created_at?: string
           garage_id?: string | null
           id?: string
+          listing_date?: string | null
+          signup_date?: string | null
           subscription_active?: boolean
+          subscription_date?: string | null
           updated_at?: string
           user_id?: string
         }
