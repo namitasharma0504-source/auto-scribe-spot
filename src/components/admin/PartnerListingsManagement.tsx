@@ -374,7 +374,14 @@ export function PartnerListingsManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredListings.map((listing) => (
-                    <TableRow key={listing.id}>
+                    <TableRow 
+                      key={listing.id} 
+                      className="cursor-pointer hover:bg-purple-500/5"
+                      onClick={() => {
+                        setSelectedListing(listing);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
                       <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
                       <TableCell>
                         <div>
@@ -442,7 +449,7 @@ export function PartnerListingsManagement() {
                           ? new Date(listing.submitted_at).toLocaleDateString() 
                           : "-"}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1 justify-end">
                           <Button
                             size="sm"
