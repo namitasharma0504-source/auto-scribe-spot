@@ -240,6 +240,36 @@ export function GarageManagement() {
     }
   };
 
+  const handleQuickSubscriptionToggle = async (ownerId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("garage_owners")
+        .update({
+          subscription_active: !currentStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ownerId);
+
+      if (error) throw error;
+
+      toast({
+        title: !currentStatus ? "Subscription Activated" : "Subscription Deactivated",
+        description: !currentStatus 
+          ? "Owner now has dashboard access" 
+          : "Owner dashboard access revoked",
+      });
+
+      fetchGarageOwners();
+    } catch (error: any) {
+      console.error("Error toggling subscription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchPartners = async () => {
     try {
       const { data, error } = await supabase
@@ -1189,7 +1219,7 @@ export function GarageManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {/* Subscription Status */}
+                        {/* Subscription Status with Quick Toggle */}
                         {(() => {
                           const owner = getOwnerForGarage(garage.id);
                           if (!owner) {
@@ -1199,16 +1229,20 @@ export function GarageManagement() {
                               </Badge>
                             );
                           }
-                          return owner.subscription_active ? (
-                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 text-xs">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Inactive
-                            </Badge>
+                          return (
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={owner.subscription_active}
+                                onCheckedChange={() => handleQuickSubscriptionToggle(owner.id, owner.subscription_active)}
+                                className="data-[state=checked]:bg-green-500"
+                              />
+                              <span className={cn(
+                                "text-xs",
+                                owner.subscription_active ? "text-green-600" : "text-muted-foreground"
+                              )}>
+                                {owner.subscription_active ? "Active" : "Inactive"}
+                              </span>
+                            </div>
                           );
                         })()}
                       </TableCell>
