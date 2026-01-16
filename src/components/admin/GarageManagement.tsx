@@ -1096,6 +1096,7 @@ export function GarageManagement() {
                     <TableHead>Rating</TableHead>
                     <TableHead>Reviews</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Subscription</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1186,6 +1187,30 @@ export function GarageManagement() {
                             </Badge>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {/* Subscription Status */}
+                        {(() => {
+                          const owner = getOwnerForGarage(garage.id);
+                          if (!owner) {
+                            return (
+                              <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/30 text-xs">
+                                Unclaimed
+                              </Badge>
+                            );
+                          }
+                          return owner.subscription_active ? (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 text-xs">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Inactive
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
