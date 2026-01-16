@@ -25,6 +25,8 @@ import {
   Eye,
   ExternalLink,
   RefreshCw,
+  Mail,
+  Lock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { GarageRecentReviews } from "./GarageRecentReviews";
@@ -182,6 +184,7 @@ export function GarageManagementSheet({
   const [isDeletingListing, setIsDeletingListing] = useState(false);
   const [isDeletingCredentials, setIsDeletingCredentials] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
 
   // Get unlinked owners
   const unlinkedOwners = garageOwners.filter(o => !o.garage_id);
@@ -217,6 +220,8 @@ export function GarageManagementSheet({
     // Load owner data for this garage
     const owner = garageOwners.find(o => o.garage_id === g.id) || null;
     setSelectedOwner(owner);
+    setOwnerEmail(null);
+    
     if (owner) {
       setOwnerForm({
         signup_date: owner.signup_date,
@@ -225,6 +230,24 @@ export function GarageManagementSheet({
         subscription_end_date: owner.subscription_end_date,
         subscription_active: owner.subscription_active,
       });
+      
+      // Try to fetch owner email from claim requests where they claimed this garage
+      try {
+        const { data: claimData } = await supabase
+          .from("garage_claim_requests")
+          .select("claimant_email")
+          .eq("claimant_user_id", owner.user_id)
+          .eq("status", "approved")
+          .limit(1)
+          .single();
+        
+        if (claimData?.claimant_email) {
+          setOwnerEmail(claimData.claimant_email);
+        }
+      } catch (err) {
+        // No claim record found, email will show as N/A
+        console.log("Could not fetch owner email from claims");
+      }
     } else {
       setOwnerForm({});
     }
@@ -1100,6 +1123,37 @@ export function GarageManagementSheet({
                         </div>
                       </div>
 
+                      {/* Login Credentials Section */}
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lock className="w-4 h-4 text-blue-600" />
+                          <p className="font-medium text-sm text-blue-800">Login Credentials</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="flex items-center gap-3">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <p className="text-xs text-muted-foreground">Email ID</p>
+                              <p className="font-medium text-sm">
+                                {ownerEmail || (
+                                  <span className="text-muted-foreground italic">
+                                    Not available (use password reset)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <p className="text-xs text-muted-foreground">Password</p>
+                              <p className="font-medium text-sm text-muted-foreground">••••••••</p>
+                              <p className="text-xs text-muted-foreground">(Encrypted - not visible)</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Reset Password */}
                       <div className="flex items-center justify-between p-3 rounded-lg border bg-amber-50 border-amber-200">
                         <div>
@@ -1116,6 +1170,12 @@ export function GarageManagementSheet({
                           Reset
                         </Button>
                       </div>
+
+                      {/* Save Owner Changes Button */}
+                      <Button onClick={handleSaveOwnerDates} disabled={isSavingOwner} variant="secondary" className="w-full">
+                        {isSavingOwner ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Save Owner Changes
+                      </Button>
                     </>
                   ) : (
                     <div className="space-y-4">
