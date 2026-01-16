@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Heart, PenSquare, Loader2 } from "lucide-react";
+import { MapPin, Phone, Globe, Clock, ChevronDown, ChevronUp, Heart, PenSquare, Loader2, AlertTriangle, Building2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StarRating } from "@/components/StarRating";
@@ -316,6 +316,31 @@ const GarageDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          {/* Unclaimed Garage Banner */}
+          {!garage.owner_id && (
+            <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl p-4 md:p-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-amber-600" />
+                      Unclaimed Garage Listing
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      This garage is not yet claimed by its owner. Are you the owner? Claim this listing to manage your garage profile and respond to reviews.
+                    </p>
+                  </div>
+                </div>
+                <div className="md:flex-shrink-0">
+                  <ClaimGarageDialog garageId={garage.id} garageName={garage.name} />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mobile Badges */}
           <div className="md:hidden mb-6">
             <GarageBadges
