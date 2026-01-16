@@ -809,7 +809,22 @@ export function GarageManagementSheet({
           </div>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-200px)]">
+        {/* Global Save Button - Always Visible */}
+        <div className="px-6 py-3 border-b bg-gradient-to-r from-green-50 to-emerald-50">
+          <Button 
+            onClick={handleSaveEdit} 
+            disabled={isSaving} 
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save All Listing Changes
+          </Button>
+          <p className="text-xs text-center text-muted-foreground mt-1">
+            Save any changes made to name, address, services, or badges
+          </p>
+        </div>
+
+        <ScrollArea className="h-[calc(100vh-280px)]">
           <div className="p-6 space-y-6">
             <Accordion type="multiple" defaultValue={["listing", "owner", "lifecycle", "access"]} className="space-y-4">
               
