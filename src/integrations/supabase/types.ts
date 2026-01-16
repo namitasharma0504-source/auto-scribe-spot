@@ -435,6 +435,8 @@ export type Database = {
         Row: {
           address: string | null
           approval_notes: string | null
+          captured_latitude: number | null
+          captured_longitude: number | null
           city: string | null
           country: string | null
           created_at: string
@@ -445,6 +447,8 @@ export type Database = {
           is_recommended: boolean | null
           is_verified: boolean | null
           listing_type: string | null
+          location_capture_method: string | null
+          location_captured_at: string | null
           location_link: string | null
           name: string
           owner_id: string | null
@@ -467,6 +471,8 @@ export type Database = {
         Insert: {
           address?: string | null
           approval_notes?: string | null
+          captured_latitude?: number | null
+          captured_longitude?: number | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -477,6 +483,8 @@ export type Database = {
           is_recommended?: boolean | null
           is_verified?: boolean | null
           listing_type?: string | null
+          location_capture_method?: string | null
+          location_captured_at?: string | null
           location_link?: string | null
           name: string
           owner_id?: string | null
@@ -499,6 +507,8 @@ export type Database = {
         Update: {
           address?: string | null
           approval_notes?: string | null
+          captured_latitude?: number | null
+          captured_longitude?: number | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -509,6 +519,8 @@ export type Database = {
           is_recommended?: boolean | null
           is_verified?: boolean | null
           listing_type?: string | null
+          location_capture_method?: string | null
+          location_captured_at?: string | null
           location_link?: string | null
           name?: string
           owner_id?: string | null

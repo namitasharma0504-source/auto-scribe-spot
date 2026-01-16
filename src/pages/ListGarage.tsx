@@ -31,6 +31,8 @@ interface FormErrors {
   country?: string;
   state?: string;
   services?: string;
+  location?: string;
+  photo?: string;
 }
 
 // Predefined services list
@@ -178,6 +180,12 @@ const ListGarage = () => {
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [isParsingMapsLink, setIsParsingMapsLink] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [capturedCoordinates, setCapturedCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+    capturedAt: string;
+    method: 'gps' | 'maps_link';
+  } | null>(null);
   const [locationVerification, setLocationVerification] = useState<{
     verified: boolean;
     detectedCity?: string;
@@ -276,6 +284,17 @@ const ListGarage = () => {
           setFormData(prev => ({ ...prev, locationLink: parsed.fullUrl }));
         }
         
+        // Capture coordinates from parsed link
+        if (parsed.latitude && parsed.longitude) {
+          setCapturedCoordinates({
+            latitude: parsed.latitude,
+            longitude: parsed.longitude,
+            capturedAt: new Date().toISOString(),
+            method: 'maps_link',
+          });
+          clearError('location');
+        }
+        
         // Set country to India by default (since this is the primary market)
         if (!formData.country) {
           setFormData(prev => ({ ...prev, country: "in" }));
@@ -325,6 +344,15 @@ const ListGarage = () => {
       
       const { latitude, longitude } = position.coords;
       
+      // Store captured coordinates immediately
+      setCapturedCoordinates({
+        latitude,
+        longitude,
+        capturedAt: new Date().toISOString(),
+        method: 'gps',
+      });
+      clearError('location');
+      
       // Call edge function to reverse geocode
       const { data, error } = await supabase.functions.invoke('parse-google-maps', {
         body: { latitude, longitude }
@@ -351,9 +379,10 @@ const ListGarage = () => {
           // Auto-match to form
           matchLocationToForm(parsed.city, parsed.state, parsed.country);
           
-          toast.success(`Location detected: ${[parsed.city, parsed.state].filter(Boolean).join(', ')}`);
+          toast.success(`Location captured: ${[parsed.city, parsed.state].filter(Boolean).join(', ')}`);
         } else {
-          toast.success("Location captured! Coordinates saved.");
+          setLocationVerification({ verified: true });
+          toast.success("GPS location captured successfully!");
         }
       }
     } catch (error: any) {
@@ -560,6 +589,21 @@ const ListGarage = () => {
       newErrors.services = "Please select at least one service you offer";
     }
     
+    // Partner-specific validations
+    if (listingType === "partner") {
+      // Partners MUST capture GPS location to prove physical visit
+      if (!capturedCoordinates) {
+        newErrors.location = "You must capture your GPS location to verify physical visit";
+      } else if (capturedCoordinates.method !== 'gps') {
+        newErrors.location = "Partners must use GPS location (not Maps link) to verify presence at garage";
+      }
+      
+      // Partners MUST upload photo of garage board/visiting card
+      if (!photoFile) {
+        newErrors.photo = "Please upload a photo of the garage board or visiting card";
+      }
+    }
+    
     setErrors(newErrors);
     
     // Mark all fields as touched
@@ -570,6 +614,8 @@ const ListGarage = () => {
       country: true,
       state: true,
       services: true,
+      location: true,
+      photo: true,
     });
     
     return Object.keys(newErrors).length === 0;
@@ -663,7 +709,12 @@ const ListGarage = () => {
           partner_id: partnerId,
           referral_source: isPartner ? 'partner' : 'direct',
           rating: 5.0,
-          review_count: 0
+          review_count: 0,
+          // Location verification data
+          captured_latitude: capturedCoordinates?.latitude || null,
+          captured_longitude: capturedCoordinates?.longitude || null,
+          location_captured_at: capturedCoordinates?.capturedAt || null,
+          location_capture_method: capturedCoordinates?.method || null,
         })
         .select('id')
         .single();
@@ -969,17 +1020,39 @@ const ListGarage = () => {
             )}
 
             {/* Google Maps Link / Live Location */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <MapPinned className="w-4 h-4 text-primary" />
-                Garage Location
+            <div className="space-y-3" data-error={!!errors.location}>
+              <Label className={cn("flex items-center gap-2", errors.location && "text-destructive")}>
+                <MapPinned className={cn("w-4 h-4", errors.location ? "text-destructive" : "text-primary")} />
+                Garage Location {listingType === "partner" && "*"}
               </Label>
               
-              {/* Live Location Button */}
+              {/* Partner-specific warning */}
+              {listingType === "partner" && (
+                <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-purple-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-purple-700">Physical Visit Required</p>
+                      <p className="text-xs text-purple-600">
+                        You must be physically present at the garage to capture GPS location. 
+                        This ensures data authenticity and prevents copying from online sources.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Live Location Button - mandatory for partners */}
               <Button
                 type="button"
-                variant="outline"
-                className="w-full gap-2 border-dashed"
+                variant={listingType === "partner" ? "default" : "outline"}
+                className={cn(
+                  "w-full gap-2",
+                  listingType === "partner" 
+                    ? "bg-purple-600 hover:bg-purple-700" 
+                    : "border-dashed",
+                  capturedCoordinates?.method === 'gps' && "bg-green-600 hover:bg-green-700"
+                )}
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation}
               >
@@ -988,38 +1061,65 @@ const ListGarage = () => {
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Getting your location...
                   </>
+                ) : capturedCoordinates?.method === 'gps' ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    GPS Location Captured ✓
+                  </>
                 ) : (
                   <>
                     <Navigation className="w-4 h-4" />
-                    Use Current Location
+                    {listingType === "partner" ? "Capture GPS Location (Required)" : "Use Current Location"}
                   </>
                 )}
               </Button>
               
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="flex-1 border-t" />
-                <span>OR paste Google Maps link</span>
-                <span className="flex-1 border-t" />
-              </div>
+              {/* Show captured coordinates for partners */}
+              {capturedCoordinates && (
+                <div className="p-2 rounded bg-muted text-xs font-mono">
+                  📍 {capturedCoordinates.latitude.toFixed(6)}, {capturedCoordinates.longitude.toFixed(6)}
+                  <span className="ml-2 text-muted-foreground">
+                    ({capturedCoordinates.method === 'gps' ? 'GPS' : 'Maps Link'})
+                  </span>
+                </div>
+              )}
               
-              <div className="relative">
-                <Input
-                  id="locationLink"
-                  type="url"
-                  placeholder="Paste Google Maps share link (e.g., https://share.google/...)"
-                  value={formData.locationLink}
-                  onChange={(e) => handleLocationLinkChange(e.target.value)}
-                  className={cn(
-                    locationVerification?.verified && "border-green-500 pr-10"
-                  )}
-                />
-                {isParsingMapsLink && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                )}
-                {locationVerification?.verified && !isParsingMapsLink && (
-                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
-                )}
-              </div>
+              {errors.location && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.location}
+                </p>
+              )}
+              
+              {/* Maps link option - secondary for partners */}
+              {listingType !== "partner" && (
+                <>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex-1 border-t" />
+                    <span>OR paste Google Maps link</span>
+                    <span className="flex-1 border-t" />
+                  </div>
+                  
+                  <div className="relative">
+                    <Input
+                      id="locationLink"
+                      type="url"
+                      placeholder="Paste Google Maps share link (e.g., https://share.google/...)"
+                      value={formData.locationLink}
+                      onChange={(e) => handleLocationLinkChange(e.target.value)}
+                      className={cn(
+                        locationVerification?.verified && "border-green-500 pr-10"
+                      )}
+                    />
+                    {isParsingMapsLink && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                    )}
+                    {locationVerification?.verified && !isParsingMapsLink && (
+                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                    )}
+                  </div>
+                </>
+              )}
               
               {/* Location Verification Status */}
               {locationVerification?.verified && (locationVerification.detectedCity || locationVerification.detectedState) && (
@@ -1047,17 +1147,40 @@ const ListGarage = () => {
               )}
               
               <p className="text-xs text-muted-foreground">
-                Use live location or paste a Google Maps link - we'll auto-detect the city and verify it matches your selection
+                {listingType === "partner" 
+                  ? "GPS location capture is mandatory to verify your physical presence at the garage"
+                  : "Use live location or paste a Google Maps link - we'll auto-detect the city and verify it matches your selection"
+                }
               </p>
             </div>
 
             {/* Photo Upload */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-primary" />
-                Garage Photo
+            <div className="space-y-2" data-error={!!errors.photo}>
+              <Label className={cn("flex items-center gap-2", errors.photo && "text-destructive")}>
+                <Camera className={cn("w-4 h-4", errors.photo ? "text-destructive" : "text-primary")} />
+                {listingType === "partner" ? "Garage Board / Visiting Card Photo *" : "Garage Photo"}
               </Label>
-              <div className="border-2 border-dashed border-border rounded-xl p-4">
+              
+              {/* Partner-specific instruction */}
+              {listingType === "partner" && (
+                <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                  <div className="flex items-start gap-2">
+                    <Camera className="w-4 h-4 text-purple-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-purple-700">Photo Proof Required</p>
+                      <p className="text-xs text-purple-600">
+                        Upload a clear photo of the garage board (name board) or the owner's visiting card. 
+                        This proves you physically visited and collected authentic information.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className={cn(
+                "border-2 border-dashed rounded-xl p-4",
+                errors.photo ? "border-destructive bg-destructive/5" : "border-border"
+              )}>
                 {photoPreview ? (
                   <div className="relative">
                     <img 
@@ -1074,14 +1197,33 @@ const ListGarage = () => {
                     >
                       <X className="h-4 w-4" />
                     </Button>
+                    {listingType === "partner" && (
+                      <Badge className="absolute bottom-2 left-2 bg-green-600">
+                        <CheckCircle className="w-3 h-3 mr-1" /> Photo uploaded
+                      </Badge>
+                    )}
                   </div>
                 ) : (
                   <div 
-                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors"
+                    className={cn(
+                      "flex flex-col items-center justify-center py-8 cursor-pointer rounded-lg transition-colors",
+                      listingType === "partner" ? "hover:bg-purple-500/10" : "hover:bg-muted/50"
+                    )}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Click to upload garage photo</p>
+                    <Upload className={cn(
+                      "h-10 w-10 mb-2",
+                      listingType === "partner" ? "text-purple-600" : "text-muted-foreground"
+                    )} />
+                    <p className={cn(
+                      "text-sm",
+                      listingType === "partner" ? "text-purple-700 font-medium" : "text-muted-foreground"
+                    )}>
+                      {listingType === "partner" 
+                        ? "Upload garage board or visiting card photo" 
+                        : "Click to upload garage photo"
+                      }
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB</p>
                   </div>
                 )}
@@ -1093,6 +1235,13 @@ const ListGarage = () => {
                   className="hidden"
                 />
               </div>
+              
+              {errors.photo && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.photo}
+                </p>
+              )}
             </div>
 
             {/* Services Selection */}
