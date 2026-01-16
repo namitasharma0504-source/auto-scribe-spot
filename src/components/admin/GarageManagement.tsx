@@ -179,6 +179,12 @@ export function GarageManagement() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
+  const [newOwnerForm, setNewOwnerForm] = useState({
+    business_name: "",
+    contact_phone: "",
+    enable_subscription: false,
+  });
+  const [isCreatingOwner, setIsCreatingOwner] = useState(false);
 
   useEffect(() => {
     fetchGarages();
@@ -267,6 +273,83 @@ export function GarageManagement() {
         description: "Failed to update subscription status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCreateOwner = async (garageId: string) => {
+    if (!newOwnerForm.business_name.trim()) {
+      toast({
+        title: "Business Name Required",
+        description: "Please enter a business name for the owner",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingOwner(true);
+    try {
+      const now = new Date().toISOString();
+      
+      // Create a new garage_owner record
+      const { data: newOwner, error: ownerError } = await supabase
+        .from("garage_owners")
+        .insert({
+          garage_id: garageId,
+          user_id: crypto.randomUUID(), // Placeholder user_id since no actual user account
+          business_name: newOwnerForm.business_name.trim(),
+          contact_phone: newOwnerForm.contact_phone.trim() || null,
+          signup_date: now,
+          listing_date: now,
+          subscription_active: newOwnerForm.enable_subscription,
+          subscription_date: newOwnerForm.enable_subscription ? now : null,
+        })
+        .select()
+        .single();
+
+      if (ownerError) throw ownerError;
+
+      // Update the garage with owner_id reference
+      const { error: garageError } = await supabase
+        .from("garages")
+        .update({ owner_id: newOwner.id })
+        .eq("id", garageId);
+
+      if (garageError) throw garageError;
+
+      toast({
+        title: "Owner Created & Linked",
+        description: newOwnerForm.enable_subscription 
+          ? "Owner has been created with active dashboard access"
+          : "Owner has been created. Enable subscription for dashboard access.",
+      });
+
+      // Reset form and refresh data
+      setNewOwnerForm({
+        business_name: "",
+        contact_phone: "",
+        enable_subscription: false,
+      });
+      
+      fetchGarageOwners();
+      fetchGarages();
+      
+      // Update selectedOwner to show the new owner in the form
+      setSelectedOwner(newOwner);
+      setOwnerForm({
+        signup_date: newOwner.signup_date,
+        listing_date: newOwner.listing_date,
+        subscription_date: newOwner.subscription_date,
+        subscription_active: newOwner.subscription_active,
+      });
+    } catch (error: any) {
+      console.error("Error creating owner:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create owner",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingOwner(false);
     }
   };
 
@@ -2041,13 +2124,71 @@ export function GarageManagement() {
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 border rounded-lg bg-muted/30 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    No owner is linked to this garage yet.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Owner details will appear here once someone claims this garage.
-                  </p>
+                <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                  <div className="text-center">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      No owner is linked to this garage yet.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Create an owner manually to manage subscription access.
+                    </p>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create New Owner
+                    </h4>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="new_business_name">Business Name *</Label>
+                      <Input
+                        id="new_business_name"
+                        value={newOwnerForm.business_name}
+                        onChange={(e) => setNewOwnerForm({ ...newOwnerForm, business_name: e.target.value })}
+                        placeholder="Enter business/owner name"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="new_contact_phone">Contact Phone</Label>
+                      <Input
+                        id="new_contact_phone"
+                        value={newOwnerForm.contact_phone}
+                        onChange={(e) => setNewOwnerForm({ ...newOwnerForm, contact_phone: e.target.value })}
+                        placeholder="Enter contact phone"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 border rounded-lg bg-green-500/5">
+                      <div className="flex items-center gap-2">
+                        <Key className="w-4 h-4 text-green-600" />
+                        <Label htmlFor="new_enable_subscription" className="text-sm cursor-pointer">
+                          Enable Dashboard Access
+                        </Label>
+                      </div>
+                      <Switch
+                        id="new_enable_subscription"
+                        checked={newOwnerForm.enable_subscription}
+                        onCheckedChange={(checked) => setNewOwnerForm({ ...newOwnerForm, enable_subscription: checked })}
+                      />
+                    </div>
+                    
+                    <Button 
+                      onClick={() => selectedGarage && handleCreateOwner(selectedGarage.id)}
+                      disabled={isCreatingOwner || !newOwnerForm.business_name.trim()}
+                      className="w-full"
+                    >
+                      {isCreatingOwner ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 mr-2" />
+                      )}
+                      Create Owner & Link to Garage
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
