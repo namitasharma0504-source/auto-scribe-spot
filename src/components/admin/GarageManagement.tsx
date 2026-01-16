@@ -150,6 +150,7 @@ interface GarageOwner {
   signup_date: string | null;
   listing_date: string | null;
   subscription_date: string | null;
+  subscription_end_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -221,6 +222,7 @@ export function GarageManagement() {
           signup_date: ownerForm.signup_date || null,
           listing_date: ownerForm.listing_date || null,
           subscription_date: ownerForm.subscription_date || null,
+          subscription_end_date: ownerForm.subscription_end_date || null,
           subscription_active: ownerForm.subscription_active || false,
           updated_at: new Date().toISOString(),
         })
@@ -2090,6 +2092,85 @@ export function GarageManagement() {
                       )}
                     </div>
                   </div>
+
+                  {/* Subscription End Date */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Subscription End Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !ownerForm.subscription_end_date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {ownerForm.subscription_end_date ? format(new Date(ownerForm.subscription_end_date), "PPP") : "Select end date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={ownerForm.subscription_end_date ? new Date(ownerForm.subscription_end_date) : undefined}
+                          onSelect={(date) => setOwnerForm({ ...ownerForm, subscription_end_date: date?.toISOString() || null })}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {ownerForm.subscription_end_date && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-muted-foreground"
+                        onClick={() => setOwnerForm({ ...ownerForm, subscription_end_date: null })}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Subscription Status Summary Card */}
+                  {(() => {
+                    const isExpired = ownerForm.subscription_end_date && new Date(ownerForm.subscription_end_date) < new Date();
+                    const daysRemaining = ownerForm.subscription_end_date 
+                      ? Math.ceil((new Date(ownerForm.subscription_end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                      : 0;
+                    
+                    return (
+                      <Card className={cn(
+                        "border-2",
+                        ownerForm.subscription_active && !isExpired ? "border-green-500 bg-green-50" : 
+                        isExpired ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50"
+                      )}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">Subscription Status</p>
+                              <p className="text-sm text-muted-foreground">
+                                {ownerForm.subscription_active && !isExpired 
+                                  ? `Active - ${daysRemaining} days remaining`
+                                  : isExpired ? "Expired" : "Inactive"}
+                              </p>
+                              {ownerForm.subscription_date && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Started: {format(new Date(ownerForm.subscription_date), "PPP")}
+                                </p>
+                              )}
+                              {ownerForm.subscription_end_date && (
+                                <p className="text-xs text-muted-foreground">
+                                  Ends: {format(new Date(ownerForm.subscription_end_date), "PPP")}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant={ownerForm.subscription_active && !isExpired ? "default" : "destructive"}>
+                              {ownerForm.subscription_active && !isExpired ? "Active" : isExpired ? "Expired" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
 
                   {/* Subscription Status Toggle */}
                   <div className="flex items-center justify-between p-3 rounded-lg border bg-background">

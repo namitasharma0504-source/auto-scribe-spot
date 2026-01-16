@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 
 interface ClaimRequest {
@@ -44,6 +45,8 @@ interface GarageOwner {
   business_name: string | null;
   contact_phone: string | null;
   subscription_active: boolean;
+  subscription_date: string | null;
+  subscription_end_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -215,37 +218,69 @@ export default function GarageAccount() {
           </div>
 
           {/* Dashboard Access Card (if approved and subscription active) */}
-          {hasApprovedClaim && hasActiveSubscription && (
-            <Card className="border-green-500/30 bg-green-500/5">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-green-700 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5" />
-                      Dashboard Access Active
-                    </CardTitle>
-                    <CardDescription className="text-green-600">
-                      Your subscription is active! You can access and manage your garage dashboard.
-                    </CardDescription>
+          {hasApprovedClaim && hasActiveSubscription && (() => {
+            const isExpired = garageOwner?.subscription_end_date && new Date(garageOwner.subscription_end_date) < new Date();
+            const daysRemaining = garageOwner?.subscription_end_date 
+              ? Math.ceil((new Date(garageOwner.subscription_end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+              : 0;
+            const isExpiringSoon = daysRemaining > 0 && daysRemaining <= 30;
+            
+            return (
+              <Card className={cn(
+                "border-green-500/30 bg-green-500/5",
+                isExpiringSoon && "border-amber-500/30 bg-amber-500/5"
+              )}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className={cn(
+                        "flex items-center gap-2",
+                        isExpiringSoon ? "text-amber-700" : "text-green-700"
+                      )}>
+                        <CheckCircle className="w-5 h-5" />
+                        Dashboard Access Active
+                      </CardTitle>
+                      <CardDescription className={isExpiringSoon ? "text-amber-600" : "text-green-600"}>
+                        {isExpiringSoon 
+                          ? `Your subscription expires in ${daysRemaining} days. Renew soon!`
+                          : "Your subscription is active! You can access and manage your garage dashboard."}
+                      </CardDescription>
+                    </div>
+                    {garageOwner?.subscription_end_date && (
+                      <Badge variant={isExpiringSoon ? "outline" : "default"} className={cn(
+                        isExpiringSoon ? "bg-amber-500/10 text-amber-600 border-amber-500/30" : "bg-green-500/10 text-green-600 border-green-500/30"
+                      )}>
+                        {daysRemaining} days left
+                      </Badge>
+                    )}
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-lg">{garage.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {[garage.city, garage.state].filter(Boolean).join(", ")}
-                    </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-lg">{garage.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {[garage.city, garage.state].filter(Boolean).join(", ")}
+                      </p>
+                      {garageOwner?.subscription_end_date && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Subscription valid until: {new Date(garageOwner.subscription_end_date).toLocaleDateString('en-IN', { 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <Button onClick={() => navigate("/garage-dashboard")} className="gap-2">
+                      Go to Dashboard
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button onClick={() => navigate("/garage-dashboard")} className="gap-2">
-                    Go to Dashboard
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Claim Approved but Subscription Pending Card */}
           {hasApprovedClaim && !hasActiveSubscription && (

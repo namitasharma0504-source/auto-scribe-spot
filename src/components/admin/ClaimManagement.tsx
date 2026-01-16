@@ -280,30 +280,37 @@ export function ClaimManagement() {
         .eq("user_id", claim.claimant_user_id)
         .maybeSingle();
 
+      // Calculate 1-year subscription dates
+      const today = new Date();
+      const subscriptionEndDate = new Date(today);
+      subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 1);
+      
+      const subscriptionData = {
+        garage_id: claim.garage_id,
+        business_name: claim.garage?.name || claim.claimant_name,
+        contact_phone: claim.claimant_phone,
+        subscription_active: true,  // Activated on claim approval!
+        subscription_date: today.toISOString().split('T')[0],
+        subscription_end_date: subscriptionEndDate.toISOString().split('T')[0],
+      };
+
       if (existingOwner) {
-        // Update existing record with the claimed garage
+        // Update existing record with the claimed garage and activate subscription
         const { error: updateError } = await supabase
           .from("garage_owners")
-          .update({
-            garage_id: claim.garage_id,
-            business_name: claim.garage?.name || claim.claimant_name,
-            contact_phone: claim.claimant_phone,
-          })
+          .update(subscriptionData)
           .eq("user_id", claim.claimant_user_id);
         
         if (updateError) {
           console.error("Failed to update garage_owners:", updateError);
         }
       } else {
-        // Insert new record
+        // Insert new record with active subscription
         const { error: insertError } = await supabase
           .from("garage_owners")
           .insert({
             user_id: claim.claimant_user_id,
-            garage_id: claim.garage_id,
-            business_name: claim.garage?.name || claim.claimant_name,
-            contact_phone: claim.claimant_phone,
-            subscription_active: false, // Admin must enable after payment
+            ...subscriptionData,
           });
         
         if (insertError) {
