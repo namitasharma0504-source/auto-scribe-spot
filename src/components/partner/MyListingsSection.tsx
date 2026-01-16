@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { 
   Building2, Search, Calendar as CalendarIcon, 
   Plus, Play, Flag, CheckCircle, XCircle, Clock,
-  Database, Star, Laptop
+  Database, Star, Laptop, IndianRupee
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,9 +43,11 @@ interface PartnerListing {
   reputation_upsell: boolean | null;
   reputation_earning: number | null;
   reputation_payment_id: string | null;
+  reputation_verified: boolean | null;
   gms_upsell: boolean | null;
   gms_earning: number | null;
   gms_payment_id: string | null;
+  gms_verified: boolean | null;
   total_earning: number | null;
   payout_status: string | null;
   garages?: { name: string; city: string | null } | null;
@@ -54,10 +56,15 @@ interface PartnerListing {
 interface MyListingsSectionProps {
   listings: PartnerListing[];
   onStartTask: () => void;
-  onUpsell: (listing: PartnerListing) => void;
+  onUpsell: (listing: PartnerListing, upsellType?: 'reputation' | 'gms') => void;
   onDispute: (listing: PartnerListing) => void;
   partnerId?: string;
 }
+
+// Commission amounts
+const DATA_COLLECTION_AMOUNT = 20;
+const REPUTATION_AMOUNT = 450;
+const GMS_AMOUNT = 1800;
 
 export function MyListingsSection({ 
   listings, 
@@ -119,52 +126,131 @@ export function MyListingsSection({
     });
   }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter]);
 
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
-      case "approved":
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>;
-      case "rejected":
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/30"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
-      case "under_review":
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30"><Clock className="w-3 h-3 mr-1" />Under Review</Badge>;
-      default:
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+  // Calculate total payout for a listing (only verified items count)
+  const calculateTotalPayout = (listing: PartnerListing) => {
+    let total = 0;
+    
+    // Data Collection: ₹20 if approved
+    if (listing.status === "approved") {
+      total += DATA_COLLECTION_AMOUNT;
     }
+    
+    // Reputation: ₹450 if verified by admin
+    if (listing.reputation_upsell && listing.reputation_verified) {
+      total += REPUTATION_AMOUNT;
+    }
+    
+    // GMS: ₹1,800 if verified by admin
+    if (listing.gms_upsell && listing.gms_verified) {
+      total += GMS_AMOUNT;
+    }
+    
+    return total;
   };
 
-  const getPayoutStatusBadge = (status: string | null) => {
-    switch (status) {
-      case "paid":
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Paid</Badge>;
-      case "processing":
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Processing</Badge>;
-      default:
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">Pending</Badge>;
+  // Data Collection status badge
+  const getDataCollectionStatus = (listing: PartnerListing) => {
+    if (listing.status === "approved") {
+      return (
+        <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+          <CheckCircle className="w-3 h-3 mr-0.5" />Verified
+        </Badge>
+      );
     }
+    if (listing.status === "rejected") {
+      return (
+        <Badge className="bg-red-500/10 text-red-600 border-red-500/30 text-[10px] px-1.5 py-0.5">
+          <XCircle className="w-3 h-3 mr-0.5" />Rejected
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-[10px] px-1.5 py-0.5">
+        <Clock className="w-3 h-3 mr-0.5" />Unverified
+      </Badge>
+    );
   };
 
-  const getCategoryBadges = (listing: PartnerListing) => {
-    const badges = [];
-    badges.push({ 
-      label: 'Data Collection', 
-      icon: Database,
-      color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' 
-    });
-    if (listing.reputation_upsell) {
-      badges.push({ 
-        label: 'Reputation', 
-        icon: Star,
-        color: 'bg-violet-500/10 text-violet-600 border-violet-500/30' 
-      });
+  // Reputation status display
+  const getReputationStatus = (listing: PartnerListing) => {
+    // If listing not approved, show dash
+    if (listing.status !== "approved") {
+      return <span className="text-[10px] text-muted-foreground">-</span>;
     }
-    if (listing.gms_upsell) {
-      badges.push({ 
-        label: 'GMS Software', 
-        icon: Laptop,
-        color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
-      });
+    
+    // If reputation is verified (active)
+    if (listing.reputation_upsell && listing.reputation_verified) {
+      return (
+        <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+          <CheckCircle className="w-3 h-3 mr-0.5" />Active
+        </Badge>
+      );
     }
-    return badges;
+    
+    // If reputation is submitted but pending verification
+    if (listing.reputation_upsell && !listing.reputation_verified) {
+      return (
+        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] px-1.5 py-0.5">
+          <Clock className="w-3 h-3 mr-0.5" />Pending
+        </Badge>
+      );
+    }
+    
+    // Not yet upsold - show upsell button
+    return (
+      <Button 
+        size="sm" 
+        variant="outline"
+        className="h-5 px-1.5 text-[10px] text-purple-600 border-purple-400 hover:bg-purple-50"
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpsell(listing, 'reputation');
+        }}
+      >
+        <Star className="w-3 h-3 mr-0.5" />₹450
+      </Button>
+    );
+  };
+
+  // GMS status display
+  const getGMSStatus = (listing: PartnerListing) => {
+    // If listing not approved, show dash
+    if (listing.status !== "approved") {
+      return <span className="text-[10px] text-muted-foreground">-</span>;
+    }
+    
+    // If GMS is verified (active)
+    if (listing.gms_upsell && listing.gms_verified) {
+      return (
+        <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+          <CheckCircle className="w-3 h-3 mr-0.5" />Active
+        </Badge>
+      );
+    }
+    
+    // If GMS is submitted but pending verification
+    if (listing.gms_upsell && !listing.gms_verified) {
+      return (
+        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] px-1.5 py-0.5">
+          <Clock className="w-3 h-3 mr-0.5" />Pending
+        </Badge>
+      );
+    }
+    
+    // Not yet upsold - show upsell button
+    return (
+      <Button 
+        size="sm" 
+        variant="outline"
+        className="h-5 px-1.5 text-[10px] text-blue-600 border-blue-400 hover:bg-blue-50"
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpsell(listing, 'gms');
+        }}
+      >
+        <Laptop className="w-3 h-3 mr-0.5" />₹1800
+      </Button>
+    );
   };
 
   // Stats
@@ -173,7 +259,7 @@ export function MyListingsSection({
   const pendingCount = filteredListings.filter(l => l.status === "pending" || !l.status).length;
   const rejectedCount = filteredListings.filter(l => l.status === "rejected").length;
   const paidCount = filteredListings.filter(l => l.status === "approved" && l.payout_status === "paid").length;
-  const totalEarnings = filteredListings.reduce((sum, l) => sum + (l.total_earning || 0), 0);
+  const totalEarnings = filteredListings.reduce((sum, l) => sum + calculateTotalPayout(l), 0);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -341,6 +427,13 @@ export function MyListingsSection({
           </div>
         </div>
 
+        {/* Color Legend */}
+        <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground px-1">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Verified/Active</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Pending Approval</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Unverified</span>
+        </div>
+
         {/* Listings Table - Scrollable */}
         <div className="flex-1 min-h-0 overflow-auto">
           {filteredListings.length === 0 ? (
@@ -368,39 +461,61 @@ export function MyListingsSection({
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">GIN</TableHead>
-                    <TableHead className="text-xs">Garage</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs">Payout</TableHead>
-                    <TableHead className="text-xs text-right">Earnings</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-[10px] font-semibold">Timestamp</TableHead>
+                    <TableHead className="text-[10px] font-semibold">Garage</TableHead>
+                    <TableHead className="text-[10px] font-semibold">GIN</TableHead>
+                    <TableHead className="text-[10px] font-semibold text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Database className="w-3 h-3 text-purple-500" />
+                        Data (₹20)
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Star className="w-3 h-3 text-violet-500" />
+                        Reputation
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Laptop className="w-3 h-3 text-blue-500" />
+                        GMS
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <IndianRupee className="w-3 h-3 text-emerald-500" />
+                        Total Payout
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredListings.slice(0, 10).map((listing) => {
-                    const canUpsell = listing.status === "approved" && (!listing.reputation_upsell || !listing.gms_upsell);
                     const canDispute = listing.status === "rejected";
+                    const totalPayout = calculateTotalPayout(listing);
 
                     return (
-                      <TableRow key={listing.id}>
-                        <TableCell className="font-mono text-xs py-2">{listing.gin || "-"}</TableCell>
+                      <TableRow key={listing.id} className="hover:bg-muted/20">
+                        <TableCell className="py-2 text-[10px] text-muted-foreground whitespace-nowrap">
+                          {listing.submitted_at ? format(new Date(listing.submitted_at), "dd MMM yyyy") : "-"}
+                        </TableCell>
                         <TableCell className="py-2">
                           <div>
-                            <p className="text-xs font-medium truncate max-w-[120px]">{listing.garages?.name || "Processing..."}</p>
+                            <p className="text-xs font-medium truncate max-w-[100px]">{listing.garages?.name || "Processing..."}</p>
                             <p className="text-[10px] text-muted-foreground">{listing.garages?.city || "-"}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="py-2">{getStatusBadge(listing.status)}</TableCell>
-                        <TableCell className="py-2">
-                          {listing.status === "approved" ? (
-                            getPayoutStatusBadge(listing.payout_status)
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right py-2 font-semibold text-xs text-purple-600">
-                          ₹{(listing.total_earning || 0)}
+                        <TableCell className="font-mono text-[10px] py-2 text-purple-600">{listing.gin || "-"}</TableCell>
+                        <TableCell className="py-2 text-center">{getDataCollectionStatus(listing)}</TableCell>
+                        <TableCell className="py-2 text-center">{getReputationStatus(listing)}</TableCell>
+                        <TableCell className="py-2 text-center">{getGMSStatus(listing)}</TableCell>
+                        <TableCell className="text-right py-2">
+                          <span className={`font-bold text-sm ${totalPayout > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                            ₹{totalPayout.toLocaleString()}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right py-2">
                           <div className="flex justify-end gap-1">
@@ -414,16 +529,6 @@ export function MyListingsSection({
                                 <Flag className="w-3 h-3" />
                               </Button>
                             )}
-                            {canUpsell && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="text-purple-600 h-6 px-2 text-xs border-purple-300"
-                                onClick={() => onUpsell(listing)}
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -431,16 +536,14 @@ export function MyListingsSection({
                   })}
                 </TableBody>
               </Table>
+              {filteredListings.length > 10 && (
+                <div className="p-2 text-center text-xs text-muted-foreground bg-muted/30 border-t">
+                  Showing 10 of {filteredListings.length} listings
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Results count */}
-        {filteredListings.length > 0 && (
-          <p className="text-xs text-muted-foreground text-center pt-1">
-            Showing {Math.min(filteredListings.length, 10)} of {filteredListings.length} listings
-          </p>
-        )}
       </CardContent>
     </Card>
   );

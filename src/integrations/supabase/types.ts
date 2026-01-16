@@ -658,6 +658,7 @@ export type Database = {
           gms_earning: number | null
           gms_payment_id: string | null
           gms_upsell: boolean | null
+          gms_verified: boolean | null
           id: string
           listing_id: string | null
           partner_id: string
@@ -669,6 +670,7 @@ export type Database = {
           reputation_earning: number | null
           reputation_payment_id: string | null
           reputation_upsell: boolean | null
+          reputation_verified: boolean | null
           status: string | null
           submitted_at: string | null
           total_earning: number | null
@@ -681,6 +683,7 @@ export type Database = {
           gms_earning?: number | null
           gms_payment_id?: string | null
           gms_upsell?: boolean | null
+          gms_verified?: boolean | null
           id?: string
           listing_id?: string | null
           partner_id: string
@@ -692,6 +695,7 @@ export type Database = {
           reputation_earning?: number | null
           reputation_payment_id?: string | null
           reputation_upsell?: boolean | null
+          reputation_verified?: boolean | null
           status?: string | null
           submitted_at?: string | null
           total_earning?: number | null
@@ -704,6 +708,7 @@ export type Database = {
           gms_earning?: number | null
           gms_payment_id?: string | null
           gms_upsell?: boolean | null
+          gms_verified?: boolean | null
           id?: string
           listing_id?: string | null
           partner_id?: string
@@ -715,6 +720,7 @@ export type Database = {
           reputation_earning?: number | null
           reputation_payment_id?: string | null
           reputation_upsell?: boolean | null
+          reputation_verified?: boolean | null
           status?: string | null
           submitted_at?: string | null
           total_earning?: number | null
