@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import { 
-  Building2, Search, Calendar as CalendarIcon, Filter, 
-  ChevronDown, Plus, Play, Database, Star, Laptop, Flag,
-  CheckCircle, XCircle, Clock
+  Building2, Search, Calendar as CalendarIcon, 
+  Plus, Play, Flag, CheckCircle, XCircle, Clock,
+  Database, Star, Laptop
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -56,13 +56,15 @@ interface MyListingsSectionProps {
   onStartTask: () => void;
   onUpsell: (listing: PartnerListing) => void;
   onDispute: (listing: PartnerListing) => void;
+  partnerId?: string;
 }
 
 export function MyListingsSection({ 
   listings, 
   onStartTask, 
   onUpsell, 
-  onDispute 
+  onDispute,
+  partnerId
 }: MyListingsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -170,261 +172,234 @@ export function MyListingsSection({
   const hasActiveFilters = searchQuery || statusFilter !== "all" || categoryFilter !== "all" || dateRange;
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="w-5 h-5 text-purple-500" />
               My Listed Garages
             </CardTitle>
-            <CardDescription>
-              View and manage all garages you have listed
-            </CardDescription>
+            <Button 
+              size="sm"
+              onClick={onStartTask}
+              className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
+            >
+              <Plus className="w-3 h-3" /> Add New
+            </Button>
           </div>
-          <Button 
-            onClick={onStartTask}
-            className="gap-2 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
-          >
-            <Plus className="w-4 h-4" /> Add New Listing
-          </Button>
+          {partnerId && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Your Partner ID:</span>
+              <code className="text-xs font-mono bg-purple-100 text-purple-700 px-2 py-0.5 rounded">{partnerId}</code>
+            </div>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Filters Row */}
-        <div className="flex flex-col md:flex-row gap-3">
+      <CardContent className="flex-1 flex flex-col space-y-3 overflow-hidden">
+        {/* Compact Filters Row */}
+        <div className="flex flex-col gap-2">
           {/* Search */}
-          <div className="relative flex-1">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by garage name, city, or GIN..."
+              placeholder="Search garage, city, GIN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-9 text-sm"
             />
           </div>
 
-          {/* Date Range Picker */}
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM yyyy")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "dd MMM yyyy")
-                  )
-                ) : (
-                  <span className="text-muted-foreground">Filter by date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-background" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={(range) => {
-                  setDateRange(range);
-                  if (range?.to) setIsCalendarOpen(false);
-                }}
-                numberOfMonths={2}
-              />
-              <div className="p-3 border-t flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => {
-                    setDateRange(undefined);
-                    setIsCalendarOpen(false);
+          {/* Filter Row */}
+          <div className="flex flex-wrap gap-2">
+            {/* Date Range Picker */}
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                  <CalendarIcon className="h-3 w-3" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>{format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM")}</>
+                    ) : format(dateRange.from, "dd MMM")
+                  ) : "Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-background" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    setDateRange(range);
+                    if (range?.to) setIsCalendarOpen(false);
                   }}
-                >
-                  Clear
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => setIsCalendarOpen(false)}
-                >
-                  Apply
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+                  numberOfMonths={1}
+                />
+                <div className="p-2 border-t flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setDateRange(undefined);
+                      setIsCalendarOpen(false);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-background">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-auto h-8 text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Category Filter */}
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="bg-background">
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="data_only">Data Collection Only</SelectItem>
-              <SelectItem value="reputation">Reputation Upsell</SelectItem>
-              <SelectItem value="gms">GMS Software Upsell</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Category Filter */}
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-auto h-8 text-xs">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="data_only">Data Only</SelectItem>
+                <SelectItem value="reputation">Reputation</SelectItem>
+                <SelectItem value="gms">GMS</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-              Clear Filters
-            </Button>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs text-muted-foreground">
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Compact Stats Summary */}
+        <div className="grid grid-cols-5 gap-2">
+          <div className="p-2 rounded-lg bg-muted/50 text-center">
+            <p className="text-sm font-bold">{totalCount}</p>
+            <p className="text-[10px] text-muted-foreground">Total</p>
+          </div>
+          <div className="p-2 rounded-lg bg-green-500/10 text-center">
+            <p className="text-sm font-bold text-green-600">{approvedCount}</p>
+            <p className="text-[10px] text-muted-foreground">Approved</p>
+          </div>
+          <div className="p-2 rounded-lg bg-yellow-500/10 text-center">
+            <p className="text-sm font-bold text-yellow-600">{pendingCount}</p>
+            <p className="text-[10px] text-muted-foreground">Pending</p>
+          </div>
+          <div className="p-2 rounded-lg bg-red-500/10 text-center">
+            <p className="text-sm font-bold text-red-600">{rejectedCount}</p>
+            <p className="text-[10px] text-muted-foreground">Rejected</p>
+          </div>
+          <div className="p-2 rounded-lg bg-purple-500/10 text-center">
+            <p className="text-sm font-bold text-purple-600">₹{totalEarnings}</p>
+            <p className="text-[10px] text-muted-foreground">Earned</p>
+          </div>
+        </div>
+
+        {/* Listings Table - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {filteredListings.length === 0 ? (
+            <div className="text-center py-8 border rounded-lg">
+              <Building2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+              {listings.length === 0 ? (
+                <>
+                  <h3 className="text-base font-semibold mb-1">No listings yet</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Start adding garages to earn money!</p>
+                  <Button size="sm" onClick={onStartTask} className="bg-gradient-to-r from-purple-500 to-violet-500">
+                    <Play className="w-3 h-3 mr-1" /> Start First Task
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-semibold mb-1">No matches</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Try adjusting your filters</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Clear Filters
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">GIN</TableHead>
+                    <TableHead className="text-xs">Garage</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Earnings</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredListings.slice(0, 10).map((listing) => {
+                    const canUpsell = listing.status === "approved" && (!listing.reputation_upsell || !listing.gms_upsell);
+                    const canDispute = listing.status === "rejected";
+
+                    return (
+                      <TableRow key={listing.id}>
+                        <TableCell className="font-mono text-xs py-2">{listing.gin || "-"}</TableCell>
+                        <TableCell className="py-2">
+                          <div>
+                            <p className="text-xs font-medium truncate max-w-[120px]">{listing.garages?.name || "Processing..."}</p>
+                            <p className="text-[10px] text-muted-foreground">{listing.garages?.city || "-"}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2">{getStatusBadge(listing.status)}</TableCell>
+                        <TableCell className="text-right py-2 font-semibold text-xs text-purple-600">
+                          ₹{(listing.total_earning || 0)}
+                        </TableCell>
+                        <TableCell className="text-right py-2">
+                          <div className="flex justify-end gap-1">
+                            {canDispute && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-orange-600 h-6 px-2 text-xs"
+                                onClick={() => onDispute(listing)}
+                              >
+                                <Flag className="w-3 h-3" />
+                              </Button>
+                            )}
+                            {canUpsell && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-purple-600 h-6 px-2 text-xs border-purple-300"
+                                onClick={() => onUpsell(listing)}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </div>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="p-3 rounded-lg bg-muted/50 text-center">
-            <p className="text-lg font-bold">{totalCount}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
-          </div>
-          <div className="p-3 rounded-lg bg-green-500/10 text-center">
-            <p className="text-lg font-bold text-green-600">{approvedCount}</p>
-            <p className="text-xs text-muted-foreground">Approved</p>
-          </div>
-          <div className="p-3 rounded-lg bg-yellow-500/10 text-center">
-            <p className="text-lg font-bold text-yellow-600">{pendingCount}</p>
-            <p className="text-xs text-muted-foreground">Pending</p>
-          </div>
-          <div className="p-3 rounded-lg bg-red-500/10 text-center">
-            <p className="text-lg font-bold text-red-600">{rejectedCount}</p>
-            <p className="text-xs text-muted-foreground">Rejected</p>
-          </div>
-          <div className="p-3 rounded-lg bg-purple-500/10 text-center">
-            <p className="text-lg font-bold text-purple-600">₹{totalEarnings.toFixed(0)}</p>
-            <p className="text-xs text-muted-foreground">Earnings</p>
-          </div>
-        </div>
-
-        {/* Listings Table */}
-        {filteredListings.length === 0 ? (
-          <div className="text-center py-12 border rounded-lg">
-            <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-            {listings.length === 0 ? (
-              <>
-                <h3 className="text-lg font-semibold mb-2">No listings yet</h3>
-                <p className="text-muted-foreground mb-4">Start adding garages to earn money!</p>
-                <Button onClick={onStartTask} className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600">
-                  <Play className="w-4 h-4 mr-2" /> Start Your First Task
-                </Button>
-              </>
-            ) : (
-              <>
-                <h3 className="text-lg font-semibold mb-2">No listings match your filters</h3>
-                <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear All Filters
-                </Button>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>GIN</TableHead>
-                  <TableHead>Garage Details</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Categories</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Earnings</TableHead>
-                  <TableHead>Payout</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredListings.map((listing) => {
-                  const canUpsell = listing.status === "approved" && (!listing.reputation_upsell || !listing.gms_upsell);
-                  const canDispute = listing.status === "rejected";
-
-                  return (
-                    <TableRow key={listing.id}>
-                      <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{listing.garages?.name || "Processing..."}</p>
-                          <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {listing.submitted_at ? (
-                          <div className="text-sm">
-                            <p className="font-medium">{format(new Date(listing.submitted_at), "dd MMM yyyy")}</p>
-                            <p className="text-xs text-muted-foreground">{format(new Date(listing.submitted_at), "hh:mm a")}</p>
-                          </div>
-                        ) : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {getCategoryBadges(listing).map((badge, idx) => (
-                            <Badge key={idx} variant="outline" className={`text-xs ${badge.color}`}>
-                              <badge.icon className="w-3 h-3 mr-1" />
-                              {badge.label}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(listing.status)}</TableCell>
-                      <TableCell className="font-semibold text-purple-600">
-                        ₹{(listing.total_earning || 0).toFixed(0)}
-                      </TableCell>
-                      <TableCell>{getPayoutStatusBadge(listing.payout_status)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {canDispute && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-orange-600 hover:text-orange-700 h-7 px-2"
-                              onClick={() => onDispute(listing)}
-                            >
-                              <Flag className="w-3 h-3 mr-1" />
-                              Dispute
-                            </Button>
-                          )}
-                          {canUpsell && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-purple-600 hover:text-purple-700 h-7 px-2 border-purple-300"
-                              onClick={() => onUpsell(listing)}
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Upsell
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
         {/* Results count */}
         {filteredListings.length > 0 && (
-          <p className="text-sm text-muted-foreground text-center">
-            Showing {filteredListings.length} of {listings.length} listings
+          <p className="text-xs text-muted-foreground text-center pt-1">
+            Showing {Math.min(filteredListings.length, 10)} of {filteredListings.length} listings
           </p>
         )}
       </CardContent>
