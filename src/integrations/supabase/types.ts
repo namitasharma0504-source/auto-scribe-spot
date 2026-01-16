@@ -357,6 +357,7 @@ export type Database = {
           signup_date: string | null
           subscription_active: boolean
           subscription_date: string | null
+          subscription_end_date: string | null
           updated_at: string
           user_id: string
         }
@@ -370,6 +371,7 @@ export type Database = {
           signup_date?: string | null
           subscription_active?: boolean
           subscription_date?: string | null
+          subscription_end_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -383,6 +385,7 @@ export type Database = {
           signup_date?: string | null
           subscription_active?: boolean
           subscription_date?: string | null
+          subscription_end_date?: string | null
           updated_at?: string
           user_id?: string
         }
