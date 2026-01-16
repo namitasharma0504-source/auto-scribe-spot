@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle, User, Store } from "lucide-react";
+import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle, User, Store, Navigation, MapPinned } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -177,6 +177,14 @@ const ListGarage = () => {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [isParsingMapsLink, setIsParsingMapsLink] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationVerification, setLocationVerification] = useState<{
+    verified: boolean;
+    detectedCity?: string;
+    detectedState?: string;
+    detectedCountry?: string;
+    mismatch?: boolean;
+  } | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -196,6 +204,41 @@ const ListGarage = () => {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
+  // Helper to match detected location with form selections
+  const matchLocationToForm = (detectedCity?: string, detectedState?: string, detectedCountry?: string) => {
+    if (!detectedCity && !detectedState) return;
+    
+    // Check if India
+    if (detectedCountry?.toLowerCase().includes('india')) {
+      // Try to match state
+      const matchedState = indiaStates.find(s => 
+        s.label.toLowerCase() === detectedState?.toLowerCase() ||
+        detectedState?.toLowerCase().includes(s.label.toLowerCase())
+      );
+      
+      if (matchedState && !formData.state) {
+        setFormData(prev => ({ ...prev, country: 'in', state: matchedState.value }));
+      }
+      
+      // Try to match district/city
+      if (matchedState) {
+        const districts = indiaDistricts[matchedState.value] || [];
+        const matchedDistrict = districts.find(d =>
+          d.label.toLowerCase() === detectedCity?.toLowerCase() ||
+          detectedCity?.toLowerCase().includes(d.label.toLowerCase())
+        );
+        
+        if (matchedDistrict && !formData.city) {
+          setFormData(prev => ({ ...prev, city: matchedDistrict.value }));
+        } else if (detectedCity && !formData.customCity) {
+          // Use as custom city
+          setFormData(prev => ({ ...prev, customCity: detectedCity }));
+          setUseCustomCity(true);
+        }
+      }
+    }
+  };
+
   // Parse Google Maps link and auto-fill form
   const parseGoogleMapsLink = async (url: string) => {
     if (!url) return;
@@ -210,6 +253,7 @@ const ListGarage = () => {
     if (!isGoogleMapsLink) return;
     
     setIsParsingMapsLink(true);
+    setLocationVerification(null);
     
     try {
       const { data, error } = await supabase.functions.invoke('parse-google-maps', {
@@ -236,6 +280,21 @@ const ListGarage = () => {
         if (!formData.country) {
           setFormData(prev => ({ ...prev, country: "in" }));
         }
+        
+        // Handle location verification
+        if (parsed.city || parsed.state) {
+          setLocationVerification({
+            verified: true,
+            detectedCity: parsed.city,
+            detectedState: parsed.state,
+            detectedCountry: parsed.country,
+          });
+          
+          // Auto-match to form
+          matchLocationToForm(parsed.city, parsed.state, parsed.country);
+          
+          toast.success(`Location detected: ${[parsed.city, parsed.state].filter(Boolean).join(', ')}`);
+        }
       }
     } catch (error) {
       console.error('Error parsing Google Maps link:', error);
@@ -245,8 +304,77 @@ const ListGarage = () => {
     }
   };
 
+  // Get current location using browser geolocation
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    setIsGettingLocation(true);
+    setLocationVerification(null);
+    
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+      
+      const { latitude, longitude } = position.coords;
+      
+      // Call edge function to reverse geocode
+      const { data, error } = await supabase.functions.invoke('parse-google-maps', {
+        body: { latitude, longitude }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.data) {
+        const parsed = data.data;
+        
+        // Create a Google Maps URL from coordinates
+        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        setFormData(prev => ({ ...prev, locationLink: mapsUrl }));
+        
+        // Set verification data
+        if (parsed.city || parsed.state) {
+          setLocationVerification({
+            verified: true,
+            detectedCity: parsed.city,
+            detectedState: parsed.state,
+            detectedCountry: parsed.country,
+          });
+          
+          // Auto-match to form
+          matchLocationToForm(parsed.city, parsed.state, parsed.country);
+          
+          toast.success(`Location detected: ${[parsed.city, parsed.state].filter(Boolean).join(', ')}`);
+        } else {
+          toast.success("Location captured! Coordinates saved.");
+        }
+      }
+    } catch (error: any) {
+      console.error('Geolocation error:', error);
+      if (error.code === 1) {
+        toast.error("Location access denied. Please enable location permissions.");
+      } else if (error.code === 2) {
+        toast.error("Unable to determine location. Please try again.");
+      } else if (error.code === 3) {
+        toast.error("Location request timed out. Please try again.");
+      } else {
+        toast.error("Failed to get location");
+      }
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
   const handleLocationLinkChange = (value: string) => {
     setFormData(prev => ({ ...prev, locationLink: value }));
+    setLocationVerification(null);
     
     // Debounce the parsing
     if (value.length > 10) {
@@ -840,15 +968,40 @@ const ListGarage = () => {
               </div>
             )}
 
-            {/* Google Maps Link */}
-            <div className="space-y-2">
-              <Label htmlFor="locationLink" className="flex items-center gap-2">
-                <LinkIcon className="w-4 h-4 text-primary" />
-                Google Maps Link
-                {isParsingMapsLink && (
-                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-                )}
+            {/* Google Maps Link / Live Location */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <MapPinned className="w-4 h-4 text-primary" />
+                Garage Location
               </Label>
+              
+              {/* Live Location Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 border-dashed"
+                onClick={getCurrentLocation}
+                disabled={isGettingLocation}
+              >
+                {isGettingLocation ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Getting your location...
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="w-4 h-4" />
+                    Use Current Location
+                  </>
+                )}
+              </Button>
+              
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="flex-1 border-t" />
+                <span>OR paste Google Maps link</span>
+                <span className="flex-1 border-t" />
+              </div>
+              
               <div className="relative">
                 <Input
                   id="locationLink"
@@ -856,10 +1009,45 @@ const ListGarage = () => {
                   placeholder="Paste Google Maps share link (e.g., https://share.google/...)"
                   value={formData.locationLink}
                   onChange={(e) => handleLocationLinkChange(e.target.value)}
+                  className={cn(
+                    locationVerification?.verified && "border-green-500 pr-10"
+                  )}
                 />
+                {isParsingMapsLink && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                )}
+                {locationVerification?.verified && !isParsingMapsLink && (
+                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                )}
               </div>
+              
+              {/* Location Verification Status */}
+              {locationVerification?.verified && (locationVerification.detectedCity || locationVerification.detectedState) && (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-green-700">Location Verified</p>
+                      <p className="text-xs text-green-600">
+                        Detected: {[locationVerification.detectedCity, locationVerification.detectedState, locationVerification.detectedCountry].filter(Boolean).join(', ')}
+                      </p>
+                      {formData.state && locationVerification.detectedState && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.state.toLowerCase().includes(locationVerification.detectedState?.toLowerCase() || '') || 
+                           locationVerification.detectedState?.toLowerCase().includes(formData.state.toLowerCase()) ? (
+                            <span className="text-green-600">✓ Matches selected state</span>
+                          ) : (
+                            <span className="text-amber-600">⚠ Selected state may differ from detected location</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <p className="text-xs text-muted-foreground">
-                Paste your Google Maps share link - we'll auto-fill the garage name if available
+                Use live location or paste a Google Maps link - we'll auto-detect the city and verify it matches your selection
               </p>
             </div>
 

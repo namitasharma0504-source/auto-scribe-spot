@@ -9,6 +9,48 @@ interface ParsedLocation {
   latitude?: number;
   longitude?: number;
   fullUrl?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+// Reverse geocode using OpenStreetMap Nominatim (free, no API key needed)
+async function reverseGeocode(lat: number, lon: number): Promise<{ city?: string; state?: string; country?: string }> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'MeriGarageReviews/1.0',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      console.error('Nominatim API error:', response.status);
+      return {};
+    }
+    
+    const data = await response.json();
+    const address = data.address || {};
+    
+    // Extract city (try multiple fields as Nominatim varies by location)
+    const city = address.city || address.town || address.village || address.municipality || 
+                 address.suburb || address.district || address.county || '';
+    
+    // Extract state
+    const state = address.state || address.state_district || address.province || '';
+    
+    // Extract country
+    const country = address.country || '';
+    
+    console.log('Reverse geocode result:', { city, state, country });
+    
+    return { city, state, country };
+  } catch (error) {
+    console.error('Reverse geocode error:', error);
+    return {};
+  }
 }
 
 Deno.serve(async (req) => {
@@ -17,11 +59,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
+    const { url, latitude, longitude } = await req.json();
+
+    // If lat/long provided directly (for live location), just reverse geocode
+    if (latitude !== undefined && longitude !== undefined) {
+      console.log('Reverse geocoding coordinates:', latitude, longitude);
+      const geoResult = await reverseGeocode(latitude, longitude);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          data: {
+            latitude,
+            longitude,
+            ...geoResult,
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!url) {
       return new Response(
-        JSON.stringify({ success: false, error: 'URL is required' }),
+        JSON.stringify({ success: false, error: 'URL or coordinates required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -71,6 +131,14 @@ Deno.serve(async (req) => {
         result.latitude = parseFloat(altCoordMatch[1]);
         result.longitude = parseFloat(altCoordMatch[2]);
       }
+    }
+
+    // If we have coordinates, reverse geocode to get city/state
+    if (result.latitude && result.longitude) {
+      const geoResult = await reverseGeocode(result.latitude, result.longitude);
+      result.city = geoResult.city;
+      result.state = geoResult.state;
+      result.country = geoResult.country;
     }
 
     // Extract place name from URL path
