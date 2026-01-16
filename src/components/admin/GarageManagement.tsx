@@ -6,7 +6,6 @@ import {
   Upload,
   Download,
   Eye,
-  Edit,
   Trash2,
   MapPin,
   Phone,
@@ -14,39 +13,24 @@ import {
   MessageSquare,
   CheckCircle,
   XCircle,
-  Save,
-  X,
   Image as ImageIcon,
-  Plus,
-  Loader2,
   User,
   Store,
   Users,
-  CalendarIcon,
-  Key,
-  UserPlus,
-  Link2,
-  UserX,
+  Settings,
 } from "lucide-react";
 import { format } from "date-fns";
-import { GarageRecentReviews } from "./GarageRecentReviews";
 import { GarageAllReviews } from "./GarageAllReviews";
+import { GarageManagementSheet } from "./GarageManagementSheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -73,32 +57,7 @@ import {
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 import { cn } from "@/lib/utils";
-
-// Predefined services list
-const predefinedServices = [
-  "General Service",
-  "AC Repair",
-  "Body Work",
-  "Tyres",
-  "Diagnostics",
-  "EV-friendly",
-  "Multi-brand",
-  "Premium cars",
-  "Oil Change",
-  "Brake Service",
-  "Engine Repair",
-  "Transmission",
-  "Electrical",
-  "Suspension",
-  "Wheel Alignment",
-  "Car Wash",
-  "Detailing",
-  "Battery Service",
-  "Clutch Repair",
-  "Exhaust System"
-];
 
 interface Garage {
   id: string;
@@ -123,18 +82,9 @@ interface Garage {
   submitted_by: string | null;
   listing_type: string | null;
   partner_id: string | null;
-  approval_notes: string | null;
+  slug: string | null;
   created_at: string;
-  // Joined data
   submitter_email?: string | null;
-}
-
-interface GaragePhoto {
-  id: string;
-  garage_id: string;
-  photo_url: string;
-  display_order: number;
-  created_at: string;
 }
 
 interface Partner {
@@ -161,30 +111,18 @@ interface GarageOwner {
 export function GarageManagement() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
   const [garages, setGarages] = useState<Garage[]>([]);
-  const [garagePhotos, setGaragePhotos] = useState<GaragePhoto[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [garageOwners, setGarageOwners] = useState<GarageOwner[]>([]);
-  const [selectedOwner, setSelectedOwner] = useState<GarageOwner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSavingOwner, setIsSavingOwner] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Garage>>({});
-  const [ownerForm, setOwnerForm] = useState<Partial<GarageOwner>>({});
-  const [customService, setCustomService] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
-  const [selectedOwnerToLink, setSelectedOwnerToLink] = useState<string>("");
-  const [isLinkingOwner, setIsLinkingOwner] = useState(false);
 
   useEffect(() => {
     fetchGarages();
