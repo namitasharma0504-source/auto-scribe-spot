@@ -4,7 +4,7 @@ import {
   Building2, IndianRupee, TrendingUp, Clock, CheckCircle, XCircle,
   LogOut, Home, Plus, Wallet, Eye, FileText, AlertTriangle,
   RefreshCw, ChevronRight, Users, Award, Play, Star, Laptop,
-  Database, Calendar as CalendarIcon, MessageSquare, Flag
+  Database, Calendar as CalendarIcon, MessageSquare, Flag, GripVertical
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -586,35 +591,68 @@ export default function PartnerDashboard() {
           </Card>
         </div>
 
-        {/* Split-Screen: Earnings Calendar + My Listings */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Earnings Calendar */}
-          <div className="h-full">
-            <EarningsCalendar 
-              earnings={dailyEarnings} 
-              onDayClick={(date, earning) => {
-                setSelectedDayData({ date, earning });
-                setStatDialog("day");
-              }}
-            />
-          </div>
+        {/* Split-Screen: Earnings Calendar + My Listings - Resizable */}
+        <div className="mb-8 hidden lg:block">
+          <ResizablePanelGroup direction="horizontal" className="min-h-[500px] rounded-lg border">
+            {/* Earnings Calendar Panel */}
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <div className="h-full p-4 overflow-auto">
+                <EarningsCalendar 
+                  earnings={dailyEarnings} 
+                  onDayClick={(date, earning) => {
+                    setSelectedDayData({ date, earning });
+                    setStatDialog("day");
+                  }}
+                />
+              </div>
+            </ResizablePanel>
 
-          {/* My Listings Section with Filters */}
-          <div className="h-full">
-            <MyListingsSection
-              listings={listings}
-              onStartTask={() => setShowStartTask(true)}
-              onUpsell={(listing) => {
-                setSelectedListing(listing);
-                setShowUpsell(true);
-              }}
-              onDispute={(listing) => {
-                setSelectedListing(listing);
-                setShowDispute(true);
-              }}
-              partnerId={partner.id}
-            />
-          </div>
+            {/* Resizable Handle */}
+            <ResizableHandle withHandle />
+
+            {/* My Listings Panel */}
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <div className="h-full p-4 overflow-auto">
+                <MyListingsSection
+                  listings={listings}
+                  onStartTask={() => setShowStartTask(true)}
+                  onUpsell={(listing) => {
+                    setSelectedListing(listing);
+                    setShowUpsell(true);
+                  }}
+                  onDispute={(listing) => {
+                    setSelectedListing(listing);
+                    setShowDispute(true);
+                  }}
+                  partnerId={partner.id}
+                />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+
+        {/* Mobile: Stacked Layout */}
+        <div className="lg:hidden space-y-6 mb-8">
+          <EarningsCalendar 
+            earnings={dailyEarnings} 
+            onDayClick={(date, earning) => {
+              setSelectedDayData({ date, earning });
+              setStatDialog("day");
+            }}
+          />
+          <MyListingsSection
+            listings={listings}
+            onStartTask={() => setShowStartTask(true)}
+            onUpsell={(listing) => {
+              setSelectedListing(listing);
+              setShowUpsell(true);
+            }}
+            onDispute={(listing) => {
+              setSelectedListing(listing);
+              setShowDispute(true);
+            }}
+            partnerId={partner.id}
+          />
         </div>
 
         {/* Stat Detail Dialog */}
