@@ -73,6 +73,7 @@ interface PartnerListing {
   gms_earning: number | null;
   total_earning: number | null;
   payout_status: string | null;
+  payment_proof_url: string | null;
   partners?: { id: string; full_name: string; username: string } | null;
   garages?: { 
     name: string; 
@@ -107,6 +108,10 @@ export function PartnerListingsManagement() {
   const [listingPhotos, setListingPhotos] = useState<GaragePhoto[]>([]);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  
+  // Payment proof state
+  const [paymentProofSignedUrl, setPaymentProofSignedUrl] = useState<string | null>(null);
+  const [isLoadingPaymentProof, setIsLoadingPaymentProof] = useState(false);
 
   useEffect(() => {
     fetchListings();
@@ -164,11 +169,35 @@ export function PartnerListingsManagement() {
     }
   };
 
+  // Fetch payment proof signed URL
+  const fetchPaymentProof = async (paymentProofPath: string | null) => {
+    if (!paymentProofPath) {
+      setPaymentProofSignedUrl(null);
+      return;
+    }
+    
+    setIsLoadingPaymentProof(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from('partner-documents')
+        .createSignedUrl(paymentProofPath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      setPaymentProofSignedUrl(data?.signedUrl || null);
+    } catch (error) {
+      console.error("Error fetching payment proof:", error);
+      setPaymentProofSignedUrl(null);
+    } finally {
+      setIsLoadingPaymentProof(false);
+    }
+  };
+
   // Open listing details with photos
   const openListingDetails = (listing: PartnerListing) => {
     setSelectedListing(listing);
     setIsDetailsOpen(true);
     fetchListingPhotos(listing.listing_id);
+    fetchPaymentProof(listing.payment_proof_url);
   };
 
   const handleApprove = async (listingId: string, garageId: string | null) => {
@@ -824,6 +853,44 @@ export function PartnerListingsManagement() {
                   </div>
                 </div>
               </div>
+
+              {/* Payment Proof Section (for upsells) */}
+              {(selectedListing.reputation_upsell || selectedListing.gms_upsell) && (
+                <div className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-orange-700">
+                    <FileText className="w-4 h-4" /> Payment Proof
+                  </h4>
+                  {isLoadingPaymentProof ? (
+                    <div className="flex items-center justify-center py-4">
+                      <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : paymentProofSignedUrl ? (
+                    <div className="space-y-2">
+                      <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                        <img
+                          src={paymentProofSignedUrl}
+                          alt="Payment Proof"
+                          className="w-full h-full object-contain cursor-pointer"
+                          onClick={() => window.open(paymentProofSignedUrl, '_blank')}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Click image to view full size. Partner uploaded this as proof of payment.
+                      </p>
+                    </div>
+                  ) : selectedListing.payment_proof_url ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">Payment proof file exists but could not be loaded.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Path: {selectedListing.payment_proof_url}</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
+                      <Image className="w-8 h-8 mb-2 opacity-50" />
+                      <p className="text-sm">No payment proof uploaded yet</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Rejection Reason (if any) */}
               {selectedListing.rejection_reason && (
