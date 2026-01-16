@@ -23,6 +23,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ListGarage from "./pages/ListGarage";
 import GarageAuth from "./pages/GarageAuth";
+import GarageAccount from "./pages/GarageAccount";
 import GarageDashboard from "./pages/GarageDashboard";
 import TrustSafety from "./pages/TrustSafety";
 import ContentGuidelines from "./pages/ContentGuidelines";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin-login" element={<AdminAuth />} />
             <Route path="/garage-auth" element={<GarageAuth />} />
+            <Route path="/garage-account" element={<GarageAccount />} />
             <Route path="/garage-dashboard" element={<GarageDashboard />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<Contact />} />
