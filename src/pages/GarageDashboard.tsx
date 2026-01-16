@@ -400,6 +400,17 @@ export default function GarageDashboard() {
         return;
       }
 
+      // Check if subscription is active (admin controlled)
+      if (!owner.subscription_active) {
+        toast({
+          title: "Subscription Required",
+          description: "Your dashboard access is not active. Please contact support to activate your subscription.",
+          variant: "destructive",
+        });
+        navigate("/garage-account");
+        return;
+      }
+
       setGarageOwner(owner);
 
       // Get garage

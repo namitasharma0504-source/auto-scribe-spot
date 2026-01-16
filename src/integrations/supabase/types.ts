@@ -353,6 +353,7 @@ export type Database = {
           created_at: string
           garage_id: string | null
           id: string
+          subscription_active: boolean
           updated_at: string
           user_id: string
         }
@@ -362,6 +363,7 @@ export type Database = {
           created_at?: string
           garage_id?: string | null
           id?: string
+          subscription_active?: boolean
           updated_at?: string
           user_id: string
         }
@@ -371,6 +373,7 @@ export type Database = {
           created_at?: string
           garage_id?: string | null
           id?: string
+          subscription_active?: boolean
           updated_at?: string
           user_id?: string
         }

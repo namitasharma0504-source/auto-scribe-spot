@@ -37,6 +37,17 @@ interface ClaimRequest {
   };
 }
 
+interface GarageOwner {
+  id: string;
+  user_id: string;
+  garage_id: string | null;
+  business_name: string | null;
+  contact_phone: string | null;
+  subscription_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 interface SubmittedGarage {
   id: string;
   name: string;
@@ -50,7 +61,7 @@ interface SubmittedGarage {
 }
 
 export default function GarageAccount() {
-  const [garageOwner, setGarageOwner] = useState<any>(null);
+  const [garageOwner, setGarageOwner] = useState<GarageOwner | null>(null);
   const [garage, setGarage] = useState<any>(null);
   const [submittedGarages, setSubmittedGarages] = useState<SubmittedGarage[]>([]);
   const [claimRequests, setClaimRequests] = useState<ClaimRequest[]>([]);
@@ -175,8 +186,9 @@ export default function GarageAccount() {
     );
   }
 
-  // If user has an approved claim (garage_id exists), show dashboard access
+  // If user has an approved claim (garage_id exists) and subscription is active
   const hasApprovedClaim = garageOwner?.garage_id && garage;
+  const hasActiveSubscription = garageOwner?.subscription_active === true;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -202,18 +214,18 @@ export default function GarageAccount() {
             </Button>
           </div>
 
-          {/* Dashboard Access Card (if approved) */}
-          {hasApprovedClaim && (
+          {/* Dashboard Access Card (if approved and subscription active) */}
+          {hasApprovedClaim && hasActiveSubscription && (
             <Card className="border-green-500/30 bg-green-500/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-green-700 flex items-center gap-2">
                       <CheckCircle className="w-5 h-5" />
-                      Dashboard Access Granted
+                      Dashboard Access Active
                     </CardTitle>
                     <CardDescription className="text-green-600">
-                      Your garage claim has been approved! You can now manage your garage.
+                      Your subscription is active! You can access and manage your garage dashboard.
                     </CardDescription>
                   </div>
                 </div>
@@ -231,6 +243,43 @@ export default function GarageAccount() {
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Claim Approved but Subscription Pending Card */}
+          {hasApprovedClaim && !hasActiveSubscription && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-amber-700 flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Subscription Pending
+                    </CardTitle>
+                    <CardDescription className="text-amber-600">
+                      Your claim is approved! Dashboard access will be enabled once your subscription is activated.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-lg">{garage.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {[garage.city, garage.state].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Awaiting Payment
+                  </Badge>
+                </div>
+                <p className="text-xs text-amber-600 mt-4 bg-amber-500/10 p-3 rounded-lg">
+                  Please complete your subscription payment. Our team will contact you shortly.
+                  Call <strong>+91 93107 45153</strong> for immediate assistance.
+                </p>
               </CardContent>
             </Card>
           )}
