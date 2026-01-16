@@ -291,7 +291,7 @@ export function UpsellModal({
                   onCheckedChange={(checked) => setPaymentDone(!!checked)} 
                 />
                 <Label htmlFor="payment-done" className="flex-1 cursor-pointer text-sm">
-                  I confirm that I have received ₹{amountToCollect} from the garage owner
+                  I confirm that the garage owner has paid ₹{amountToCollect} on given QR code, attaching the payment proof here
                 </Label>
               </div>
 
