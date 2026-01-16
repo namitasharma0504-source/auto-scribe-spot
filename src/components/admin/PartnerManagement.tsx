@@ -14,7 +14,11 @@ import {
   AlertTriangle,
   IndianRupee,
   TrendingUp,
-  Wallet
+  Wallet,
+  Phone,
+  MapPin,
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,6 +136,11 @@ export function PartnerManagement() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectingListingId, setRejectingListingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // Listing detail view
+  const [viewingListing, setViewingListing] = useState<PartnerListing | null>(null);
+  const [isListingDetailsOpen, setIsListingDetailsOpen] = useState(false);
+  const [listingComment, setListingComment] = useState("");
 
   useEffect(() => {
     fetchPartners();
@@ -917,7 +926,14 @@ export function PartnerManagement() {
                       </TableHeader>
                       <TableBody>
                         {selectedPartner.listings.map((listing) => (
-                          <TableRow key={listing.id}>
+                          <TableRow 
+                            key={listing.id} 
+                            className="cursor-pointer hover:bg-purple-500/5"
+                            onClick={() => {
+                              setViewingListing(listing);
+                              setIsListingDetailsOpen(true);
+                            }}
+                          >
                             <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
                             <TableCell>
                               <div>
@@ -973,41 +989,54 @@ export function PartnerManagement() {
                                 ? new Date(listing.submitted_at).toLocaleDateString() 
                                 : "-"}
                             </TableCell>
-                            <TableCell className="text-right">
-                              {(listing.status === "pending" || !listing.status) && (
-                                <div className="flex gap-1 justify-end">
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={() => {
+                                    setViewingListing(listing);
+                                    setIsListingDetailsOpen(true);
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                {(listing.status === "pending" || !listing.status || listing.status === "under_review") && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                      onClick={() => handleApproveListing(listing.id)}
+                                    >
+                                      <CheckCircle className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                      onClick={() => {
+                                        setRejectingListingId(listing.id);
+                                        setIsRejectDialogOpen(true);
+                                      }}
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                                {listing.status === "rejected" && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
                                     onClick={() => handleApproveListing(listing.id)}
+                                    title="Re-approve this listing"
                                   >
                                     <CheckCircle className="w-4 h-4" />
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                                    onClick={() => {
-                                      setRejectingListingId(listing.id);
-                                      setIsRejectDialogOpen(true);
-                                    }}
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              )}
-                              {listing.status === "rejected" && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                                  onClick={() => handleApproveListing(listing.id)}
-                                  title="Re-approve this listing"
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                </Button>
-                              )}
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1170,6 +1199,217 @@ export function PartnerManagement() {
               Reject Listing
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Listing Details Dialog */}
+      <Dialog open={isListingDetailsOpen} onOpenChange={setIsListingDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-600" />
+              Submission Details
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2">
+              <span className="font-mono bg-muted px-2 py-0.5 rounded">{viewingListing?.gin || "GIN Pending"}</span>
+              {viewingListing && (
+                <Badge 
+                  className={
+                    viewingListing.status === "approved" 
+                      ? "bg-green-500/10 text-green-600" 
+                      : viewingListing.status === "rejected"
+                      ? "bg-red-500/10 text-red-600"
+                      : viewingListing.status === "under_review"
+                      ? "bg-blue-500/10 text-blue-600"
+                      : "bg-yellow-500/10 text-yellow-600"
+                  }
+                >
+                  {viewingListing.status === "under_review" ? "Under Review" : (viewingListing.status || "pending")}
+                </Badge>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingListing && (
+            <div className="space-y-6">
+              {/* Garage Details */}
+              <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-purple-700">
+                  <Building2 className="w-4 h-4" /> Garage Information
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-start gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-muted-foreground">Garage Name</p>
+                      <p className="font-medium">{viewingListing.garages?.name || "Unknown"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-muted-foreground">City</p>
+                      <p className="font-medium">{viewingListing.garages?.city || "Not provided"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Categories/Services */}
+              <div className="p-4 rounded-lg bg-muted/30 border">
+                <h4 className="font-semibold mb-3">Categories & Services</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                    Data Collection (₹20)
+                  </Badge>
+                  {viewingListing.reputation_upsell && (
+                    <Badge className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+                      Reputation Management (₹450)
+                    </Badge>
+                  )}
+                  {viewingListing.gms_upsell && (
+                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                      GMS Software (₹1,800)
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Earnings */}
+              <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-emerald-700">
+                  <IndianRupee className="w-4 h-4" /> Earnings Breakdown
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Data Collection (Base)</span>
+                    <span className="font-medium">₹{viewingListing.base_earning || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Reputation Upsell</span>
+                    <span className="font-medium">₹{viewingListing.reputation_earning || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>GMS Software Sale</span>
+                    <span className="font-medium">₹{viewingListing.gms_earning || 0}</span>
+                  </div>
+                  <hr className="my-2" />
+                  <div className="flex justify-between font-semibold text-base">
+                    <span>Total Earnings</span>
+                    <span className="text-emerald-600">₹{viewingListing.total_earning || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rejection Reason if exists */}
+              {viewingListing.rejection_reason && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <p className="text-sm font-medium text-red-700">Previous Rejection Reason:</p>
+                  <p className="text-sm text-red-600">{viewingListing.rejection_reason}</p>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div className="text-xs text-muted-foreground border-t pt-3">
+                <div className="flex flex-wrap gap-4">
+                  <span>Submitted: {viewingListing.submitted_at ? new Date(viewingListing.submitted_at).toLocaleString() : "-"}</span>
+                  {viewingListing.approved_at && (
+                    <span>Approved: {new Date(viewingListing.approved_at).toLocaleString()}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Approval Actions for Pending/Under Review */}
+              {(!viewingListing.status || viewingListing.status === "pending" || viewingListing.status === "under_review") && (
+                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-yellow-700">
+                    <Clock className="w-4 h-4" /> Pending Verification
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Review the submission details above. You can approve, or add a comment and reject.
+                  </p>
+                  
+                  {/* Comment for rejection */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                      <MessageSquare className="w-4 h-4" /> Comment / Rejection Reason
+                    </label>
+                    <Textarea
+                      value={listingComment}
+                      onChange={(e) => setListingComment(e.target.value)}
+                      placeholder="Add a comment (required for rejection)..."
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <Button 
+                      className="gap-2 bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        handleApproveListing(viewingListing.id);
+                        setIsListingDetailsOpen(false);
+                        setListingComment("");
+                      }}
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={!listingComment.trim()}
+                      onClick={() => {
+                        setRejectingListingId(viewingListing.id);
+                        setRejectionReason(listingComment);
+                        setIsListingDetailsOpen(false);
+                        setIsRejectDialogOpen(true);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject with Comment
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* For Approved Listings - Show payout status */}
+              {viewingListing.status === "approved" && (
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2 text-green-700">
+                    <CheckCircle className="w-4 h-4" /> Approved
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Payout Status: <Badge className={
+                      viewingListing.payout_status === "paid" 
+                        ? "bg-green-500/10 text-green-600" 
+                        : "bg-yellow-500/10 text-yellow-600"
+                    }>
+                      {viewingListing.payout_status || "pending"}
+                    </Badge>
+                  </p>
+                </div>
+              )}
+
+              {/* For Rejected - Option to Re-approve */}
+              {viewingListing.status === "rejected" && (
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-red-700">
+                    <XCircle className="w-4 h-4" /> Rejected
+                  </h4>
+                  <Button 
+                    className="gap-2 bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      handleApproveListing(viewingListing.id);
+                      setIsListingDetailsOpen(false);
+                    }}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Re-approve Listing
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
