@@ -127,11 +127,6 @@ export default function PartnerDashboard() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedDayData, setSelectedDayData] = useState<{ date: Date; earning: DayEarning | undefined } | null>(null);
   const [activeTasks, setActiveTasks] = useState<string[]>([]);
-  
-  // Listings filter states
-  const [listingSearch, setListingSearch] = useState("");
-  const [listingDateFrom, setListingDateFrom] = useState<Date | undefined>(undefined);
-  const [listingDateTo, setListingDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -322,30 +317,6 @@ export default function PartnerDashboard() {
     return Array.from(earningsMap.values());
   }, [listings]);
 
-  // Filter listings based on search and date range
-  const filteredListings = useMemo(() => {
-    return listings.filter((listing) => {
-      // Search filter - check GIN, garage name, city
-      const searchLower = listingSearch.toLowerCase();
-      const matchesSearch = !listingSearch || 
-        listing.gin?.toLowerCase().includes(searchLower) ||
-        listing.garages?.name?.toLowerCase().includes(searchLower) ||
-        listing.garages?.city?.toLowerCase().includes(searchLower);
-
-      // Date range filter
-      const submittedDate = listing.submitted_at ? new Date(listing.submitted_at) : null;
-      const matchesDateFrom = !listingDateFrom || (submittedDate && submittedDate >= listingDateFrom);
-      const matchesDateTo = !listingDateTo || (submittedDate && submittedDate <= new Date(listingDateTo.getTime() + 24 * 60 * 60 * 1000 - 1));
-
-      return matchesSearch && matchesDateFrom && matchesDateTo;
-    });
-  }, [listings, listingSearch, listingDateFrom, listingDateTo]);
-
-  const clearListingFilters = () => {
-    setListingSearch("");
-    setListingDateFrom(undefined);
-    setListingDateTo(undefined);
-  };
 
   if (authLoading || isLoading) {
     return (
@@ -825,230 +796,19 @@ export default function PartnerDashboard() {
           </TabsList>
 
           <TabsContent value="listings" className="space-y-4">
-            {listings.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <h3 className="text-lg font-semibold mb-2">No listings yet</h3>
-                  <p className="text-muted-foreground mb-4">Start adding garages to earn money!</p>
-                  <Button onClick={() => setShowStartTask(true)} className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600">
-                    <Play className="w-4 h-4 mr-2" /> Start Your First Task
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader className="pb-4">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <CardTitle>Your Garage Listings</CardTitle>
-                    <Button onClick={() => setShowStartTask(true)} size="sm" className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 w-fit">
-                      <Plus className="w-4 h-4" /> Add New
-                    </Button>
-                  </div>
-                  
-                  {/* Search and Date Filters */}
-                  <div className="flex flex-col md:flex-row gap-3 mt-4">
-                    {/* Search Bar */}
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search by GIN, garage name, or city..."
-                        value={listingSearch}
-                        onChange={(e) => setListingSearch(e.target.value)}
-                        className="pl-9 pr-9"
-                      />
-                      {listingSearch && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
-                          onClick={() => setListingSearch("")}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {/* Date From */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full md:w-[140px] justify-start text-left font-normal",
-                            !listingDateFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {listingDateFrom ? format(listingDateFrom, "dd MMM yy") : "From"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={listingDateFrom}
-                          onSelect={setListingDateFrom}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    
-                    {/* Date To */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full md:w-[140px] justify-start text-left font-normal",
-                            !listingDateTo && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {listingDateTo ? format(listingDateTo, "dd MMM yy") : "To"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-background" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={listingDateTo}
-                          onSelect={setListingDateTo}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    
-                    {/* Clear Filters */}
-                    {(listingSearch || listingDateFrom || listingDateTo) && (
-                      <Button variant="ghost" size="sm" onClick={clearListingFilters} className="gap-1">
-                        <X className="w-3 h-3" /> Clear
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Filter Summary */}
-                  {(listingSearch || listingDateFrom || listingDateTo) && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Showing {filteredListings.length} of {listings.length} listings
-                    </p>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {filteredListings.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <Search className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">No listings match your filters</p>
-                      <Button variant="link" onClick={clearListingFilters} className="mt-2">
-                        Clear filters
-                      </Button>
-                    </div>
-                  ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>GIN</TableHead>
-                          <TableHead>Garage</TableHead>
-                          <TableHead>Submitted</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Earnings</TableHead>
-                          <TableHead>Payout</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredListings.map((listing) => {
-                          // Determine category based on upsells
-                          const getCategory = () => {
-                            const categories = [];
-                            categories.push({ type: 'Data Collection', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' });
-                            if (listing.reputation_upsell) {
-                              categories.push({ type: 'Reputation', color: 'bg-violet-500/10 text-violet-600 border-violet-500/30' });
-                            }
-                            if (listing.gms_upsell) {
-                              categories.push({ type: 'GMS Software', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' });
-                            }
-                            return categories;
-                          };
-
-                          const categories = getCategory();
-                          const canUpsell = listing.status === "approved" && (!listing.reputation_upsell || !listing.gms_upsell);
-
-                          return (
-                            <TableRow key={listing.id}>
-                              <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">{listing.garages?.name || "Processing..."}</p>
-                                  <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">
-                                  {listing.submitted_at ? (
-                                    <>
-                                      <p className="font-medium">{format(new Date(listing.submitted_at), "dd MMM yyyy")}</p>
-                                      <p className="text-xs text-muted-foreground">{format(new Date(listing.submitted_at), "hh:mm a")}</p>
-                                    </>
-                                  ) : "-"}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1 max-w-[150px]">
-                                  {categories.map((cat, idx) => (
-                                    <Badge key={idx} variant="outline" className={`text-xs ${cat.color}`}>
-                                      {cat.type}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </TableCell>
-                              <TableCell>{getStatusBadge(listing.status)}</TableCell>
-                              <TableCell className="font-medium text-purple-600">
-                                ₹{(listing.total_earning || 0).toFixed(0)}
-                              </TableCell>
-                              <TableCell>{getPayoutStatusBadge(listing.payout_status)}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  {listing.status === "rejected" && (
-                                    <Button 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      className="text-orange-600 hover:text-orange-700 h-7 px-2"
-                                      onClick={() => {
-                                        setSelectedListing(listing);
-                                        setShowDispute(true);
-                                      }}
-                                    >
-                                      <Flag className="w-3 h-3 mr-1" />
-                                      Dispute
-                                    </Button>
-                                  )}
-                                  {canUpsell && (
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="text-purple-600 hover:text-purple-700 h-7 px-2 border-purple-300"
-                                      onClick={() => {
-                                        setSelectedListing(listing);
-                                        setShowUpsell(true);
-                                      }}
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Upsell
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            <MyListingsSection
+              listings={listings}
+              onStartTask={() => setShowStartTask(true)}
+              onUpsell={(listing) => {
+                setSelectedListing(listing);
+                setShowUpsell(true);
+              }}
+              onDispute={(listing) => {
+                setSelectedListing(listing);
+                setShowDispute(true);
+              }}
+              partnerId={partner.id}
+            />
           </TabsContent>
 
           <TabsContent value="payouts" className="space-y-4">
