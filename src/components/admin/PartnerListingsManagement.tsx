@@ -579,22 +579,38 @@ export function PartnerListingsManagement() {
               <Building2 className="w-5 h-5 text-purple-600" />
               Listing Details
             </DialogTitle>
-            <DialogDescription className="flex items-center gap-2">
+            <DialogDescription className="flex items-center gap-4 flex-wrap">
               <span className="font-mono bg-muted px-2 py-0.5 rounded">{selectedListing?.gin || "GIN Pending"}</span>
               {selectedListing && (
-                <Badge 
-                  className={
-                    selectedListing.status === "approved" 
-                      ? "bg-green-500/10 text-green-600" 
-                      : selectedListing.status === "rejected"
-                      ? "bg-red-500/10 text-red-600"
-                      : selectedListing.status === "under_review"
-                      ? "bg-blue-500/10 text-blue-600"
-                      : "bg-yellow-500/10 text-yellow-600"
-                  }
-                >
-                  {selectedListing.status || "pending"}
-                </Badge>
+                <>
+                  <Badge 
+                    className={
+                      selectedListing.status === "approved" 
+                        ? "bg-green-500/10 text-green-600" 
+                        : selectedListing.status === "rejected"
+                        ? "bg-red-500/10 text-red-600"
+                        : selectedListing.status === "under_review"
+                        ? "bg-blue-500/10 text-blue-600"
+                        : "bg-yellow-500/10 text-yellow-600"
+                    }
+                  >
+                    {selectedListing.status === "under_review" ? "Under Review" : (selectedListing.status || "pending")}
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <Wallet className="w-3 h-3" />
+                    <Badge 
+                      className={
+                        selectedListing.payout_status === "paid" 
+                          ? "bg-green-500/10 text-green-600" 
+                          : selectedListing.payout_status === "processing"
+                          ? "bg-blue-500/10 text-blue-600"
+                          : "bg-yellow-500/10 text-yellow-600"
+                      }
+                    >
+                      Payout: {selectedListing.payout_status || "pending"}
+                    </Badge>
+                  </div>
+                </>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -869,62 +885,45 @@ export function PartnerListingsManagement() {
                   
                   {/* Payout Status Timeline */}
                   <div className="flex items-center gap-2 mb-4">
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                      !selectedListing.payout_status || selectedListing.payout_status === "pending"
-                        ? "bg-yellow-500 text-white"
-                        : "bg-muted text-muted-foreground"
-                    }`}>
+                    <button
+                      onClick={() => handleUpdatePayoutStatus(selectedListing.id, "pending")}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all cursor-pointer hover:opacity-80 ${
+                        !selectedListing.payout_status || selectedListing.payout_status === "pending"
+                          ? "bg-yellow-500 text-white ring-2 ring-yellow-500/50"
+                          : "bg-muted text-muted-foreground hover:bg-yellow-500/20"
+                      }`}
+                    >
                       <Clock className="w-3 h-3" /> Pending
-                    </div>
+                    </button>
                     <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                      selectedListing.payout_status === "processing"
-                        ? "bg-blue-500 text-white"
-                        : selectedListing.payout_status === "paid"
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-muted/50 text-muted-foreground"
-                    }`}>
+                    <button
+                      onClick={() => handleUpdatePayoutStatus(selectedListing.id, "processing")}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all cursor-pointer hover:opacity-80 ${
+                        selectedListing.payout_status === "processing"
+                          ? "bg-blue-500 text-white ring-2 ring-blue-500/50"
+                          : selectedListing.payout_status === "paid"
+                          ? "bg-muted text-muted-foreground hover:bg-blue-500/20"
+                          : "bg-muted/50 text-muted-foreground hover:bg-blue-500/20"
+                      }`}
+                    >
                       <CreditCard className="w-3 h-3" /> Processing
-                    </div>
+                    </button>
                     <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                      selectedListing.payout_status === "paid"
-                        ? "bg-green-500 text-white"
-                        : "bg-muted/50 text-muted-foreground"
-                    }`}>
+                    <button
+                      onClick={() => handleUpdatePayoutStatus(selectedListing.id, "paid")}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all cursor-pointer hover:opacity-80 ${
+                        selectedListing.payout_status === "paid"
+                          ? "bg-green-500 text-white ring-2 ring-green-500/50"
+                          : "bg-muted/50 text-muted-foreground hover:bg-green-500/20"
+                      }`}
+                    >
                       <CheckCircle className="w-3 h-3" /> Paid
-                    </div>
+                    </button>
                   </div>
 
-                  {/* Payout Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {(!selectedListing.payout_status || selectedListing.payout_status === "pending") && (
-                      <Button 
-                        size="sm"
-                        className="gap-2 bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleUpdatePayoutStatus(selectedListing.id, "processing")}
-                      >
-                        <CreditCard className="w-4 h-4" />
-                        Mark as Processing
-                      </Button>
-                    )}
-                    {selectedListing.payout_status === "processing" && (
-                      <Button 
-                        size="sm"
-                        className="gap-2 bg-green-600 hover:bg-green-700"
-                        onClick={() => handleUpdatePayoutStatus(selectedListing.id, "paid")}
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Mark as Paid
-                      </Button>
-                    )}
-                    {selectedListing.payout_status === "paid" && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Payout Completed</span>
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Click on any status to update the payout status. Changes will reflect in the partner's dashboard.
+                  </p>
                 </div>
               )}
 
