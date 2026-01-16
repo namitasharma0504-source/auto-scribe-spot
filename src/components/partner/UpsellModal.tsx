@@ -72,9 +72,16 @@ export function UpsellModal({
     setUploading(true);
 
     try {
+      // Get current user ID for folder path (required by RLS policy)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${listingId}-${Date.now()}.${fileExt}`;
-      const filePath = `payment-proofs/${fileName}`;
+      const fileName = `payment-proof-${listingId}-${Date.now()}.${fileExt}`;
+      // Use user ID as folder name to comply with RLS policy
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('partner-documents')
@@ -82,15 +89,13 @@ export function UpsellModal({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('partner-documents')
-        .getPublicUrl(filePath);
-
-      setPaymentProofUrl(publicUrl);
+      // Store the file path (not public URL since bucket is private)
+      // Admin will use signed URLs to view
+      setPaymentProofUrl(filePath);
       toast.success("Payment proof uploaded successfully");
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload payment proof");
+      toast.error("Failed to upload payment proof: " + (error.message || "Unknown error"));
       setPaymentProof(null);
     } finally {
       setUploading(false);
