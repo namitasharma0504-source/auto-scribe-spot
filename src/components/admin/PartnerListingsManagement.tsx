@@ -94,6 +94,7 @@ export function PartnerListingsManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
+  const [upsellFilter, setUpsellFilter] = useState<string>("all");
   
   // Rejection dialog
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -112,6 +113,7 @@ export function PartnerListingsManagement() {
   // Payment proof state
   const [paymentProofSignedUrl, setPaymentProofSignedUrl] = useState<string | null>(null);
   const [isLoadingPaymentProof, setIsLoadingPaymentProof] = useState(false);
+  const [paymentProofError, setPaymentProofError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchListings();
@@ -171,6 +173,7 @@ export function PartnerListingsManagement() {
 
   // Fetch payment proof signed URL
   const fetchPaymentProof = async (paymentProofPath: string | null) => {
+    setPaymentProofError(null);
     if (!paymentProofPath) {
       setPaymentProofSignedUrl(null);
       return;
@@ -178,14 +181,38 @@ export function PartnerListingsManagement() {
     
     setIsLoadingPaymentProof(true);
     try {
+      // Handle both full URLs and storage paths
+      let storagePath = paymentProofPath;
+      
+      // If it's a full URL, extract the path
+      if (paymentProofPath.startsWith('http')) {
+        // Extract path from URL like: .../partner-documents/payment-proofs/...
+        const match = paymentProofPath.match(/partner-documents\/(.+)/);
+        if (match) {
+          storagePath = match[1];
+        } else {
+          // It's already a public URL, use it directly
+          setPaymentProofSignedUrl(paymentProofPath);
+          setIsLoadingPaymentProof(false);
+          return;
+        }
+      }
+      
+      console.log("Fetching payment proof for path:", storagePath);
+      
       const { data, error } = await supabase.storage
         .from('partner-documents')
-        .createSignedUrl(paymentProofPath, 3600); // 1 hour expiry
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signed URL error:", error);
+        setPaymentProofError(error.message);
+        throw error;
+      }
       setPaymentProofSignedUrl(data?.signedUrl || null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching payment proof:", error);
+      setPaymentProofError(error.message || "Failed to load payment proof");
       setPaymentProofSignedUrl(null);
     } finally {
       setIsLoadingPaymentProof(false);
@@ -323,7 +350,21 @@ export function PartnerListingsManagement() {
     const matchesPayout = payoutFilter === "all" || listing.payout_status === payoutFilter ||
       (payoutFilter === "pending" && !listing.payout_status);
     
-    return matchesSearch && matchesStatus && matchesPayout;
+    // Upsell filter
+    let matchesUpsell = true;
+    if (upsellFilter === "none") {
+      matchesUpsell = !listing.reputation_upsell && !listing.gms_upsell;
+    } else if (upsellFilter === "reputation") {
+      matchesUpsell = listing.reputation_upsell === true;
+    } else if (upsellFilter === "gms") {
+      matchesUpsell = listing.gms_upsell === true;
+    } else if (upsellFilter === "both") {
+      matchesUpsell = listing.reputation_upsell === true && listing.gms_upsell === true;
+    } else if (upsellFilter === "any") {
+      matchesUpsell = listing.reputation_upsell === true || listing.gms_upsell === true;
+    }
+    
+    return matchesSearch && matchesStatus && matchesPayout && matchesUpsell;
   });
 
   // Stats
@@ -333,6 +374,11 @@ export function PartnerListingsManagement() {
   const totalEarnings = listings.reduce((sum, l) => sum + (l.total_earning || 0), 0);
   const pendingPayout = listings.filter(l => l.status === "approved" && l.payout_status !== "paid")
     .reduce((sum, l) => sum + (l.total_earning || 0), 0);
+  
+  // Upsell stats
+  const reputationUpsellCount = listings.filter(l => l.reputation_upsell === true).length;
+  const gmsUpsellCount = listings.filter(l => l.gms_upsell === true).length;
+  const totalUpsellCount = listings.filter(l => l.reputation_upsell === true || l.gms_upsell === true).length;
 
   return (
     <div className="space-y-6">
@@ -394,6 +440,20 @@ export function PartnerListingsManagement() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Upsell Summary */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+        <span className="text-sm font-medium text-purple-700">Upsells Summary:</span>
+        <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+          Total: {totalUpsellCount} listings
+        </Badge>
+        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+          Reputation: {reputationUpsellCount}
+        </Badge>
+        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+          GMS: {gmsUpsellCount}
+        </Badge>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -427,6 +487,19 @@ export function PartnerListingsManagement() {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={upsellFilter} onValueChange={setUpsellFilter}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Upsells" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Listings</SelectItem>
+            <SelectItem value="any">With Any Upsell</SelectItem>
+            <SelectItem value="reputation">Reputation Only</SelectItem>
+            <SelectItem value="gms">GMS Only</SelectItem>
+            <SelectItem value="both">Both Upsells</SelectItem>
+            <SelectItem value="none">No Upsells</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={fetchListings} className="gap-2">
@@ -895,9 +968,21 @@ export function PartnerListingsManagement() {
                       )}
                     </div>
                   ) : selectedListing.payment_proof_url ? (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">Payment proof file exists but could not be loaded.</p>
-                      <p className="text-xs text-muted-foreground mt-1">Path: {selectedListing.payment_proof_url}</p>
+                    <div className="text-center py-4 space-y-2">
+                      <p className="text-sm text-red-500">Payment proof file exists but could not be loaded.</p>
+                      {paymentProofError && (
+                        <p className="text-xs text-red-400">Error: {paymentProofError}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground break-all">Path: {selectedListing.payment_proof_url}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => fetchPaymentProof(selectedListing.payment_proof_url)}
+                        className="mt-2"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Retry Load
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
