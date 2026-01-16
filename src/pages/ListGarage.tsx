@@ -519,7 +519,7 @@ const ListGarage = () => {
           is_verified: false,
           is_approved: shouldAutoApprove,
           submitted_by: user.id,
-          owner_id: isOwner ? user.id : null,
+          owner_id: null, // Owner must claim through verification process
           listing_type: listingType,
           partner_id: partnerId,
           referral_source: isPartner ? 'partner' : 'direct',
