@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Phone, MapPin, Link as LinkIcon, Camera, Wrench, ArrowLeft, CheckCircle, Upload, X, Plus, Loader2, AlertCircle, User, Store } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -115,6 +115,42 @@ const ListGarage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [listingType, setListingType] = useState<"owner" | "customer" | "partner" | "">("");
+  const [isLoadingRole, setIsLoadingRole] = useState(true);
+
+  // Auto-detect user role from signup to skip role selection
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user) {
+        setIsLoadingRole(false);
+        return;
+      }
+      
+      try {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (roleData?.role) {
+          // Map database role to listing type
+          if (roleData.role === 'garage_owner') {
+            setListingType('owner');
+          } else if (roleData.role === 'partner') {
+            setListingType('partner');
+          } else if (roleData.role === 'customer') {
+            setListingType('customer');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      } finally {
+        setIsLoadingRole(false);
+      }
+    };
+    
+    fetchUserRole();
+  }, [user]);
   const [formData, setFormData] = useState({
     garageName: "",
     phone: "",
@@ -604,74 +640,16 @@ const ListGarage = () => {
             </p>
           </div>
 
-          {/* Listing Type Selection */}
-          {!listingType && (
-            <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border space-y-6 mb-6">
-              <div className="text-center">
-                <h2 className="text-xl font-semibold mb-2">Who are you?</h2>
-                <p className="text-sm text-muted-foreground mb-6">Help us understand how to best serve you</p>
-              </div>
-              
-              <div className="grid gap-4 md:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => setListingType("owner")}
-                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group"
-                >
-                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Store className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-foreground">I'm a Garage Owner</h3>
-                    <p className="text-sm text-muted-foreground mt-1">I want to list my own garage and manage it</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setListingType("customer")}
-                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group"
-                >
-                  <div className="w-14 h-14 bg-secondary/50 rounded-full flex items-center justify-center group-hover:bg-secondary transition-colors">
-                    <User className="w-7 h-7 text-secondary-foreground" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-foreground">I'm a Customer</h3>
-                    <p className="text-sm text-muted-foreground mt-1">I visited a garage and want to list it</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setListingType("partner")}
-                  className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
-                >
-                  <div className="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                    <Building2 className="w-7 h-7 text-blue-600" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-foreground">I'm a Channel Partner</h3>
-                    <p className="text-sm text-muted-foreground mt-1">I'm a MeriGarage partner listing garages</p>
-                  </div>
-                </button>
-              </div>
+          {/* Loading State */}
+          {isLoadingRole && (
+            <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+              <span className="text-muted-foreground">Setting up your form...</span>
             </div>
           )}
 
-          {/* Back to selection button */}
-          {listingType && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setListingType("")}
-              className="mb-4 gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Change selection
-            </Button>
-          )}
-
-          {listingType && (
+          {/* Role Badge - shown when role is detected */}
+          {!isLoadingRole && listingType && (
             <div className="mb-6">
               <Badge 
                 variant={listingType === "owner" ? "default" : "secondary"} 
@@ -691,7 +669,7 @@ const ListGarage = () => {
             </div>
           )}
 
-          {listingType && (
+          {!isLoadingRole && listingType && (
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border space-y-6">
             {/* Garage Name */}
             <div className="space-y-2" data-error={!!errors.garageName}>
