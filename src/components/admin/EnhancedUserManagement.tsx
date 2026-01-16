@@ -305,28 +305,32 @@ export function EnhancedUserManagement() {
     }
   };
 
-  const handleDeleteRole = async (roleId: string) => {
-    if (!confirm("Are you sure you want to remove this role?")) return;
+  const handleDeleteRole = async (roleId: string, userId: string) => {
+    if (!confirm("Are you sure you want to completely delete this user? This will remove their account and allow the email to be used for new signups.")) return;
 
     try {
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("id", roleId);
+      // Call edge function to completely delete user (including from auth.users)
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: userId },
+      });
 
       if (error) throw error;
 
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
       toast({
-        title: "Role Removed",
-        description: "User role has been removed",
+        title: "User Deleted",
+        description: data?.message || "User has been completely removed. Email can be used again.",
       });
 
       fetchUsers();
     } catch (error: any) {
-      console.error("Error deleting role:", error);
+      console.error("Error deleting user:", error);
       toast({
         title: "Error",
-        description: "Failed to remove role",
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -701,7 +705,7 @@ export function EnhancedUserManagement() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteRole(role.id)}
+                                onClick={() => handleDeleteRole(role.id, role.user_id)}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
