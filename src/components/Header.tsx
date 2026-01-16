@@ -4,6 +4,7 @@ import { Menu, X, User, LayoutDashboard, Building2, LogOut, Search } from "lucid
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import logoMain from "@/assets/merigarage-logo-main.png";
 
 export function Header() {
@@ -12,6 +13,22 @@ export function Header() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const { user, loading, signOut } = useAuth();
+  const { role, loading: roleLoading } = useUserRole();
+
+  // Get dashboard path based on user role
+  const getDashboardPath = () => {
+    switch (role) {
+      case "admin":
+        return "/admin";
+      case "garage_owner":
+        return "/garage-dashboard";
+      case "partner":
+        return "/partner-dashboard";
+      case "customer":
+      default:
+        return "/dashboard";
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,10 +74,10 @@ export function Header() {
                   Garage Login
                 </Button>
               </Link>
-              {!loading && (
+              {!loading && !roleLoading && (
                 user ? (
                   <>
-                    <Link to="/dashboard">
+                    <Link to={getDashboardPath()}>
                       <Button variant="ghost" size="sm" className="gap-2">
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
@@ -117,10 +134,10 @@ export function Header() {
                   Garage Login
                 </Button>
               </Link>
-              {!loading && (
+              {!loading && !roleLoading && (
                 user ? (
                   <>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Link to={getDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
