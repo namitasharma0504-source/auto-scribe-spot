@@ -69,6 +69,7 @@ export function MyListingsSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [payoutFilter, setPayoutFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -103,9 +104,20 @@ export function MyListingsSection({
         dateMatch = isWithinInterval(submittedDate, { start: from, end: to });
       }
 
-      return searchMatch && statusMatch && categoryMatch && dateMatch;
+      // Payout filter (only applies to approved listings)
+      let payoutMatch = true;
+      if (payoutFilter !== "all") {
+        if (listing.status !== "approved") {
+          payoutMatch = false;
+        } else {
+          const currentPayoutStatus = listing.payout_status || "pending";
+          payoutMatch = currentPayoutStatus === payoutFilter;
+        }
+      }
+
+      return searchMatch && statusMatch && categoryMatch && dateMatch && payoutMatch;
     });
-  }, [listings, searchQuery, statusFilter, categoryFilter, dateRange]);
+  }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter]);
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
@@ -167,10 +179,11 @@ export function MyListingsSection({
     setSearchQuery("");
     setStatusFilter("all");
     setCategoryFilter("all");
+    setPayoutFilter("all");
     setDateRange(undefined);
   };
 
-  const hasActiveFilters = searchQuery || statusFilter !== "all" || categoryFilter !== "all" || dateRange;
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || categoryFilter !== "all" || payoutFilter !== "all" || dateRange;
 
   return (
     <Card className="h-full flex flex-col">
@@ -276,6 +289,19 @@ export function MyListingsSection({
                 <SelectItem value="data_only">Data Only</SelectItem>
                 <SelectItem value="reputation">Reputation</SelectItem>
                 <SelectItem value="gms">GMS</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Payout Status Filter */}
+            <Select value={payoutFilter} onValueChange={setPayoutFilter}>
+              <SelectTrigger className="w-auto h-8 text-xs">
+                <SelectValue placeholder="Payout" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectItem value="all">All Payouts</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
               </SelectContent>
             </Select>
 
