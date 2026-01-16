@@ -4,7 +4,7 @@ import {
   Building2, IndianRupee, TrendingUp, Clock, CheckCircle, XCircle,
   LogOut, Home, Plus, Wallet, Eye, FileText, AlertTriangle,
   RefreshCw, ChevronRight, Users, Award, Play, Star, Laptop,
-  Database, Calendar as CalendarIcon, MessageSquare, Flag
+  Database, Calendar as CalendarIcon, MessageSquare, Flag, Search, X
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -31,6 +34,7 @@ import { DisputeModal } from "@/components/partner/DisputeModal";
 import { PartnerFeedbackModal } from "@/components/partner/PartnerFeedbackModal";
 import { MyListingsSection } from "@/components/partner/MyListingsSection";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Partner {
   id: string;
@@ -121,6 +125,11 @@ export default function PartnerDashboard() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedDayData, setSelectedDayData] = useState<{ date: Date; earning: DayEarning | undefined } | null>(null);
   const [activeTasks, setActiveTasks] = useState<string[]>([]);
+  
+  // Listings filter states
+  const [listingSearch, setListingSearch] = useState("");
+  const [listingDateFrom, setListingDateFrom] = useState<Date | undefined>(undefined);
+  const [listingDateTo, setListingDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -315,6 +324,31 @@ export default function PartnerDashboard() {
 
     return Array.from(earningsMap.values());
   }, [listings]);
+
+  // Filter listings based on search and date range
+  const filteredListings = useMemo(() => {
+    return listings.filter((listing) => {
+      // Search filter - check GIN, garage name, city
+      const searchLower = listingSearch.toLowerCase();
+      const matchesSearch = !listingSearch || 
+        listing.gin?.toLowerCase().includes(searchLower) ||
+        listing.garages?.name?.toLowerCase().includes(searchLower) ||
+        listing.garages?.city?.toLowerCase().includes(searchLower);
+
+      // Date range filter
+      const submittedDate = listing.submitted_at ? new Date(listing.submitted_at) : null;
+      const matchesDateFrom = !listingDateFrom || (submittedDate && submittedDate >= listingDateFrom);
+      const matchesDateTo = !listingDateTo || (submittedDate && submittedDate <= new Date(listingDateTo.getTime() + 24 * 60 * 60 * 1000 - 1));
+
+      return matchesSearch && matchesDateFrom && matchesDateTo;
+    });
+  }, [listings, listingSearch, listingDateFrom, listingDateTo]);
+
+  const clearListingFilters = () => {
+    setListingSearch("");
+    setListingDateFrom(undefined);
+    setListingDateTo(undefined);
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -807,15 +841,110 @@ export default function PartnerDashboard() {
               </Card>
             ) : (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Your Garage Listings</span>
-                    <Button onClick={() => setShowStartTask(true)} size="sm" className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600">
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <CardTitle>Your Garage Listings</CardTitle>
+                    <Button onClick={() => setShowStartTask(true)} size="sm" className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 w-fit">
                       <Plus className="w-4 h-4" /> Add New
                     </Button>
-                  </CardTitle>
+                  </div>
+                  
+                  {/* Search and Date Filters */}
+                  <div className="flex flex-col md:flex-row gap-3 mt-4">
+                    {/* Search Bar */}
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by GIN, garage name, or city..."
+                        value={listingSearch}
+                        onChange={(e) => setListingSearch(e.target.value)}
+                        className="pl-9 pr-9"
+                      />
+                      {listingSearch && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                          onClick={() => setListingSearch("")}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Date From */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full md:w-[140px] justify-start text-left font-normal",
+                            !listingDateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {listingDateFrom ? format(listingDateFrom, "dd MMM yy") : "From"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={listingDateFrom}
+                          onSelect={setListingDateFrom}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {/* Date To */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full md:w-[140px] justify-start text-left font-normal",
+                            !listingDateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {listingDateTo ? format(listingDateTo, "dd MMM yy") : "To"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={listingDateTo}
+                          onSelect={setListingDateTo}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {/* Clear Filters */}
+                    {(listingSearch || listingDateFrom || listingDateTo) && (
+                      <Button variant="ghost" size="sm" onClick={clearListingFilters} className="gap-1">
+                        <X className="w-3 h-3" /> Clear
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Filter Summary */}
+                  {(listingSearch || listingDateFrom || listingDateTo) && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Showing {filteredListings.length} of {listings.length} listings
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
+                  {filteredListings.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <Search className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                      <p className="text-muted-foreground">No listings match your filters</p>
+                      <Button variant="link" onClick={clearListingFilters} className="mt-2">
+                        Clear filters
+                      </Button>
+                    </div>
+                  ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -831,7 +960,7 @@ export default function PartnerDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {listings.map((listing) => {
+                        {filteredListings.map((listing) => {
                           // Determine category based on upsells
                           const getCategory = () => {
                             const categories = [];
@@ -919,6 +1048,7 @@ export default function PartnerDashboard() {
                       </TableBody>
                     </Table>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             )}
