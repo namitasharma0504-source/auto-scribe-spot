@@ -335,6 +335,7 @@ export default function GarageDashboard() {
   const [isRequestingVerification, setIsRequestingVerification] = useState(false);
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [leadsCount, setLeadsCount] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -465,6 +466,14 @@ export default function GarageDashboard() {
       if (verRequest) {
         setVerificationRequest(verRequest);
       }
+
+      // Fetch leads count for this garage
+      const { count: leadsCountData } = await supabase
+        .from("garage_leads")
+        .select("*", { count: "exact", head: true })
+        .eq("garage_id", garageData.id);
+
+      setLeadsCount(leadsCountData || 0);
 
       setIsLoading(false);
     };
@@ -710,12 +719,12 @@ export default function GarageDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Profile Views</p>
-                  <p className="text-2xl font-bold text-foreground">1,234</p>
+                  <p className="text-2xl font-bold text-muted-foreground">Coming Soon</p>
                 </div>
                 <Eye className="w-8 h-8 text-primary" />
               </div>
-              <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                <ArrowUp className="w-3 h-3" /> Click for details
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                Analytics tracking coming soon
               </p>
             </CardContent>
           </Card>
@@ -731,12 +740,12 @@ export default function GarageDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Inquiries</p>
-                  <p className="text-2xl font-bold text-foreground">42</p>
+                  <p className="text-2xl font-bold text-foreground">{leadsCount}</p>
                 </div>
                 <Users className="w-8 h-8 text-accent" />
               </div>
-              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                <ArrowDown className="w-3 h-3" /> Click for details
+              <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                <ArrowUp className="w-3 h-3" /> Click for details
               </p>
             </CardContent>
           </Card>
@@ -751,7 +760,7 @@ export default function GarageDashboard() {
           currentValue={
             selectedStat === "rating" ? (garage?.rating || "5.0") :
             selectedStat === "reviews" ? (garage?.review_count || 0) :
-            selectedStat === "views" ? "1,234" : "42"
+            selectedStat === "views" ? "Coming Soon" : leadsCount
           }
         />
 
