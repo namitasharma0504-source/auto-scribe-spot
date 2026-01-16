@@ -221,10 +221,14 @@ export default function PartnerDashboard() {
     listingId: string,
     reputationSold: boolean,
     gmsSold: boolean,
-    paymentIds: { reputation?: string; gms?: string }
+    paymentIds: { reputation?: string; gms?: string },
+    paymentProofUrl?: string
   ) => {
     try {
-      const updates: Record<string, any> = {};
+      const updates: Record<string, any> = {
+        // Set status to pending verification when upsell is submitted
+        status: 'under_review'
+      };
       
       if (reputationSold) {
         updates.reputation_upsell = true;
@@ -236,6 +240,16 @@ export default function PartnerDashboard() {
         updates.gms_upsell = true;
         updates.gms_earning = 1800;
         updates.gms_payment_id = paymentIds.gms;
+      }
+
+      // Store payment proof URL in the gms_payment_id or reputation_payment_id field
+      // In a real scenario, you'd have a dedicated field for payment proof
+      if (paymentProofUrl) {
+        if (reputationSold && !gmsSold) {
+          updates.reputation_payment_id = paymentProofUrl;
+        } else if (gmsSold) {
+          updates.gms_payment_id = paymentProofUrl;
+        }
       }
       
       // Calculate new total
@@ -254,7 +268,7 @@ export default function PartnerDashboard() {
 
       if (error) throw error;
 
-      toast.success("Upsell recorded successfully!");
+      toast.success("Upsell submitted for verification! You'll earn commission once admin approves the payment.");
       checkPartnerAndFetchData();
     } catch (error: any) {
       console.error("Error recording upsell:", error);
@@ -754,83 +768,100 @@ export default function PartnerDashboard() {
                         <TableRow>
                           <TableHead>GIN</TableHead>
                           <TableHead>Garage</TableHead>
+                          <TableHead>Submitted</TableHead>
+                          <TableHead>Category</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Upsells</TableHead>
                           <TableHead>Earnings</TableHead>
                           <TableHead>Payout</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {listings.map((listing) => (
-                          <TableRow key={listing.id}>
-                            <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{listing.garages?.name || "Processing..."}</p>
-                                <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(listing.status)}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                {listing.reputation_upsell && (
-                                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600">Rep ₹450</Badge>
-                                )}
-                                {listing.gms_upsell && (
-                                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">GMS ₹1800</Badge>
-                                )}
-                                {!listing.reputation_upsell && !listing.gms_upsell && listing.status === "approved" && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="text-xs h-6"
-                                    onClick={() => {
-                                      setSelectedListing(listing);
-                                      setShowUpsell(true);
-                                    }}
-                                  >
-                                    + Upsell
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium text-purple-600">
-                              ₹{(listing.total_earning || 0).toFixed(0)}
-                            </TableCell>
-                            <TableCell>{getPayoutStatusBadge(listing.payout_status)}</TableCell>
-                            <TableCell>
-                              {listing.status === "rejected" && (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="text-orange-600 hover:text-orange-700 h-7 px-2"
-                                  onClick={() => {
-                                    setSelectedListing(listing);
-                                    setShowDispute(true);
-                                  }}
-                                >
-                                  <Flag className="w-3 h-3 mr-1" />
-                                  Dispute
-                                </Button>
-                              )}
-                              {listing.status === "approved" && !listing.reputation_upsell && !listing.gms_upsell && (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="text-purple-600 hover:text-purple-700 h-7 px-2"
-                                  onClick={() => {
-                                    setSelectedListing(listing);
-                                    setShowUpsell(true);
-                                  }}
-                                >
-                                  <Plus className="w-3 h-3 mr-1" />
-                                  Upsell
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {listings.map((listing) => {
+                          // Determine category based on upsells
+                          const getCategory = () => {
+                            const categories = [];
+                            categories.push({ type: 'Data Collection', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' });
+                            if (listing.reputation_upsell) {
+                              categories.push({ type: 'Reputation', color: 'bg-violet-500/10 text-violet-600 border-violet-500/30' });
+                            }
+                            if (listing.gms_upsell) {
+                              categories.push({ type: 'GMS Software', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' });
+                            }
+                            return categories;
+                          };
+
+                          const categories = getCategory();
+                          const canUpsell = listing.status === "approved" && (!listing.reputation_upsell || !listing.gms_upsell);
+
+                          return (
+                            <TableRow key={listing.id}>
+                              <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{listing.garages?.name || "Processing..."}</p>
+                                  <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {listing.submitted_at ? (
+                                    <>
+                                      <p className="font-medium">{format(new Date(listing.submitted_at), "dd MMM yyyy")}</p>
+                                      <p className="text-xs text-muted-foreground">{format(new Date(listing.submitted_at), "hh:mm a")}</p>
+                                    </>
+                                  ) : "-"}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1 max-w-[150px]">
+                                  {categories.map((cat, idx) => (
+                                    <Badge key={idx} variant="outline" className={`text-xs ${cat.color}`}>
+                                      {cat.type}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell>{getStatusBadge(listing.status)}</TableCell>
+                              <TableCell className="font-medium text-purple-600">
+                                ₹{(listing.total_earning || 0).toFixed(0)}
+                              </TableCell>
+                              <TableCell>{getPayoutStatusBadge(listing.payout_status)}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  {listing.status === "rejected" && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      className="text-orange-600 hover:text-orange-700 h-7 px-2"
+                                      onClick={() => {
+                                        setSelectedListing(listing);
+                                        setShowDispute(true);
+                                      }}
+                                    >
+                                      <Flag className="w-3 h-3 mr-1" />
+                                      Dispute
+                                    </Button>
+                                  )}
+                                  {canUpsell && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="text-purple-600 hover:text-purple-700 h-7 px-2 border-purple-300"
+                                      onClick={() => {
+                                        setSelectedListing(listing);
+                                        setShowUpsell(true);
+                                      }}
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Upsell
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>

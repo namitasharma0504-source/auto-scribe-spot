@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Star, Laptop, IndianRupee, QrCode, CheckCircle2, AlertCircle, Copy, ExternalLink } from "lucide-react";
+import { Star, Laptop, QrCode, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,9 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UpsellModalProps {
   open: boolean;
@@ -22,12 +20,15 @@ interface UpsellModalProps {
   listingId: string;
   garageName: string;
   garageGin: string;
-  onUpsellConfirm: (listingId: string, reputationSold: boolean, gmsSold: boolean, paymentIds: { reputation?: string; gms?: string }) => void;
+  onUpsellConfirm: (listingId: string, reputationSold: boolean, gmsSold: boolean, paymentIds: { reputation?: string; gms?: string }, paymentProofUrl?: string) => void;
 }
 
 const REPUTATION_PRICE = 1500;
 const GMS_PRICE = 6000;
-const UPI_ID = "merigarage@upi"; // Replace with actual UPI ID
+const COMBINED_PRICE = 7500;
+const REPUTATION_COMMISSION = 450;
+const GMS_COMMISSION = 1800;
+const COMBINED_COMMISSION = 2250;
 
 export function UpsellModal({ 
   open, 
@@ -37,49 +38,112 @@ export function UpsellModal({
   garageGin,
   onUpsellConfirm 
 }: UpsellModalProps) {
-  const [reputationSold, setReputationSold] = useState(false);
-  const [gmsSold, setGmsSold] = useState(false);
-  const [reputationPaymentId, setReputationPaymentId] = useState("");
-  const [gmsPaymentId, setGmsPaymentId] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("reputation");
+  const [reputationSelected, setReputationSelected] = useState(false);
+  const [gmsSelected, setGmsSelected] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
 
-  const generateUpiLink = (amount: number, note: string) => {
-    return `upi://pay?pa=${UPI_ID}&pn=MeriGarage&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+  const getAmountToCollect = () => {
+    if (reputationSelected && gmsSelected) return COMBINED_PRICE;
+    if (reputationSelected) return REPUTATION_PRICE;
+    if (gmsSelected) return GMS_PRICE;
+    return 0;
   };
 
-  const copyUpiId = () => {
-    navigator.clipboard.writeText(UPI_ID);
-    toast.success("UPI ID copied to clipboard");
+  const getPartnerCommission = () => {
+    if (reputationSelected && gmsSelected) return COMBINED_COMMISSION;
+    if (reputationSelected) return REPUTATION_COMMISSION;
+    if (gmsSelected) return GMS_COMMISSION;
+    return 0;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setPaymentProof(file);
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${listingId}-${Date.now()}.${fileExt}`;
+      const filePath = `payment-proofs/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('partner-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('partner-documents')
+        .getPublicUrl(filePath);
+
+      setPaymentProofUrl(publicUrl);
+      toast.success("Payment proof uploaded successfully");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload payment proof");
+      setPaymentProof(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePaymentProof = () => {
+    setPaymentProof(null);
+    setPaymentProofUrl("");
   };
 
   const handleConfirm = () => {
-    if (reputationSold && !reputationPaymentId.trim()) {
-      toast.error("Please enter the Reputation payment transaction ID");
-      return;
-    }
-    if (gmsSold && !gmsPaymentId.trim()) {
-      toast.error("Please enter the GMS payment transaction ID");
+    if (!reputationSelected && !gmsSelected) {
+      toast.error("Please select at least one service to upsell");
       return;
     }
 
-    onUpsellConfirm(listingId, reputationSold, gmsSold, {
-      reputation: reputationSold ? reputationPaymentId : undefined,
-      gms: gmsSold ? gmsPaymentId : undefined,
-    });
+    if (!paymentDone) {
+      toast.error("Please confirm that payment has been received");
+      return;
+    }
+
+    if (!paymentProofUrl) {
+      toast.error("Please upload payment proof");
+      return;
+    }
+
+    onUpsellConfirm(
+      listingId, 
+      reputationSelected, 
+      gmsSelected, 
+      {
+        reputation: reputationSelected ? `REP-${garageGin}` : undefined,
+        gms: gmsSelected ? `GMS-${garageGin}` : undefined,
+      },
+      paymentProofUrl
+    );
     
     // Reset
-    setReputationSold(false);
-    setGmsSold(false);
-    setReputationPaymentId("");
-    setGmsPaymentId("");
+    setReputationSelected(false);
+    setGmsSelected(false);
+    setPaymentDone(false);
+    setPaymentProof(null);
+    setPaymentProofUrl("");
     onOpenChange(false);
   };
 
-  const totalEarning = (reputationSold ? 450 : 0) + (gmsSold ? 1800 : 0);
+  const amountToCollect = getAmountToCollect();
+  const partnerCommission = getPartnerCommission();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="w-5 h-5 text-emerald-600" />
@@ -91,142 +155,165 @@ export function UpsellModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="reputation" className="gap-2">
-              <Star className="w-4 h-4" />
-              Reputation
-            </TabsTrigger>
-            <TabsTrigger value="gms" className="gap-2">
-              <Laptop className="w-4 h-4" />
-              GMS Software
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="reputation" className="space-y-4 pt-4">
-            <div className="text-center p-4 bg-purple-500/10 rounded-xl border border-purple-500/30">
-              <h3 className="font-semibold text-purple-700">Reputation Management</h3>
-              <p className="text-3xl font-bold text-purple-600 mt-2">₹{REPUTATION_PRICE}/year</p>
-              <p className="text-sm text-muted-foreground mt-1">Your commission: <span className="font-semibold text-emerald-600">₹450</span></p>
-            </div>
-
-            <div className="flex justify-center p-4 bg-card rounded-xl border">
-              <QRCodeSVG 
-                value={generateUpiLink(REPUTATION_PRICE, `REP-${garageGin}`)} 
-                size={180}
-                level="H"
-                includeMargin
-              />
-            </div>
-
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-              <span className="text-muted-foreground">UPI ID:</span>
-              <code className="font-mono">{UPI_ID}</code>
-              <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={copyUpiId}>
-                <Copy className="w-3 h-3" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Checkbox 
-                id="rep-sold" 
-                checked={reputationSold} 
-                onCheckedChange={(checked) => setReputationSold(!!checked)} 
-              />
-              <Label htmlFor="rep-sold" className="flex-1 cursor-pointer">
-                Payment received from garage owner
-              </Label>
-            </div>
-
-            {reputationSold && (
-              <div className="space-y-2">
-                <Label htmlFor="rep-txn">Transaction ID / Reference</Label>
-                <Input
-                  id="rep-txn"
-                  placeholder="Enter payment reference"
-                  value={reputationPaymentId}
-                  onChange={(e) => setReputationPaymentId(e.target.value)}
-                />
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="gms" className="space-y-4 pt-4">
-            <div className="text-center p-4 bg-blue-500/10 rounded-xl border border-blue-500/30">
-              <h3 className="font-semibold text-blue-700">Garage Management Software</h3>
-              <p className="text-3xl font-bold text-blue-600 mt-2">₹{GMS_PRICE}/year</p>
-              <p className="text-sm text-muted-foreground mt-1">Your commission: <span className="font-semibold text-emerald-600">₹1,800</span></p>
-            </div>
-
-            <div className="flex justify-center p-4 bg-card rounded-xl border">
-              <QRCodeSVG 
-                value={generateUpiLink(GMS_PRICE, `GMS-${garageGin}`)} 
-                size={180}
-                level="H"
-                includeMargin
-              />
-            </div>
-
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-              <span className="text-muted-foreground">UPI ID:</span>
-              <code className="font-mono">{UPI_ID}</code>
-              <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={copyUpiId}>
-                <Copy className="w-3 h-3" />
-              </Button>
-            </div>
-
-            <a 
-              href="https://merigarage.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 text-sm text-blue-600 hover:underline"
+        <div className="space-y-4 mt-4">
+          {/* Service Selection */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-muted-foreground">SELECT SERVICES TO SELL</h4>
+            
+            {/* Reputation Management Option */}
+            <div 
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                reputationSelected 
+                  ? 'border-purple-500 bg-purple-500/10' 
+                  : 'border-border hover:border-purple-300'
+              }`}
+              onClick={() => setReputationSelected(!reputationSelected)}
             >
-              <ExternalLink className="w-4 h-4" />
-              Demo the software
-            </a>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Checkbox 
-                id="gms-sold" 
-                checked={gmsSold} 
-                onCheckedChange={(checked) => setGmsSold(!!checked)} 
-              />
-              <Label htmlFor="gms-sold" className="flex-1 cursor-pointer">
-                Payment received from garage owner
-              </Label>
+              <div className="flex items-start gap-3">
+                <Checkbox 
+                  checked={reputationSelected} 
+                  onCheckedChange={(checked) => setReputationSelected(!!checked)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-purple-600" />
+                    <span className="font-semibold">Reputation Management</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Collect <span className="font-bold text-purple-600">₹{REPUTATION_PRICE}</span> from garage
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">Your commission: ₹{REPUTATION_COMMISSION}</p>
+                </div>
+              </div>
             </div>
 
-            {gmsSold && (
-              <div className="space-y-2">
-                <Label htmlFor="gms-txn">Transaction ID / Reference</Label>
-                <Input
-                  id="gms-txn"
-                  placeholder="Enter payment reference"
-                  value={gmsPaymentId}
-                  onChange={(e) => setGmsPaymentId(e.target.value)}
+            {/* GMS Software Option */}
+            <div 
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                gmsSelected 
+                  ? 'border-blue-500 bg-blue-500/10' 
+                  : 'border-border hover:border-blue-300'
+              }`}
+              onClick={() => setGmsSelected(!gmsSelected)}
+            >
+              <div className="flex items-start gap-3">
+                <Checkbox 
+                  checked={gmsSelected} 
+                  onCheckedChange={(checked) => setGmsSelected(!!checked)}
+                  className="mt-1"
                 />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Laptop className="w-4 h-4 text-blue-600" />
+                    <span className="font-semibold">GMS Software</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Collect <span className="font-bold text-blue-600">₹{GMS_PRICE}</span> from garage
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">Your commission: ₹{GMS_COMMISSION}</p>
+                </div>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {(reputationSold || gmsSold) && (
-          <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30 mt-4">
-            <span className="text-sm text-emerald-700">Your Earning:</span>
-            <span className="text-lg font-bold text-emerald-600">₹{totalEarning}</span>
+            </div>
           </div>
-        )}
+
+          {/* Amount Summary */}
+          {(reputationSelected || gmsSelected) && (
+            <>
+              <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl border border-purple-500/30">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Amount to Collect from Garage</p>
+                  <p className="text-4xl font-bold text-foreground mt-1">₹{amountToCollect.toLocaleString()}</p>
+                  {reputationSelected && gmsSelected && (
+                    <p className="text-xs text-muted-foreground mt-1">(₹{REPUTATION_PRICE} + ₹{GMS_PRICE} = ₹{COMBINED_PRICE})</p>
+                  )}
+                </div>
+              </div>
+
+              {/* QR Code for Payment */}
+              <div className="text-center">
+                <p className="text-sm font-medium mb-3">Scan QR Code for Payment</p>
+                <div className="inline-block p-4 bg-card rounded-xl border">
+                  {/* Dummy QR Code placeholder */}
+                  <div className="w-44 h-44 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <div className="text-center">
+                      <QrCode className="w-16 h-16 mx-auto text-gray-400" />
+                      <p className="text-xs text-gray-500 mt-2">UPI QR Code</p>
+                      <p className="text-xs font-bold text-purple-600">₹{amountToCollect}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  UPI ID: merigarage@upi
+                </p>
+              </div>
+
+              {/* Payment Proof Upload */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Upload Payment Proof</Label>
+                {!paymentProof ? (
+                  <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-purple-400 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="payment-proof"
+                      disabled={uploading}
+                    />
+                    <label htmlFor="payment-proof" className="cursor-pointer">
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {uploading ? "Uploading..." : "Click to upload screenshot or PDF"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Max 5MB</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                    <ImageIcon className="w-8 h-8 text-emerald-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{paymentProof.name}</p>
+                      <p className="text-xs text-emerald-600">Uploaded successfully</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={removePaymentProof} className="h-8 w-8">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Confirmation */}
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Checkbox 
+                  id="payment-done" 
+                  checked={paymentDone} 
+                  onCheckedChange={(checked) => setPaymentDone(!!checked)} 
+                />
+                <Label htmlFor="payment-done" className="flex-1 cursor-pointer text-sm">
+                  I confirm that I have received ₹{amountToCollect} from the garage owner
+                </Label>
+              </div>
+
+              {/* Commission Summary */}
+              <div className="flex items-center justify-between p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                <span className="text-sm text-emerald-700">Your Commission (after admin approval):</span>
+                <span className="text-xl font-bold text-emerald-600">₹{partnerCommission}</span>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="flex gap-3 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-            Skip for Now
+            Cancel
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!reputationSold && !gmsSold}
+            disabled={!reputationSelected && !gmsSelected || !paymentDone || !paymentProofUrl}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700"
           >
-            Confirm Sales
+            Submit for Verification
           </Button>
         </div>
       </DialogContent>
