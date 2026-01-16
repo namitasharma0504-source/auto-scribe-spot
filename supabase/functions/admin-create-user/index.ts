@@ -89,9 +89,14 @@ Deno.serve(async (req) => {
 
     if (createError) {
       console.error("Error creating user:", createError);
+      // Return 200 with error in body so frontend can parse it properly
+      // supabase.functions.invoke throws on non-2xx, making error message inaccessible
+      const errorMessage = createError.code === "email_exists" 
+        ? `A user with email "${email}" already exists. Delete the existing user first or use a different email.`
+        : createError.message;
       return new Response(
-        JSON.stringify({ error: createError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: errorMessage, code: createError.code }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
