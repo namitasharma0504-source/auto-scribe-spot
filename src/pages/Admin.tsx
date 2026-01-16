@@ -21,7 +21,6 @@ import {
   ClipboardList,
   Scale,
   Trophy,
-  Key
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ import { PartnerManagement } from "@/components/admin/PartnerManagement";
 import { PartnerListingsManagement } from "@/components/admin/PartnerListingsManagement";
 import { PartnerDisputesManagement } from "@/components/admin/PartnerDisputesManagement";
 import { PartnerLeaderboard } from "@/components/admin/PartnerLeaderboard";
-import { GarageOwnerManagement } from "@/components/admin/GarageOwnerManagement";
+
 import {
   Dialog,
   DialogContent,
@@ -595,10 +594,6 @@ export default function Admin() {
               <Scale className="w-4 h-4" />
               Disputes
             </TabsTrigger>
-            <TabsTrigger value="garage-owners" className="gap-2">
-              <Key className="w-4 h-4" />
-              Garage Owners
-            </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
               Customers
@@ -886,22 +881,6 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="garage-owners">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="w-5 h-5" />
-                  Garage Owner Management
-                </CardTitle>
-                <CardDescription>
-                  Manage garage owner accounts, credentials, and subscription access to the dashboard.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <GarageOwnerManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="customers">
             <CustomerManagement />

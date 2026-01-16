@@ -21,8 +21,11 @@ import {
   Loader2,
   User,
   Store,
-  Users
+  Users,
+  CalendarIcon,
+  Key,
 } from "lucide-react";
+import { format } from "date-fns";
 import { GarageRecentReviews } from "./GarageRecentReviews";
 import { GarageAllReviews } from "./GarageAllReviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +36,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -134,6 +140,20 @@ interface Partner {
   username: string;
 }
 
+interface GarageOwner {
+  id: string;
+  user_id: string;
+  garage_id: string | null;
+  business_name: string | null;
+  contact_phone: string | null;
+  subscription_active: boolean;
+  signup_date: string | null;
+  listing_date: string | null;
+  subscription_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export function GarageManagement() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +161,8 @@ export function GarageManagement() {
   const [garages, setGarages] = useState<Garage[]>([]);
   const [garagePhotos, setGaragePhotos] = useState<GaragePhoto[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [garageOwners, setGarageOwners] = useState<GarageOwner[]>([]);
+  const [selectedOwner, setSelectedOwner] = useState<GarageOwner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGarage, setSelectedGarage] = useState<Garage | null>(null);
@@ -149,7 +171,9 @@ export function GarageManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingOwner, setIsSavingOwner] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Garage>>({});
+  const [ownerForm, setOwnerForm] = useState<Partial<GarageOwner>>({});
   const [customService, setCustomService] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -159,7 +183,62 @@ export function GarageManagement() {
   useEffect(() => {
     fetchGarages();
     fetchPartners();
+    fetchGarageOwners();
   }, []);
+
+  const fetchGarageOwners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("garage_owners")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGarageOwners(data || []);
+    } catch (error: any) {
+      console.error("Error fetching garage owners:", error);
+    }
+  };
+
+  const getOwnerForGarage = (garageId: string): GarageOwner | null => {
+    return garageOwners.find(o => o.garage_id === garageId) || null;
+  };
+
+  const handleSaveOwnerDates = async () => {
+    if (!selectedOwner) return;
+
+    setIsSavingOwner(true);
+    try {
+      const { error } = await supabase
+        .from("garage_owners")
+        .update({
+          signup_date: ownerForm.signup_date || null,
+          listing_date: ownerForm.listing_date || null,
+          subscription_date: ownerForm.subscription_date || null,
+          subscription_active: ownerForm.subscription_active || false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedOwner.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Owner Details Updated",
+        description: "The owner dates and subscription status have been saved",
+      });
+
+      fetchGarageOwners();
+    } catch (error: any) {
+      console.error("Error updating owner:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update owner details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingOwner(false);
+    }
+  };
 
   const fetchPartners = async () => {
     try {
@@ -445,6 +524,21 @@ export function GarageManagement() {
     setCustomService("");
     setShowCustomInput(false);
     fetchGaragePhotos(garage.id);
+    
+    // Load owner data for this garage
+    const owner = getOwnerForGarage(garage.id);
+    setSelectedOwner(owner);
+    if (owner) {
+      setOwnerForm({
+        signup_date: owner.signup_date,
+        listing_date: owner.listing_date,
+        subscription_date: owner.subscription_date,
+        subscription_active: owner.subscription_active,
+      });
+    } else {
+      setOwnerForm({});
+    }
+    
     setIsEditOpen(true);
   };
 
@@ -1217,6 +1311,53 @@ export function GarageManagement() {
                   </a>
                 </div>
               )}
+              
+              {/* Owner & Subscription Info */}
+              {(() => {
+                const owner = getOwnerForGarage(selectedGarage.id);
+                return owner ? (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Key className="w-4 h-4 text-primary" />
+                      <h4 className="font-medium">Owner & Subscription</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Business Name</p>
+                        <p className="font-medium">{owner.business_name || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Dashboard Access</p>
+                        <Badge variant={owner.subscription_active ? "default" : "secondary"}>
+                          {owner.subscription_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Signup Date</p>
+                        <p className="font-medium">
+                          {owner.signup_date ? format(new Date(owner.signup_date), "PP") : "Not set"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Listing Date</p>
+                        <p className="font-medium">
+                          {owner.listing_date ? format(new Date(owner.listing_date), "PP") : "Not set"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Subscription Date</p>
+                        <p className="font-medium">
+                          {owner.subscription_date ? format(new Date(owner.subscription_date), "PP") : "Not set"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 p-3 border rounded-lg bg-muted/30 text-center">
+                    <p className="text-muted-foreground text-sm">No owner linked to this garage</p>
+                  </div>
+                );
+              })()}
             </div>
           )}
           <DialogFooter>
@@ -1665,6 +1806,191 @@ export function GarageManagement() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Owner & Subscription Section */}
+            <div className="space-y-4">
+              <Separator />
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg">Owner & Subscription</h3>
+              </div>
+              
+              {selectedOwner ? (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Owner ID</p>
+                      <p className="font-medium text-sm">{selectedOwner.id.slice(0, 8)}...</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Business Name</p>
+                      <p className="font-medium">{selectedOwner.business_name || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Contact Phone</p>
+                      <p className="font-medium">{selectedOwner.contact_phone || "N/A"}</p>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Date Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Signup Date */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Signup Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !ownerForm.signup_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {ownerForm.signup_date ? format(new Date(ownerForm.signup_date), "PPP") : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={ownerForm.signup_date ? new Date(ownerForm.signup_date) : undefined}
+                            onSelect={(date) => setOwnerForm({ ...ownerForm, signup_date: date?.toISOString() || null })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {ownerForm.signup_date && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-muted-foreground"
+                          onClick={() => setOwnerForm({ ...ownerForm, signup_date: null })}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Listing Date */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Listing Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !ownerForm.listing_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {ownerForm.listing_date ? format(new Date(ownerForm.listing_date), "PPP") : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={ownerForm.listing_date ? new Date(ownerForm.listing_date) : undefined}
+                            onSelect={(date) => setOwnerForm({ ...ownerForm, listing_date: date?.toISOString() || null })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {ownerForm.listing_date && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-muted-foreground"
+                          onClick={() => setOwnerForm({ ...ownerForm, listing_date: null })}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Subscription Date */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Subscription Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !ownerForm.subscription_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {ownerForm.subscription_date ? format(new Date(ownerForm.subscription_date), "PPP") : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={ownerForm.subscription_date ? new Date(ownerForm.subscription_date) : undefined}
+                            onSelect={(date) => setOwnerForm({ ...ownerForm, subscription_date: date?.toISOString() || null })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {ownerForm.subscription_date && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-muted-foreground"
+                          onClick={() => setOwnerForm({ ...ownerForm, subscription_date: null })}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Subscription Status Toggle */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                    <div>
+                      <Label htmlFor="subscription_active" className="cursor-pointer font-medium">
+                        Dashboard Access
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable to allow owner access to /garage-dashboard
+                      </p>
+                    </div>
+                    <Switch
+                      id="subscription_active"
+                      checked={ownerForm.subscription_active || false}
+                      onCheckedChange={(checked) => setOwnerForm({ ...ownerForm, subscription_active: checked })}
+                    />
+                  </div>
+
+                  {/* Save Owner Button */}
+                  <Button 
+                    onClick={handleSaveOwnerDates} 
+                    disabled={isSavingOwner}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    {isSavingOwner ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save Owner Details
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-4 border rounded-lg bg-muted/30 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    No owner is linked to this garage yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Owner details will appear here once someone claims this garage.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Recent Reviews Section */}
