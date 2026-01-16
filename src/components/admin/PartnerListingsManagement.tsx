@@ -599,142 +599,182 @@ export function PartnerListingsManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>GIN</TableHead>
-                    <TableHead>Garage</TableHead>
-                    <TableHead>Partner</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Upsells</TableHead>
-                    <TableHead>Earnings</TableHead>
-                    <TableHead>Payout</TableHead>
                     <TableHead>Submitted</TableHead>
+                    <TableHead>Garage</TableHead>
+                    <TableHead>GIN</TableHead>
+                    <TableHead>Partner</TableHead>
+                    <TableHead className="text-center">Data Collection</TableHead>
+                    <TableHead className="text-center">Reputation</TableHead>
+                    <TableHead className="text-center">GMS Software</TableHead>
+                    <TableHead className="text-center">Total Payout</TableHead>
+                    <TableHead>Payout Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredListings.map((listing) => (
-                    <TableRow 
-                      key={listing.id} 
-                      className="cursor-pointer hover:bg-purple-500/5"
-                      onClick={() => openListingDetails(listing)}
-                    >
-                      <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{listing.garages?.name || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{listing.partners?.full_name || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{listing.partners?.id || "-"}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={
-                            listing.status === "approved" 
-                              ? "bg-green-500/10 text-green-600" 
-                              : listing.status === "rejected"
-                              ? "bg-red-500/10 text-red-600"
-                              : listing.status === "under_review"
-                              ? "bg-blue-500/10 text-blue-600"
-                              : "bg-yellow-500/10 text-yellow-600"
-                          }
-                        >
-                          {listing.status === "under_review" ? "Under Review" : (listing.status || "pending")}
-                        </Badge>
-                        {listing.rejection_reason && (
-                          <p className="text-xs text-red-500 mt-1 max-w-[120px] truncate" title={listing.rejection_reason}>
-                            {listing.rejection_reason}
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {listing.reputation_upsell && (
-                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 w-fit">Rep ₹450</Badge>
+                  {filteredListings.map((listing) => {
+                    // Calculate verified total payout
+                    let verifiedPayout = 0;
+                    if (listing.status === "approved") verifiedPayout += 20;
+                    if (listing.reputation_upsell && listing.reputation_verified) verifiedPayout += 450;
+                    if (listing.gms_upsell && listing.gms_verified) verifiedPayout += 1800;
+
+                    return (
+                      <TableRow 
+                        key={listing.id} 
+                        className="cursor-pointer hover:bg-purple-500/5"
+                        onClick={() => openListingDetails(listing)}
+                      >
+                        {/* Submitted Date */}
+                        <TableCell className="text-sm">
+                          {listing.submitted_at ? (
+                            <div>
+                              <p className="font-medium">{new Date(listing.submitted_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                              <p className="text-xs text-muted-foreground">{new Date(listing.submitted_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          ) : "-"}
+                        </TableCell>
+                        
+                        {/* Garage */}
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{listing.garages?.name || "Processing..."}</p>
+                            <p className="text-xs text-muted-foreground">{listing.garages?.city || "-"}</p>
+                          </div>
+                        </TableCell>
+                        
+                        {/* GIN */}
+                        <TableCell className="font-mono text-xs">{listing.gin || "-"}</TableCell>
+                        
+                        {/* Partner */}
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium">{listing.partners?.full_name || "Unknown"}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{listing.partners?.id || "-"}</p>
+                          </div>
+                        </TableCell>
+                        
+                        {/* Data Collection Status (₹20) */}
+                        <TableCell className="text-center">
+                          {listing.status === "approved" ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+                              <CheckCircle className="w-3 h-3 mr-0.5" />Verified
+                            </Badge>
+                          ) : listing.status === "rejected" ? (
+                            <Badge className="bg-red-500/10 text-red-600 border-red-500/30 text-[10px] px-1.5 py-0.5">
+                              <XCircle className="w-3 h-3 mr-0.5" />Rejected
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-[10px] px-1.5 py-0.5">
+                              <Clock className="w-3 h-3 mr-0.5" />Pending
+                            </Badge>
                           )}
-                          {listing.gms_upsell && (
-                            <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 w-fit">GMS ₹1.8K</Badge>
+                        </TableCell>
+                        
+                        {/* Reputation Status (₹450) */}
+                        <TableCell className="text-center">
+                          {listing.status !== "approved" ? (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          ) : listing.reputation_upsell && listing.reputation_verified ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+                              <CheckCircle className="w-3 h-3 mr-0.5" />Active
+                            </Badge>
+                          ) : listing.reputation_upsell && !listing.reputation_verified ? (
+                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] px-1.5 py-0.5">
+                              <Clock className="w-3 h-3 mr-0.5" />Pending
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not sold</span>
                           )}
-                          {!listing.reputation_upsell && !listing.gms_upsell && (
-                            <span className="text-xs text-muted-foreground">Base only</span>
+                        </TableCell>
+                        
+                        {/* GMS Status (₹1,800) */}
+                        <TableCell className="text-center">
+                          {listing.status !== "approved" ? (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          ) : listing.gms_upsell && listing.gms_verified ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+                              <CheckCircle className="w-3 h-3 mr-0.5" />Active
+                            </Badge>
+                          ) : listing.gms_upsell && !listing.gms_verified ? (
+                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] px-1.5 py-0.5">
+                              <Clock className="w-3 h-3 mr-0.5" />Pending
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not sold</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium text-emerald-600">
-                        ₹{(listing.total_earning || 0).toFixed(0)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={
-                            listing.payout_status === "paid" 
-                              ? "bg-green-500/10 text-green-600" 
-                              : listing.payout_status === "processing"
-                              ? "bg-blue-500/10 text-blue-600"
-                              : "bg-yellow-500/10 text-yellow-600"
-                          }
-                        >
-                          {listing.payout_status || "pending"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {listing.submitted_at 
-                          ? new Date(listing.submitted_at).toLocaleDateString() 
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2"
-                            onClick={() => {
-                              setSelectedListing(listing);
-                              setIsDetailsOpen(true);
-                            }}
+                        </TableCell>
+                        
+                        {/* Total Verified Payout */}
+                        <TableCell className="text-center">
+                          <span className="font-bold text-purple-600">₹{verifiedPayout}</span>
+                        </TableCell>
+                        
+                        {/* Payout Status */}
+                        <TableCell>
+                          <Badge 
+                            className={
+                              listing.payout_status === "paid" 
+                                ? "bg-green-500/10 text-green-600" 
+                                : listing.payout_status === "processing"
+                                ? "bg-blue-500/10 text-blue-600"
+                                : "bg-yellow-500/10 text-yellow-600"
+                            }
                           >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {(!listing.status || listing.status === "pending" || listing.status === "under_review") && (
-                            <>
+                            {listing.payout_status || "pending"}
+                          </Badge>
+                        </TableCell>
+                        
+                        {/* Actions */}
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => openListingDetails(listing)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {(!listing.status || listing.status === "pending" || listing.status === "under_review") && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                                  onClick={() => handleApprove(listing.id, listing.listing_id)}
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                  onClick={() => {
+                                    setRejectingListingId(listing.id);
+                                    setIsRejectDialogOpen(true);
+                                  }}
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                            {listing.status === "rejected" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
                                 onClick={() => handleApprove(listing.id, listing.listing_id)}
+                                title="Re-approve"
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                                onClick={() => {
-                                  setRejectingListingId(listing.id);
-                                  setIsRejectDialogOpen(true);
-                                }}
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                          {listing.status === "rejected" && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                              onClick={() => handleApprove(listing.id, listing.listing_id)}
-                              title="Re-approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
