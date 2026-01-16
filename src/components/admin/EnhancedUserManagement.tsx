@@ -17,6 +17,7 @@ import {
   XCircle,
   Clock,
   IndianRupee,
+  Calendar,
   TrendingUp
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +63,12 @@ interface UserRole {
 interface Profile {
   user_id: string;
   full_name: string | null;
+  created_at: string;
+}
+
+interface UserEmail {
+  user_id: string;
+  email: string;
 }
 
 interface PartnerAccount {
@@ -86,6 +93,7 @@ export function EnhancedUserManagement() {
   const { toast } = useToast();
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [userEmails, setUserEmails] = useState<UserEmail[]>([]);
   const [partners, setPartners] = useState<PartnerAccount[]>([]);
   const [partnerEarnings, setPartnerEarnings] = useState<PartnerEarnings[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,7 +114,7 @@ export function EnhancedUserManagement() {
     try {
       const [rolesResult, profilesResult, partnersResult, listingsResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
-        supabase.from("profiles").select("user_id, full_name"),
+        supabase.from("profiles").select("user_id, full_name, created_at"),
         supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
         supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status")
       ]);
@@ -119,6 +127,31 @@ export function EnhancedUserManagement() {
       setUserRoles(rolesResult.data || []);
       setProfiles(profilesResult.data || []);
       setPartners(partnersResult.data || []);
+      
+      // Try to get emails from garage_claim_requests for garage owners
+      const userIds = (rolesResult.data || []).map(r => r.user_id);
+      const { data: claimsData } = await supabase
+        .from("garage_claim_requests")
+        .select("claimant_user_id, claimant_email")
+        .in("claimant_user_id", userIds);
+      
+      // Get partner emails
+      const partnersData = partnersResult.data || [];
+      const partnerEmails: UserEmail[] = partnersData
+        .filter(p => p.user_id && p.email)
+        .map(p => ({ user_id: p.user_id!, email: p.email! }));
+      
+      // Combine claim emails and partner emails
+      const claimEmails: UserEmail[] = (claimsData || [])
+        .filter(c => c.claimant_email)
+        .map(c => ({ user_id: c.claimant_user_id, email: c.claimant_email }));
+      
+      // Merge all emails (remove duplicates by user_id, prioritize claim emails)
+      const emailMap = new Map<string, string>();
+      partnerEmails.forEach(e => emailMap.set(e.user_id, e.email));
+      claimEmails.forEach(e => emailMap.set(e.user_id, e.email)); // Override with claim email if exists
+      
+      setUserEmails(Array.from(emailMap.entries()).map(([user_id, email]) => ({ user_id, email })));
 
       // Calculate earnings per partner
       const earningsMap = new Map<string, { total: number; pending: number }>();
@@ -163,6 +196,16 @@ export function EnhancedUserManagement() {
   const getUserName = (userId: string): string => {
     const profile = profiles.find(p => p.user_id === userId);
     return profile?.full_name || "Unknown User";
+  };
+
+  const getUserEmail = (userId: string): string | null => {
+    const emailEntry = userEmails.find(e => e.user_id === userId);
+    return emailEntry?.email || null;
+  };
+
+  const getUserCreatedAt = (userId: string): string | null => {
+    const profile = profiles.find(p => p.user_id === userId);
+    return profile?.created_at || null;
   };
 
   const handleCreateUser = async () => {
@@ -541,8 +584,10 @@ export function EnhancedUserManagement() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>User</TableHead>
+                        <TableHead>Email ID</TableHead>
                         <TableHead>User ID</TableHead>
                         <TableHead>Current Role</TableHead>
+                        <TableHead>Created</TableHead>
                         <TableHead>Change Role</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -550,6 +595,8 @@ export function EnhancedUserManagement() {
                     <TableBody>
                       {filteredRoles.map((role) => {
                         const Icon = roleIcons[role.role];
+                        const email = getUserEmail(role.user_id);
+                        const createdAt = getUserCreatedAt(role.user_id);
                         return (
                           <TableRow key={role.id}>
                             <TableCell>
@@ -561,6 +608,16 @@ export function EnhancedUserManagement() {
                               </div>
                             </TableCell>
                             <TableCell>
+                              {email ? (
+                                <div className="flex items-center gap-1.5 text-sm">
+                                  <Mail className="w-3 h-3 text-muted-foreground" />
+                                  <span className="truncate max-w-[160px]">{email}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <code className="text-xs bg-muted px-2 py-1 rounded">
                                 {role.user_id.slice(0, 8)}...
                               </code>
@@ -569,6 +626,16 @@ export function EnhancedUserManagement() {
                               <Badge variant="outline" className={roleColors[role.role]}>
                                 {role.role.replace("_", " ")}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {createdAt ? (
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Calendar className="w-3 h-3" />
+                                  {format(new Date(createdAt), "dd MMM yyyy")}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Select
