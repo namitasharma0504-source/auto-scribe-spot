@@ -29,6 +29,7 @@ import { UpsellModal } from "@/components/partner/UpsellModal";
 import { EarningsCalendar } from "@/components/partner/EarningsCalendar";
 import { DisputeModal } from "@/components/partner/DisputeModal";
 import { PartnerFeedbackModal } from "@/components/partner/PartnerFeedbackModal";
+import { MyListingsSection } from "@/components/partner/MyListingsSection";
 import { toast } from "sonner";
 
 interface Partner {
@@ -596,109 +597,19 @@ export default function PartnerDashboard() {
           />
         </div>
 
-        {/* My Listings Quick View */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-purple-500" />
-                My Listed Garages
-              </CardTitle>
-              <CardDescription>Quick view of your recent garage submissions</CardDescription>
-            </div>
-            <Button 
-              onClick={() => setShowStartTask(true)}
-              size="sm" 
-              className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
-            >
-              <Plus className="w-4 h-4" /> Add New
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {listings.length === 0 ? (
-              <div className="text-center py-8">
-                <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-semibold mb-2">No listings yet</h3>
-                <p className="text-muted-foreground mb-4">Start adding garages to earn money!</p>
-                <Button onClick={() => setShowStartTask(true)} className="bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600">
-                  <Play className="w-4 h-4 mr-2" /> Start Your First Task
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {listings.slice(0, 5).map((listing) => {
-                  // Determine category badges
-                  const getCategoryBadges = () => {
-                    const badges = [];
-                    badges.push({ label: 'Data', color: 'bg-purple-500/10 text-purple-600 border-purple-500/30' });
-                    if (listing.reputation_upsell) {
-                      badges.push({ label: 'Rep', color: 'bg-violet-500/10 text-violet-600 border-violet-500/30' });
-                    }
-                    if (listing.gms_upsell) {
-                      badges.push({ label: 'GMS', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30' });
-                    }
-                    return badges;
-                  };
-
-                  return (
-                    <div 
-                      key={listing.id} 
-                      className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="w-5 h-5 text-purple-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{listing.garages?.name || "Processing..."}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{listing.garages?.city || "-"}</span>
-                            {listing.submitted_at && (
-                              <>
-                                <span>•</span>
-                                <span>{format(new Date(listing.submitted_at), "dd MMM yyyy, hh:mm a")}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <div className="flex gap-1">
-                          {getCategoryBadges().map((badge, idx) => (
-                            <Badge key={idx} variant="outline" className={`text-xs ${badge.color}`}>
-                              {badge.label}
-                            </Badge>
-                          ))}
-                        </div>
-                        {getStatusBadge(listing.status)}
-                        <span className="font-semibold text-purple-600 min-w-[60px] text-right">
-                          ₹{(listing.total_earning || 0).toFixed(0)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {listings.length > 5 && (
-                  <div className="text-center pt-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-purple-600 hover:text-purple-700"
-                      onClick={() => {
-                        // Scroll to the listings tab and select it
-                        const tabsTrigger = document.querySelector('[data-value="listings"]') as HTMLElement;
-                        if (tabsTrigger) tabsTrigger.click();
-                      }}
-                    >
-                      View All {listings.length} Listings
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* My Listings Section with Filters */}
+        <MyListingsSection
+          listings={listings}
+          onStartTask={() => setShowStartTask(true)}
+          onUpsell={(listing) => {
+            setSelectedListing(listing);
+            setShowUpsell(true);
+          }}
+          onDispute={(listing) => {
+            setSelectedListing(listing);
+            setShowDispute(true);
+          }}
+        />
 
         {/* Stat Detail Dialog */}
         <Dialog open={statDialog !== null} onOpenChange={(open) => !open && setStatDialog(null)}>
