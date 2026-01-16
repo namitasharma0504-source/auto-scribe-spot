@@ -95,20 +95,24 @@ export default function GarageSignup() {
     setIsLoading(true);
     setError(null);
     
+    // Store role info for error messages
+    let detectedRole: string | null = null;
+    
     try {
       // Check if email already has a role assigned
       const { data: roleCheck } = await supabase
         .rpc('check_email_role_conflict', { check_email: email });
       
+      const roleLabels: Record<string, string> = {
+        'customer': 'Customer',
+        'garage_owner': 'Garage Owner',
+        'partner': 'Partner',
+        'admin': 'Admin'
+      };
+      
       if (roleCheck && roleCheck[0]?.has_conflict) {
-        const existingRole = roleCheck[0].existing_role;
-        const roleLabels: Record<string, string> = {
-          'customer': 'Customer',
-          'garage_owner': 'Garage Owner',
-          'partner': 'Partner',
-          'admin': 'Admin'
-        };
-        setError(`This email is already registered as a ${roleLabels[existingRole] || existingRole}. Please use a different email.`);
+        detectedRole = roleCheck[0].existing_role;
+        setError(`This email is already registered as a ${roleLabels[detectedRole] || detectedRole}. Please use a different email or sign in with your existing account.`);
         setIsLoading(false);
         return;
       }
@@ -188,7 +192,19 @@ export default function GarageSignup() {
       }
     } catch (error: any) {
       if (error.message.includes("already registered")) {
-        setError("This email is already registered. Please sign in or use a different email.");
+        // If we detected a role earlier, use it in the message
+        if (detectedRole) {
+          const roleLabels: Record<string, string> = {
+            'customer': 'Customer',
+            'garage_owner': 'Garage Owner',
+            'partner': 'Partner',
+            'admin': 'Admin'
+          };
+          setError(`This email is already registered as a ${roleLabels[detectedRole] || detectedRole}. Please sign in or use a different email.`);
+        } else {
+          // User exists in auth but has no role (incomplete deletion by admin)
+          setError("This email is already registered in our system. Please contact support or use a different email address.");
+        }
       } else {
         setError(error.message);
       }

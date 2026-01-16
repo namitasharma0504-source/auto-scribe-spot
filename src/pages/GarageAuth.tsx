@@ -136,25 +136,28 @@ export default function GarageAuth() {
     setIsLoading(true);
     setCustomerEmailError(null);
     
+    // Store role info for error messages
+    let detectedRole: string | null = null;
+    const roleLabels: Record<string, string> = {
+      'customer': 'Customer',
+      'garage_owner': 'Garage Owner',
+      'partner': 'Partner',
+      'admin': 'Admin'
+    };
+    
     try {
       // Check if email already has a role assigned
       const { data: roleCheck } = await supabase
         .rpc('check_email_role_conflict', { check_email: email });
       
       if (roleCheck && roleCheck[0]?.has_conflict) {
-        const existingRole = roleCheck[0].existing_role;
-        const roleLabels: Record<string, string> = {
-          'customer': 'Customer',
-          'garage_owner': 'Garage Owner',
-          'partner': 'Partner',
-          'admin': 'Admin'
-        };
+        detectedRole = roleCheck[0].existing_role;
         setCustomerEmailError(
-          `This email is already registered as a ${roleLabels[existingRole] || existingRole}. Please use a different email.`
+          `This email is already registered as a ${roleLabels[detectedRole] || detectedRole}. Please use a different email.`
         );
         toast({
           title: "Email Already Registered",
-          description: `This email is registered as a ${roleLabels[existingRole] || existingRole}. Use a different email.`,
+          description: `This email is registered as a ${roleLabels[detectedRole] || detectedRole}. Use a different email.`,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -209,11 +212,19 @@ export default function GarageAuth() {
       }
     } catch (error: any) {
       if (error.message.includes("already registered")) {
-        toast({
-          title: "Account Exists",
-          description: "This email is already registered. Please sign in or use a different email.",
-          variant: "destructive",
-        });
+        if (detectedRole) {
+          toast({
+            title: "Account Exists",
+            description: `This email is already registered as a ${roleLabels[detectedRole] || detectedRole}. Please sign in or use a different email.`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account Exists",
+            description: "This email is already registered in our system. Please contact support or use a different email address.",
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Sign Up Failed",
