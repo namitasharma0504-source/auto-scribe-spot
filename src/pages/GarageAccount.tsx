@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   Building2, 
   Search, 
@@ -9,7 +9,10 @@ import {
   XCircle,
   ExternalLink,
   LogOut,
-  ArrowRight
+  ArrowRight,
+  MapPin,
+  Phone,
+  Star
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -18,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 
 interface ClaimRequest {
   id: string;
@@ -33,9 +37,22 @@ interface ClaimRequest {
   };
 }
 
+interface SubmittedGarage {
+  id: string;
+  name: string;
+  slug: string | null;
+  city: string | null;
+  state: string | null;
+  photo_url: string | null;
+  phone: string | null;
+  rating: number | null;
+  owner_id: string | null;
+}
+
 export default function GarageAccount() {
   const [garageOwner, setGarageOwner] = useState<any>(null);
   const [garage, setGarage] = useState<any>(null);
+  const [submittedGarages, setSubmittedGarages] = useState<SubmittedGarage[]>([]);
   const [claimRequests, setClaimRequests] = useState<ClaimRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -81,6 +98,16 @@ export default function GarageAccount() {
           setGarage(garageData);
         }
       }
+
+      // Fetch garages submitted by this user (as owner)
+      const { data: userGarages } = await supabase
+        .from("garages")
+        .select("id, name, slug, city, state, photo_url, phone, rating, owner_id")
+        .eq("submitted_by", session.user.id)
+        .eq("listing_type", "owner")
+        .order("created_at", { ascending: false });
+
+      setSubmittedGarages(userGarages || []);
 
       // Fetch all claim requests for this user
       const { data: claims } = await supabase
@@ -133,6 +160,11 @@ export default function GarageAccount() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  // Check if a garage has a pending claim from this user
+  const getClaimStatusForGarage = (garageId: string) => {
+    return claimRequests.find(claim => claim.garage_id === garageId);
   };
 
   if (isLoading) {
@@ -203,16 +235,107 @@ export default function GarageAccount() {
             </Card>
           )}
 
-          {/* No Approved Claim - Show Instructions */}
-          {!hasApprovedClaim && (
+          {/* User's Submitted Garages (Show only if not yet approved) */}
+          {!hasApprovedClaim && submittedGarages.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Your Garage Listings</h2>
+              <div className="space-y-3">
+                {submittedGarages.map((g) => {
+                  const claimStatus = getClaimStatusForGarage(g.id);
+                  const isClaimPending = claimStatus?.status === "pending";
+                  const isClaimApproved = claimStatus?.status === "approved";
+                  
+                  return (
+                    <Card key={g.id} className={isClaimApproved ? "border-green-500/30" : ""}>
+                      <CardContent className="py-4">
+                        <div className="flex items-start gap-4">
+                          <img 
+                            src={g.photo_url || defaultGaragePlaceholder}
+                            alt={g.name}
+                            className="w-20 h-20 rounded-lg object-cover"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <Link 
+                                  to={`/garage/${g.slug}`}
+                                  className="font-semibold text-lg hover:text-primary transition-colors"
+                                >
+                                  {g.name}
+                                </Link>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                  <MapPin className="w-3.5 h-3.5" />
+                                  {[g.city, g.state].filter(Boolean).join(", ") || "Location not set"}
+                                </div>
+                                {g.phone && (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Phone className="w-3.5 h-3.5" />
+                                    {g.phone}
+                                  </div>
+                                )}
+                                {g.rating && (
+                                  <div className="flex items-center gap-1 text-sm mt-1">
+                                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                    <span>{g.rating.toFixed(1)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                {claimStatus && getStatusBadge(claimStatus.status)}
+                                {!claimStatus && !g.owner_id && (
+                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Needs Claim
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/garage/${g.slug}`)}
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                View Listing
+                              </Button>
+                              {!claimStatus && !g.owner_id && (
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => navigate(`/garage/${g.slug}`)}
+                                >
+                                  Claim to Get Dashboard
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {isClaimPending && (
+                              <p className="text-xs text-yellow-600 mt-2 bg-yellow-500/10 p-2 rounded">
+                                Your claim is being reviewed. You'll get dashboard access once approved.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No Approved Claim and No Submitted Garages - Show Instructions */}
+          {!hasApprovedClaim && submittedGarages.length === 0 && (
             <Card className="border-primary/30 bg-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-primary" />
-                  Claim Your Garage to Access Dashboard
+                  List Your Garage to Get Started
                 </CardTitle>
                 <CardDescription>
-                  To manage your garage on MeriGarage, you need to claim ownership of your garage listing. 
+                  To manage your garage on MeriGarage, first list your garage, then claim ownership. 
                   Our team will verify your ownership and grant you dashboard access.
                 </CardDescription>
               </CardHeader>
@@ -245,12 +368,14 @@ export default function GarageAccount() {
             </Card>
           )}
 
-          {/* Claim Requests */}
-          {claimRequests.length > 0 && (
+          {/* Other Claim Requests (for garages they didn't submit) */}
+          {claimRequests.filter(c => !submittedGarages.some(g => g.id === c.garage_id)).length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Your Claim Requests</h2>
+              <h2 className="text-lg font-semibold">Other Claim Requests</h2>
               <div className="space-y-3">
-                {claimRequests.map((claim) => (
+                {claimRequests
+                  .filter(c => !submittedGarages.some(g => g.id === c.garage_id))
+                  .map((claim) => (
                   <Card key={claim.id}>
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
@@ -305,10 +430,10 @@ export default function GarageAccount() {
             <CardContent className="py-6">
               <h3 className="font-medium mb-2">How it works:</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Search for your garage or list a new one on MeriGarage</li>
+                <li>List your garage on MeriGarage (your listing goes live immediately)</li>
                 <li>Click "Claim This Garage" on your garage's listing page</li>
                 <li>Upload proof of ownership (GST certificate, business card, etc.)</li>
-                <li>Our team will verify and approve your claim within 24-48 hours</li>
+                <li>Our team will verify and call you to complete subscription</li>
                 <li>Once approved, you'll get full access to your Garage Dashboard</li>
               </ol>
             </CardContent>

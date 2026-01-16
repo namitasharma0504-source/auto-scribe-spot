@@ -543,10 +543,7 @@ const GarageDetails = () => {
                   </Button>
                 </div>
 
-                {/* Claim Garage Button - Only show if garage has no owner */}
-                {!garage.owner_id && (
-                  <ClaimGarageDialog garageId={garage.id} garageName={garage.name} />
-                )}
+                {/* Claim Garage Button removed from sidebar - now only in the banner above */}
 
                 <div className="bg-card rounded-2xl p-6 shadow-md border border-border">
                   <h3 className="font-semibold text-foreground mb-4">Quick Stats</h3>

@@ -532,13 +532,40 @@ const ListGarage = () => {
       }
 
       // Redirect based on listing type
-      if (listingType === "owner") {
-        navigate("/garage-dashboard");
+      if (listingType === "owner" && garageData?.id) {
+        // Owner goes to their garage listing page to claim it
+        const { data: garageSlug } = await supabase
+          .from('garages')
+          .select('slug')
+          .eq('id', garageData.id)
+          .single();
+        
+        if (garageSlug?.slug) {
+          toast.success("Your garage is now live! Claim it to access your dashboard.");
+          navigate(`/garage/${garageSlug.slug}`);
+        } else {
+          navigate("/garage-account");
+        }
       } else if (listingType === "partner") {
         toast.success("Listing submitted! Earn ₹20 when approved. You can now upsell services.");
         navigate("/partner-dashboard");
       } else {
-        navigate("/");
+        // Customer - go to review the garage they just listed
+        if (garageData?.id) {
+          const { data: garageSlug } = await supabase
+            .from('garages')
+            .select('slug')
+            .eq('id', garageData.id)
+            .single();
+          
+          if (garageSlug?.slug) {
+            navigate(`/garage/${garageSlug.slug}/review`);
+          } else {
+            navigate("/");
+          }
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       console.error('Error submitting garage:', error);
