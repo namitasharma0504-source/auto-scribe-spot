@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Download,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,7 +158,58 @@ export function ClaimManagement() {
   const [adminNotes, setAdminNotes] = useState("");
   const [actionDialog, setActionDialog] = useState<{ claim: ClaimRequest; action: "approve" | "reject" } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [editingClaim, setEditingClaim] = useState<ClaimRequest | null>(null);
+  const [editForm, setEditForm] = useState({
+    claimant_name: "",
+    claimant_phone: "",
+    claimant_email: "",
+  });
   const { toast } = useToast();
+
+  const handleOpenEdit = (claim: ClaimRequest) => {
+    setEditForm({
+      claimant_name: claim.claimant_name,
+      claimant_phone: claim.claimant_phone,
+      claimant_email: claim.claimant_email,
+    });
+    setEditingClaim(claim);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingClaim) return;
+    
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("garage_claim_requests")
+        .update({
+          claimant_name: editForm.claimant_name,
+          claimant_phone: editForm.claimant_phone,
+          claimant_email: editForm.claimant_email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingClaim.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Claim Updated",
+        description: "The claim details have been updated successfully.",
+      });
+
+      setEditingClaim(null);
+      fetchClaims();
+    } catch (error: any) {
+      console.error("Error updating claim:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update claim",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const fetchClaims = async () => {
     setIsLoading(true);
@@ -445,6 +497,15 @@ export function ClaimManagement() {
                     <div className="flex gap-2 lg:flex-col">
                       <Button
                         size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => handleOpenEdit(claim)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
                         className="gap-1"
                         onClick={() => setActionDialog({ claim, action: "approve" })}
                       >
@@ -528,6 +589,62 @@ export function ClaimManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Claim Dialog */}
+      <Dialog open={!!editingClaim} onOpenChange={() => setEditingClaim(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Claim Details</DialogTitle>
+            <DialogDescription>
+              Update the claimant information for {editingClaim?.garage?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Claimant Name</label>
+              <Input
+                value={editForm.claimant_name}
+                onChange={(e) => setEditForm(prev => ({ ...prev, claimant_name: e.target.value }))}
+                placeholder="Full Name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone Number</label>
+              <Input
+                value={editForm.claimant_phone}
+                onChange={(e) => setEditForm(prev => ({ ...prev, claimant_phone: e.target.value }))}
+                placeholder="Phone Number"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email Address</label>
+              <Input
+                type="email"
+                value={editForm.claimant_email}
+                onChange={(e) => setEditForm(prev => ({ ...prev, claimant_email: e.target.value }))}
+                placeholder="Email Address"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingClaim(null)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
