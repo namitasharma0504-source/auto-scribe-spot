@@ -865,7 +865,7 @@ export function PartnerListingsManagement() {
                       <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : paymentProofSignedUrl ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                         <img
                           src={paymentProofSignedUrl}
@@ -877,6 +877,22 @@ export function PartnerListingsManagement() {
                       <p className="text-xs text-muted-foreground text-center">
                         Click image to view full size. Partner uploaded this as proof of payment.
                       </p>
+                      
+                      {/* Verify Payment Button - only show for under_review status */}
+                      {selectedListing.status === "under_review" && (
+                        <div className="pt-3 border-t border-orange-500/20">
+                          <Button 
+                            className="w-full gap-2 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApprove(selectedListing.id, selectedListing.listing_id)}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Verify Payment & Approve Upsell
+                          </Button>
+                          <p className="text-xs text-muted-foreground text-center mt-2">
+                            This will approve the listing and credit the upsell commission to the partner.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : selectedListing.payment_proof_url ? (
                     <div className="text-center py-4">
@@ -887,6 +903,11 @@ export function PartnerListingsManagement() {
                     <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
                       <Image className="w-8 h-8 mb-2 opacity-50" />
                       <p className="text-sm">No payment proof uploaded yet</p>
+                      {selectedListing.status === "under_review" && (
+                        <p className="text-xs mt-2 text-orange-600">
+                          Waiting for partner to upload payment proof
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
