@@ -160,6 +160,7 @@ export function MyListingsSection({
   const approvedCount = filteredListings.filter(l => l.status === "approved").length;
   const pendingCount = filteredListings.filter(l => l.status === "pending" || !l.status).length;
   const rejectedCount = filteredListings.filter(l => l.status === "rejected").length;
+  const paidCount = filteredListings.filter(l => l.status === "approved" && l.payout_status === "paid").length;
   const totalEarnings = filteredListings.reduce((sum, l) => sum + (l.total_earning || 0), 0);
 
   const clearFilters = () => {
@@ -287,7 +288,7 @@ export function MyListingsSection({
         </div>
 
         {/* Compact Stats Summary */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-6 gap-2">
           <div className="p-2 rounded-lg bg-muted/50 text-center">
             <p className="text-sm font-bold">{totalCount}</p>
             <p className="text-[10px] text-muted-foreground">Total</p>
@@ -303,6 +304,10 @@ export function MyListingsSection({
           <div className="p-2 rounded-lg bg-red-500/10 text-center">
             <p className="text-sm font-bold text-red-600">{rejectedCount}</p>
             <p className="text-[10px] text-muted-foreground">Rejected</p>
+          </div>
+          <div className="p-2 rounded-lg bg-emerald-500/10 text-center">
+            <p className="text-sm font-bold text-emerald-600">{paidCount}</p>
+            <p className="text-[10px] text-muted-foreground">Paid</p>
           </div>
           <div className="p-2 rounded-lg bg-purple-500/10 text-center">
             <p className="text-sm font-bold text-purple-600">₹{totalEarnings}</p>
