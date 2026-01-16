@@ -509,6 +509,33 @@ export function PartnerManagement() {
         </Button>
       </div>
 
+      {/* KYC Pending Approvals Alert */}
+      {partners.filter(p => p.kyc_status === "submitted").length > 0 && (
+        <Card className="border-blue-500/50 bg-blue-500/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <FileText className="w-8 h-8 text-blue-600 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-blue-800">KYC Approvals Pending</h3>
+                  <p className="text-sm text-blue-700">
+                    {partners.filter(p => p.kyc_status === "submitted").length} partner(s) have submitted KYC documents for verification
+                  </p>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-blue-500 text-blue-700 hover:bg-blue-50"
+                onClick={() => setKycFilter("submitted")}
+              >
+                View Pending ({partners.filter(p => p.kyc_status === "submitted").length})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -533,7 +560,7 @@ export function PartnerManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setKycFilter("verified")}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -544,12 +571,12 @@ export function PartnerManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setKycFilter("submitted")}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">KYC Pending</p>
-                <p className="text-2xl font-bold">{kycPending}</p>
+                <p className="text-sm text-muted-foreground">KYC Submitted</p>
+                <p className="text-2xl font-bold">{partners.filter(p => p.kyc_status === "submitted").length}</p>
               </div>
               <Clock className="w-8 h-8 text-yellow-500" />
             </div>
