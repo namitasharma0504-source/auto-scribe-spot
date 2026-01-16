@@ -14,7 +14,11 @@ import {
   ArrowRight,
   FileText,
   Phone,
-  MapPin
+  MapPin,
+  Image,
+  ChevronLeft,
+  ChevronRight,
+  Wrench
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +51,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface GaragePhoto {
+  id: string;
+  photo_url: string;
+  display_order: number | null;
+}
+
 interface PartnerListing {
   id: string;
   partner_id: string;
@@ -64,7 +74,16 @@ interface PartnerListing {
   total_earning: number | null;
   payout_status: string | null;
   partners?: { id: string; full_name: string; username: string } | null;
-  garages?: { name: string; city: string | null; phone: string | null } | null;
+  garages?: { 
+    name: string; 
+    city: string | null; 
+    phone: string | null;
+    address: string | null;
+    state: string | null;
+    services: string[] | null;
+    photo_url: string | null;
+    location_link: string | null;
+  } | null;
 }
 
 export function PartnerListingsManagement() {
@@ -83,6 +102,11 @@ export function PartnerListingsManagement() {
   // Details dialog
   const [selectedListing, setSelectedListing] = useState<PartnerListing | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  
+  // Photo preview states
+  const [listingPhotos, setListingPhotos] = useState<GaragePhoto[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchListings();
@@ -96,7 +120,7 @@ export function PartnerListingsManagement() {
         .select(`
           *,
           partners:partner_id (id, full_name, username),
-          garages:listing_id (name, city, phone)
+          garages:listing_id (name, city, phone, address, state, services, photo_url, location_link)
         `)
         .order("submitted_at", { ascending: false });
 
@@ -114,8 +138,42 @@ export function PartnerListingsManagement() {
     }
   };
 
-  const handleApprove = async (listingId: string) => {
+  // Fetch photos for a listing
+  const fetchListingPhotos = async (listingId: string | null) => {
+    if (!listingId) {
+      setListingPhotos([]);
+      return;
+    }
+    
+    setIsLoadingPhotos(true);
+    setCurrentPhotoIndex(0);
     try {
+      const { data, error } = await supabase
+        .from("garage_photos")
+        .select("id, photo_url, display_order")
+        .eq("garage_id", listingId)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setListingPhotos(data || []);
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+      setListingPhotos([]);
+    } finally {
+      setIsLoadingPhotos(false);
+    }
+  };
+
+  // Open listing details with photos
+  const openListingDetails = (listing: PartnerListing) => {
+    setSelectedListing(listing);
+    setIsDetailsOpen(true);
+    fetchListingPhotos(listing.listing_id);
+  };
+
+  const handleApprove = async (listingId: string, garageId: string | null) => {
+    try {
+      // Update partner_listings status
       const { error } = await supabase
         .from("partner_listings")
         .update({ 
@@ -127,12 +185,21 @@ export function PartnerListingsManagement() {
 
       if (error) throw error;
 
+      // Also set the garage as approved so it appears in All Garages
+      if (garageId) {
+        await supabase
+          .from("garages")
+          .update({ is_approved: true })
+          .eq("id", garageId);
+      }
+
       toast({
         title: "Listing Approved",
-        description: "The partner will earn ₹20 for this listing.",
+        description: "The garage is now live and the partner will earn ₹20.",
       });
 
       fetchListings();
+      setIsDetailsOpen(false);
     } catch (error: any) {
       console.error("Error approving listing:", error);
       toast({
@@ -377,10 +444,7 @@ export function PartnerListingsManagement() {
                     <TableRow 
                       key={listing.id} 
                       className="cursor-pointer hover:bg-purple-500/5"
-                      onClick={() => {
-                        setSelectedListing(listing);
-                        setIsDetailsOpen(true);
-                      }}
+                      onClick={() => openListingDetails(listing)}
                     >
                       <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
                       <TableCell>
@@ -468,7 +532,7 @@ export function PartnerListingsManagement() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                                onClick={() => handleApprove(listing.id)}
+                                onClick={() => handleApprove(listing.id, listing.listing_id)}
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </Button>
@@ -490,7 +554,7 @@ export function PartnerListingsManagement() {
                               size="sm"
                               variant="ghost"
                               className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                              onClick={() => handleApprove(listing.id)}
+                              onClick={() => handleApprove(listing.id, listing.listing_id)}
                               title="Re-approve"
                             >
                               <CheckCircle className="w-4 h-4" />
@@ -547,17 +611,50 @@ export function PartnerListingsManagement() {
                     <div className="flex items-start gap-2">
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div>
+                        <p className="text-muted-foreground">Garage Name</p>
                         <p className="font-medium">{selectedListing.garages?.name || "Unknown"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <p>{selectedListing.garages?.city || "No city"}</p>
+                      <div>
+                        <p className="text-muted-foreground">Location</p>
+                        <p>{[selectedListing.garages?.address, selectedListing.garages?.city, selectedListing.garages?.state].filter(Boolean).join(", ") || "Not provided"}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <p>{selectedListing.garages?.phone || "No phone"}</p>
+                      <div>
+                        <p className="text-muted-foreground">Phone</p>
+                        <p>{selectedListing.garages?.phone || "Not provided"}</p>
+                      </div>
                     </div>
+                    {selectedListing.garages?.services && selectedListing.garages.services.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <Wrench className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-muted-foreground">Services</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {selectedListing.garages.services.map((service, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">{service}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedListing.garages?.location_link && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <a 
+                          href={selectedListing.garages.location_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          View on Google Maps
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -578,9 +675,97 @@ export function PartnerListingsManagement() {
                 </div>
               </div>
 
+              {/* Photo Preview Section */}
+              <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-700">
+                  <Image className="w-4 h-4" /> Uploaded Photos
+                </h4>
+                {isLoadingPhotos ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : listingPhotos.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* Main Photo Display */}
+                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                      <img
+                        src={listingPhotos[currentPhotoIndex]?.photo_url}
+                        alt={`Garage photo ${currentPhotoIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {listingPhotos.length > 1 && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-background/80 backdrop-blur-sm"
+                            onClick={() => setCurrentPhotoIndex(prev => 
+                              prev === 0 ? listingPhotos.length - 1 : prev - 1
+                            )}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-background/80 backdrop-blur-sm"
+                            onClick={() => setCurrentPhotoIndex(prev => 
+                              prev === listingPhotos.length - 1 ? 0 : prev + 1
+                            )}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
+                        {currentPhotoIndex + 1} / {listingPhotos.length}
+                      </div>
+                    </div>
+                    {/* Thumbnail Strip */}
+                    {listingPhotos.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {listingPhotos.map((photo, index) => (
+                          <button
+                            key={photo.id}
+                            onClick={() => setCurrentPhotoIndex(index)}
+                            className={`flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors ${
+                              index === currentPhotoIndex 
+                                ? 'border-blue-500' 
+                                : 'border-transparent hover:border-muted-foreground/50'
+                            }`}
+                          >
+                            <img
+                              src={photo.photo_url}
+                              alt={`Thumbnail ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : selectedListing.garages?.photo_url ? (
+                  <div className="space-y-2">
+                    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                      <img
+                        src={selectedListing.garages.photo_url}
+                        alt="Garage"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Main listing photo only</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Image className="w-8 h-8 mb-2 opacity-50" />
+                    <p className="text-sm">No photos uploaded</p>
+                  </div>
+                )}
+              </div>
+
               {/* Categories/Services */}
               <div className="p-4 rounded-lg bg-muted/30 border">
-                <h4 className="font-semibold mb-3">Services & Categories</h4>
+                <h4 className="font-semibold mb-3">Earning Categories</h4>
                 <div className="flex flex-wrap gap-2">
                   <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
                     Data Collection (₹20)
@@ -654,10 +839,7 @@ export function PartnerListingsManagement() {
                   <div className="flex gap-3">
                     <Button 
                       className="gap-2 bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        handleApprove(selectedListing.id);
-                        setIsDetailsOpen(false);
-                      }}
+                      onClick={() => handleApprove(selectedListing.id, selectedListing.listing_id)}
                     >
                       <CheckCircle className="w-4 h-4" />
                       Approve Listing
@@ -753,14 +935,10 @@ export function PartnerListingsManagement() {
                     <XCircle className="w-4 h-4" /> Listing Rejected
                   </h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    This listing was rejected. You can re-approve it if needed.
                   </p>
                   <Button 
                     className="gap-2 bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      handleApprove(selectedListing.id);
-                      setIsDetailsOpen(false);
-                    }}
+                    onClick={() => handleApprove(selectedListing.id, selectedListing.listing_id)}
                   >
                     <CheckCircle className="w-4 h-4" />
                     Re-approve Listing
