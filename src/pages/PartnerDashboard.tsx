@@ -252,14 +252,9 @@ export default function PartnerDashboard() {
         updates.gms_payment_id = paymentIds.gms;
       }
 
-      // Store payment proof URL in the gms_payment_id or reputation_payment_id field
-      // In a real scenario, you'd have a dedicated field for payment proof
+      // Store payment proof URL in dedicated column
       if (paymentProofUrl) {
-        if (reputationSold && !gmsSold) {
-          updates.reputation_payment_id = paymentProofUrl;
-        } else if (gmsSold) {
-          updates.gms_payment_id = paymentProofUrl;
-        }
+        updates.payment_proof_url = paymentProofUrl;
       }
       
       // Calculate new total

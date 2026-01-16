@@ -649,6 +649,7 @@ export type Database = {
           id: string
           listing_id: string | null
           partner_id: string
+          payment_proof_url: string | null
           payout_date: string | null
           payout_status: string | null
           payout_transaction_id: string | null
@@ -671,6 +672,7 @@ export type Database = {
           id?: string
           listing_id?: string | null
           partner_id: string
+          payment_proof_url?: string | null
           payout_date?: string | null
           payout_status?: string | null
           payout_transaction_id?: string | null
@@ -693,6 +695,7 @@ export type Database = {
           id?: string
           listing_id?: string | null
           partner_id?: string
+          payment_proof_url?: string | null
           payout_date?: string | null
           payout_status?: string | null
           payout_transaction_id?: string | null
