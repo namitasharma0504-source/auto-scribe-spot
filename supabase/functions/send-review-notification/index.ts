@@ -279,6 +279,121 @@ serve(async (req: Request): Promise<Response> => {
         `,
       });
       console.log("Dispute resolution email sent to:", garageOwnerEmail);
+    } else if (type === "claim_approved") {
+      // Email to claimant when their garage claim is approved
+      await sendEmail({
+        to: reviewData.claimantEmail,
+        subject: `Congratulations! Your Garage Claim Has Been Approved - MeriGarageReviews`,
+        htmlBody: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+              .garage-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #22c55e; }
+              .next-steps { background: #dbeafe; padding: 15px; border-radius: 8px; margin: 15px 0; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+              .cta-button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🎉 Claim Approved!</h1>
+              </div>
+              <div class="content">
+                <p>Dear ${escapeHtml(reviewData.claimantName)},</p>
+                <p>Great news! Your claim for the following garage has been approved:</p>
+                
+                <div class="garage-box">
+                  <p><strong>Garage Name:</strong> ${escapeHtml(reviewData.garageName)}</p>
+                  <p><strong>Location:</strong> ${escapeHtml(reviewData.garageLocation) || "Not specified"}</p>
+                </div>
+                
+                <div class="next-steps">
+                  <p><strong>Next Steps:</strong></p>
+                  <ul>
+                    <li>Our team will contact you shortly to verify your payment details</li>
+                    <li>Once payment is confirmed, your dashboard access will be activated</li>
+                    <li>You'll be able to manage reviews, update photos, and respond to customer inquiries</li>
+                  </ul>
+                </div>
+                
+                ${reviewData.adminNotes ? `<p><strong>Admin Notes:</strong> ${escapeHtml(reviewData.adminNotes)}</p>` : ""}
+                
+                <p>Thank you for joining MeriGarageReviews!</p>
+                
+                <p>Best regards,<br>The MeriGarageReviews Team</p>
+              </div>
+              <div class="footer">
+                <p>© 2025 MeriGarageReviews. All rights reserved.</p>
+                <p>Phone: +91 93107 45153 | Email: info@merigarage.com</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+      console.log("Claim approved email sent to:", reviewData.claimantEmail);
+    } else if (type === "claim_rejected") {
+      // Email to claimant when their garage claim is rejected
+      await sendEmail({
+        to: reviewData.claimantEmail,
+        subject: `Update on Your Garage Claim - MeriGarageReviews`,
+        htmlBody: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+              .garage-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #dc2626; }
+              .reason-box { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Claim Update</h1>
+              </div>
+              <div class="content">
+                <p>Dear ${escapeHtml(reviewData.claimantName)},</p>
+                <p>We have reviewed your claim request for the following garage:</p>
+                
+                <div class="garage-box">
+                  <p><strong>Garage Name:</strong> ${escapeHtml(reviewData.garageName)}</p>
+                  <p><strong>Location:</strong> ${escapeHtml(reviewData.garageLocation) || "Not specified"}</p>
+                </div>
+                
+                <p>Unfortunately, we were unable to approve your claim at this time.</p>
+                
+                ${reviewData.adminNotes ? `
+                <div class="reason-box">
+                  <p><strong>Reason:</strong></p>
+                  <p>${escapeHtml(reviewData.adminNotes)}</p>
+                </div>
+                ` : ""}
+                
+                <p>If you believe this decision was made in error or if you have additional documentation to support your claim, please don't hesitate to contact our support team.</p>
+                
+                <p>Best regards,<br>The MeriGarageReviews Team</p>
+              </div>
+              <div class="footer">
+                <p>© 2025 MeriGarageReviews. All rights reserved.</p>
+                <p>Phone: +91 93107 45153 | Email: info@merigarage.com</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+      console.log("Claim rejected email sent to:", reviewData.claimantEmail);
     }
 
     return new Response(JSON.stringify({ success: true }), {
