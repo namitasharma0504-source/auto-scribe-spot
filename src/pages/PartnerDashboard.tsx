@@ -61,9 +61,11 @@ interface PartnerListing {
   reputation_upsell: boolean | null;
   reputation_earning: number | null;
   reputation_payment_id: string | null;
+  reputation_verified: boolean | null;
   gms_upsell: boolean | null;
   gms_earning: number | null;
   gms_payment_id: string | null;
+  gms_verified: boolean | null;
   total_earning: number | null;
   payout_status: string | null;
   garages?: { name: string; city: string | null } | null;

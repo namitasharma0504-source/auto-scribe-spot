@@ -69,8 +69,10 @@ interface PartnerListing {
   base_earning: number | null;
   reputation_upsell: boolean | null;
   reputation_earning: number | null;
+  reputation_verified: boolean | null;
   gms_upsell: boolean | null;
   gms_earning: number | null;
+  gms_verified: boolean | null;
   total_earning: number | null;
   payout_status: string | null;
   payment_proof_url: string | null;
@@ -235,7 +237,8 @@ export function PartnerListingsManagement() {
         .update({ 
           status: "approved", 
           approved_at: new Date().toISOString(),
-          rejection_reason: null 
+          rejection_reason: null,
+          base_earning: 20
         })
         .eq("id", listingId);
 
@@ -261,6 +264,72 @@ export function PartnerListingsManagement() {
       toast({
         title: "Error",
         description: "Failed to approve listing",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleVerifyReputationUpsell = async (listingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("partner_listings")
+        .update({ 
+          reputation_verified: true,
+          reputation_earning: 450,
+          status: "approved" // Ensure listing remains approved
+        })
+        .eq("id", listingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Reputation Upsell Verified",
+        description: "Partner will earn ₹450 commission for reputation management sale.",
+      });
+
+      fetchListings();
+      // Update selectedListing if it's the same one
+      if (selectedListing?.id === listingId) {
+        setSelectedListing(prev => prev ? { ...prev, reputation_verified: true, reputation_earning: 450 } : null);
+      }
+    } catch (error: any) {
+      console.error("Error verifying reputation upsell:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify reputation upsell",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleVerifyGMSUpsell = async (listingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("partner_listings")
+        .update({ 
+          gms_verified: true,
+          gms_earning: 1800,
+          status: "approved" // Ensure listing remains approved
+        })
+        .eq("id", listingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "GMS Upsell Verified",
+        description: "Partner will earn ₹1,800 commission for GMS software sale.",
+      });
+
+      fetchListings();
+      // Update selectedListing if it's the same one
+      if (selectedListing?.id === listingId) {
+        setSelectedListing(prev => prev ? { ...prev, gms_verified: true, gms_earning: 1800 } : null);
+      }
+    } catch (error: any) {
+      console.error("Error verifying GMS upsell:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify GMS upsell",
         variant: "destructive",
       });
     }
@@ -881,23 +950,72 @@ export function PartnerListingsManagement() {
                 )}
               </div>
 
-              {/* Categories/Services */}
+              {/* Categories/Services with Verification Status */}
               <div className="p-4 rounded-lg bg-muted/30 border">
-                <h4 className="font-semibold mb-3">Earning Categories</h4>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
-                    Data Collection (₹20)
-                  </Badge>
-                  {selectedListing.reputation_upsell && (
-                    <Badge className="bg-violet-500/10 text-violet-600 border-violet-500/30">
-                      Reputation Management (₹450 commission)
+                <h4 className="font-semibold mb-3">Earning Categories & Verification Status</h4>
+                <div className="space-y-3">
+                  {/* Data Collection */}
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                        Data Collection (₹20)
+                      </Badge>
+                    </div>
+                    <Badge className={
+                      selectedListing.status === "approved" 
+                        ? "bg-green-500/10 text-green-600 border-green-500/30"
+                        : selectedListing.status === "rejected"
+                        ? "bg-red-500/10 text-red-600 border-red-500/30"
+                        : "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                    }>
+                      {selectedListing.status === "approved" ? "Verified" : 
+                       selectedListing.status === "rejected" ? "Rejected" : "Pending"}
                     </Badge>
-                  )}
-                  {selectedListing.gms_upsell && (
-                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-                      GMS Software (₹1,800 commission)
-                    </Badge>
-                  )}
+                  </div>
+                  
+                  {/* Reputation Management */}
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+                        Reputation (₹450)
+                      </Badge>
+                    </div>
+                    {selectedListing.reputation_upsell ? (
+                      selectedListing.reputation_verified ? (
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
+                          <CheckCircle className="w-3 h-3 mr-1" />Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                          <Clock className="w-3 h-3 mr-1" />Pending Verification
+                        </Badge>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Not Sold</span>
+                    )}
+                  </div>
+                  
+                  {/* GMS Software */}
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        GMS Software (₹1,800)
+                      </Badge>
+                    </div>
+                    {selectedListing.gms_upsell ? (
+                      selectedListing.gms_verified ? (
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
+                          <CheckCircle className="w-3 h-3 mr-1" />Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                          <Clock className="w-3 h-3 mr-1" />Pending Verification
+                        </Badge>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Not Sold</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -909,20 +1027,24 @@ export function PartnerListingsManagement() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Data Collection (Base)</span>
-                    <span className="font-medium">₹{selectedListing.base_earning || 0}</span>
+                    <span className="font-medium">₹{selectedListing.status === "approved" ? 20 : 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Reputation Upsell</span>
-                    <span className="font-medium">₹{selectedListing.reputation_earning || 0}</span>
+                    <span className="font-medium">₹{selectedListing.reputation_upsell && selectedListing.reputation_verified ? 450 : 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>GMS Software Sale</span>
-                    <span className="font-medium">₹{selectedListing.gms_earning || 0}</span>
+                    <span className="font-medium">₹{selectedListing.gms_upsell && selectedListing.gms_verified ? 1800 : 0}</span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between font-semibold text-base">
-                    <span>Total Earnings</span>
-                    <span className="text-emerald-600">₹{selectedListing.total_earning || 0}</span>
+                    <span>Total Verified Payout</span>
+                    <span className="text-emerald-600">
+                      ₹{(selectedListing.status === "approved" ? 20 : 0) + 
+                        (selectedListing.reputation_upsell && selectedListing.reputation_verified ? 450 : 0) + 
+                        (selectedListing.gms_upsell && selectedListing.gms_verified ? 1800 : 0)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -951,21 +1073,43 @@ export function PartnerListingsManagement() {
                         Click image to view full size. Partner uploaded this as proof of payment.
                       </p>
                       
-                      {/* Verify Payment Button - only show for under_review status */}
-                      {selectedListing.status === "under_review" && (
-                        <div className="pt-3 border-t border-orange-500/20">
+                      {/* Individual Upsell Verification Buttons */}
+                      <div className="pt-3 border-t border-orange-500/20 space-y-2">
+                        {/* Verify Reputation Upsell */}
+                        {selectedListing.reputation_upsell && !selectedListing.reputation_verified && (
                           <Button 
-                            className="w-full gap-2 bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApprove(selectedListing.id, selectedListing.listing_id)}
+                            className="w-full gap-2 bg-violet-600 hover:bg-violet-700"
+                            onClick={() => handleVerifyReputationUpsell(selectedListing.id)}
                           >
                             <CheckCircle className="w-4 h-4" />
-                            Verify Payment & Approve Upsell
+                            Verify Reputation Payment (₹450 commission)
                           </Button>
-                          <p className="text-xs text-muted-foreground text-center mt-2">
-                            This will approve the listing and credit the upsell commission to the partner.
-                          </p>
-                        </div>
-                      )}
+                        )}
+                        
+                        {/* Verify GMS Upsell */}
+                        {selectedListing.gms_upsell && !selectedListing.gms_verified && (
+                          <Button 
+                            className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => handleVerifyGMSUpsell(selectedListing.id)}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Verify GMS Payment (₹1,800 commission)
+                          </Button>
+                        )}
+                        
+                        {/* All verified message */}
+                        {((selectedListing.reputation_upsell && selectedListing.reputation_verified) || !selectedListing.reputation_upsell) &&
+                         ((selectedListing.gms_upsell && selectedListing.gms_verified) || !selectedListing.gms_upsell) && (
+                          <div className="text-center text-sm text-green-600 py-2">
+                            <CheckCircle className="w-4 h-4 inline mr-1" />
+                            All upsells verified!
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground text-center">
+                          Verify each upsell separately after checking the payment proof.
+                        </p>
+                      </div>
                     </div>
                   ) : selectedListing.payment_proof_url ? (
                     <div className="text-center py-4 space-y-2">
@@ -988,11 +1132,9 @@ export function PartnerListingsManagement() {
                     <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
                       <Image className="w-8 h-8 mb-2 opacity-50" />
                       <p className="text-sm">No payment proof uploaded yet</p>
-                      {selectedListing.status === "under_review" && (
-                        <p className="text-xs mt-2 text-orange-600">
-                          Waiting for partner to upload payment proof
-                        </p>
-                      )}
+                      <p className="text-xs mt-2 text-orange-600">
+                        Waiting for partner to upload payment proof
+                      </p>
                     </div>
                   )}
                 </div>
