@@ -18,7 +18,10 @@ import {
   Phone,
   MapPin,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  Image,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +77,12 @@ interface Partner {
   profile_photo: string | null;
 }
 
+interface GaragePhoto {
+  id: string;
+  photo_url: string;
+  display_order: number | null;
+}
+
 interface PartnerListing {
   id: string;
   partner_id: string;
@@ -90,7 +99,14 @@ interface PartnerListing {
   gms_earning: number | null;
   total_earning: number | null;
   payout_status: string | null;
-  garages?: { name: string; city: string | null } | null;
+  garages?: { 
+    name: string; 
+    city: string | null; 
+    photo_url: string | null; 
+    address: string | null; 
+    phone: string | null; 
+    services: string[] | null;
+  } | null;
 }
 
 interface Payout {
@@ -141,6 +157,11 @@ export function PartnerManagement() {
   const [viewingListing, setViewingListing] = useState<PartnerListing | null>(null);
   const [isListingDetailsOpen, setIsListingDetailsOpen] = useState(false);
   const [listingComment, setListingComment] = useState("");
+  
+  // Photo preview states
+  const [listingPhotos, setListingPhotos] = useState<GaragePhoto[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchPartners();
@@ -176,7 +197,7 @@ export function PartnerManagement() {
         .from("partner_listings")
         .select(`
           *,
-          garages:listing_id (name, city)
+          garages:listing_id (name, city, photo_url, address, phone, services)
         `)
         .eq("partner_id", partner.id)
         .order("submitted_at", { ascending: false });
@@ -429,6 +450,39 @@ export function PartnerManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  // Fetch photos for a listing
+  const fetchListingPhotos = async (listingId: string | null) => {
+    if (!listingId) {
+      setListingPhotos([]);
+      return;
+    }
+    
+    setIsLoadingPhotos(true);
+    setCurrentPhotoIndex(0);
+    try {
+      const { data, error } = await supabase
+        .from("garage_photos")
+        .select("id, photo_url, display_order")
+        .eq("garage_id", listingId)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setListingPhotos(data || []);
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+      setListingPhotos([]);
+    } finally {
+      setIsLoadingPhotos(false);
+    }
+  };
+
+  // Open listing details with photos
+  const openListingDetails = (listing: PartnerListing) => {
+    setViewingListing(listing);
+    setIsListingDetailsOpen(true);
+    fetchListingPhotos(listing.listing_id);
   };
 
   const getKycStatusBadge = (status: string | null) => {
@@ -929,10 +983,7 @@ export function PartnerManagement() {
                           <TableRow 
                             key={listing.id} 
                             className="cursor-pointer hover:bg-purple-500/5"
-                            onClick={() => {
-                              setViewingListing(listing);
-                              setIsListingDetailsOpen(true);
-                            }}
+                            onClick={() => openListingDetails(listing)}
                           >
                             <TableCell className="font-mono text-sm">{listing.gin || "-"}</TableCell>
                             <TableCell>
@@ -995,10 +1046,7 @@ export function PartnerManagement() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 px-2"
-                                  onClick={() => {
-                                    setViewingListing(listing);
-                                    setIsListingDetailsOpen(true);
-                                  }}
+                                  onClick={() => openListingDetails(listing)}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
@@ -1252,7 +1300,111 @@ export function PartnerManagement() {
                       <p className="font-medium">{viewingListing.garages?.city || "Not provided"}</p>
                     </div>
                   </div>
+                  {viewingListing.garages?.address && (
+                    <div className="flex items-start gap-2 col-span-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-muted-foreground">Address</p>
+                        <p className="font-medium">{viewingListing.garages.address}</p>
+                      </div>
+                    </div>
+                  )}
+                  {viewingListing.garages?.phone && (
+                    <div className="flex items-start gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-muted-foreground">Phone</p>
+                        <p className="font-medium">{viewingListing.garages.phone}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* Photo Preview Section */}
+              <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-700">
+                  <Image className="w-4 h-4" /> Uploaded Photos
+                </h4>
+                {isLoadingPhotos ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : listingPhotos.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* Main Photo Display */}
+                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                      <img
+                        src={listingPhotos[currentPhotoIndex]?.photo_url}
+                        alt={`Garage photo ${currentPhotoIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {listingPhotos.length > 1 && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-background/80 backdrop-blur-sm"
+                            onClick={() => setCurrentPhotoIndex(prev => 
+                              prev === 0 ? listingPhotos.length - 1 : prev - 1
+                            )}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-background/80 backdrop-blur-sm"
+                            onClick={() => setCurrentPhotoIndex(prev => 
+                              prev === listingPhotos.length - 1 ? 0 : prev + 1
+                            )}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
+                        {currentPhotoIndex + 1} / {listingPhotos.length}
+                      </div>
+                    </div>
+                    {/* Thumbnail Strip */}
+                    {listingPhotos.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {listingPhotos.map((photo, index) => (
+                          <button
+                            key={photo.id}
+                            onClick={() => setCurrentPhotoIndex(index)}
+                            className={`flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors ${
+                              index === currentPhotoIndex 
+                                ? 'border-blue-500' 
+                                : 'border-transparent hover:border-muted-foreground/50'
+                            }`}
+                          >
+                            <img
+                              src={photo.photo_url}
+                              alt={`Thumbnail ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : viewingListing.garages?.photo_url ? (
+                  <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                    <img
+                      src={viewingListing.garages.photo_url}
+                      alt="Garage"
+                      className="w-full h-full object-cover"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">Main listing photo only</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Image className="w-8 h-8 mb-2 opacity-50" />
+                    <p className="text-sm">No photos uploaded</p>
+                  </div>
+                )}
               </div>
 
               {/* Categories/Services */}
