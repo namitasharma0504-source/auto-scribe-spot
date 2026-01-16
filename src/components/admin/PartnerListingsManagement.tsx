@@ -8,7 +8,13 @@ import {
   Building2,
   IndianRupee,
   Eye,
-  Filter
+  Filter,
+  Wallet,
+  CreditCard,
+  ArrowRight,
+  FileText,
+  Phone,
+  MapPin
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -172,6 +178,43 @@ export function PartnerListingsManagement() {
     }
   };
 
+  const handleUpdatePayoutStatus = async (listingId: string, newStatus: string) => {
+    try {
+      const updates: Record<string, any> = { payout_status: newStatus };
+      
+      // If marking as paid, set payout date
+      if (newStatus === "paid") {
+        updates.payout_date = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from("partner_listings")
+        .update(updates)
+        .eq("id", listingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Payout Updated",
+        description: `Payout status changed to "${newStatus}"`,
+      });
+
+      fetchListings();
+      
+      // Update selectedListing if it's the same one
+      if (selectedListing?.id === listingId) {
+        setSelectedListing(prev => prev ? { ...prev, payout_status: newStatus } : null);
+      }
+    } catch (error: any) {
+      console.error("Error updating payout:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update payout status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredListings = listings.filter(listing => {
     const matchesSearch = 
       (listing.gin || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -268,23 +311,25 @@ export function PartnerListingsManagement() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="under_review">Under Review</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
         <Select value={payoutFilter} onValueChange={setPayoutFilter}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Payout" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Payouts</SelectItem>
-            <SelectItem value="pending">Pending Payout</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
           </SelectContent>
         </Select>
@@ -350,10 +395,12 @@ export function PartnerListingsManagement() {
                               ? "bg-green-500/10 text-green-600" 
                               : listing.status === "rejected"
                               ? "bg-red-500/10 text-red-600"
+                              : listing.status === "under_review"
+                              ? "bg-blue-500/10 text-blue-600"
                               : "bg-yellow-500/10 text-yellow-600"
                           }
                         >
-                          {listing.status || "pending"}
+                          {listing.status === "under_review" ? "Under Review" : (listing.status || "pending")}
                         </Badge>
                         {listing.rejection_reason && (
                           <p className="text-xs text-red-500 mt-1 max-w-[120px] truncate" title={listing.rejection_reason}>
@@ -382,6 +429,8 @@ export function PartnerListingsManagement() {
                           className={
                             listing.payout_status === "paid" 
                               ? "bg-green-500/10 text-green-600" 
+                              : listing.payout_status === "processing"
+                              ? "bg-blue-500/10 text-blue-600"
                               : "bg-yellow-500/10 text-yellow-600"
                           }
                         >
@@ -406,7 +455,7 @@ export function PartnerListingsManagement() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          {(!listing.status || listing.status === "pending") && (
+                          {(!listing.status || listing.status === "pending" || listing.status === "under_review") && (
                             <>
                               <Button
                                 size="sm"
@@ -451,42 +500,102 @@ export function PartnerListingsManagement() {
         </CardContent>
       </Card>
 
-      {/* Details Dialog */}
+      {/* Details Dialog with Actions */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
+              <Building2 className="w-5 h-5 text-purple-600" />
               Listing Details
             </DialogTitle>
-            <DialogDescription>
-              GIN: {selectedListing?.gin || "Not assigned"}
+            <DialogDescription className="flex items-center gap-2">
+              <span className="font-mono bg-muted px-2 py-0.5 rounded">{selectedListing?.gin || "GIN Pending"}</span>
+              {selectedListing && (
+                <Badge 
+                  className={
+                    selectedListing.status === "approved" 
+                      ? "bg-green-500/10 text-green-600" 
+                      : selectedListing.status === "rejected"
+                      ? "bg-red-500/10 text-red-600"
+                      : selectedListing.status === "under_review"
+                      ? "bg-blue-500/10 text-blue-600"
+                      : "bg-yellow-500/10 text-yellow-600"
+                  }
+                >
+                  {selectedListing.status || "pending"}
+                </Badge>
+              )}
             </DialogDescription>
           </DialogHeader>
+          
           {selectedListing && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Garage Name</p>
-                  <p className="font-medium">{selectedListing.garages?.name || "Unknown"}</p>
+            <div className="space-y-6">
+              {/* Garage & Partner Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-purple-700">
+                    <Building2 className="w-4 h-4" /> Garage Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">{selectedListing.garages?.name || "Unknown"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <p>{selectedListing.garages?.city || "No city"}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <p>{selectedListing.garages?.phone || "No phone"}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">City</p>
-                  <p className="font-medium">{selectedListing.garages?.city || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Partner</p>
-                  <p className="font-medium">{selectedListing.partners?.full_name}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{selectedListing.partners?.id}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Garage Phone</p>
-                  <p className="font-medium">{selectedListing.garages?.phone || "-"}</p>
+
+                <div className="p-4 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-violet-700">
+                    <Eye className="w-4 h-4" /> Partner Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Name</p>
+                      <p className="font-medium">{selectedListing.partners?.full_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Partner ID</p>
+                      <p className="font-mono text-xs">{selectedListing.partners?.id}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Categories/Services */}
               <div className="p-4 rounded-lg bg-muted/30 border">
-                <h4 className="font-semibold mb-3">Earnings Breakdown</h4>
+                <h4 className="font-semibold mb-3">Services & Categories</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/30">
+                    Data Collection (₹20)
+                  </Badge>
+                  {selectedListing.reputation_upsell && (
+                    <Badge className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+                      Reputation Management (₹450 commission)
+                    </Badge>
+                  )}
+                  {selectedListing.gms_upsell && (
+                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                      GMS Software (₹1,800 commission)
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Earnings Breakdown */}
+              <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-emerald-700">
+                  <IndianRupee className="w-4 h-4" /> Earnings Breakdown
+                </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Data Collection (Base)</span>
@@ -500,14 +609,15 @@ export function PartnerListingsManagement() {
                     <span>GMS Software Sale</span>
                     <span className="font-medium">₹{selectedListing.gms_earning || 0}</span>
                   </div>
-                  <hr />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
+                  <hr className="my-2" />
+                  <div className="flex justify-between font-semibold text-base">
+                    <span>Total Earnings</span>
                     <span className="text-emerald-600">₹{selectedListing.total_earning || 0}</span>
                   </div>
                 </div>
               </div>
 
+              {/* Rejection Reason (if any) */}
               {selectedListing.rejection_reason && (
                 <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
                   <p className="text-sm font-medium text-red-700">Rejection Reason:</p>
@@ -515,12 +625,141 @@ export function PartnerListingsManagement() {
                 </div>
               )}
 
-              <div className="text-xs text-muted-foreground">
-                <p>Submitted: {selectedListing.submitted_at ? new Date(selectedListing.submitted_at).toLocaleString() : "-"}</p>
-                {selectedListing.approved_at && (
-                  <p>Approved: {new Date(selectedListing.approved_at).toLocaleString()}</p>
-                )}
+              {/* Timeline */}
+              <div className="text-xs text-muted-foreground border-t pt-3">
+                <div className="flex flex-wrap gap-4">
+                  <span>Submitted: {selectedListing.submitted_at ? new Date(selectedListing.submitted_at).toLocaleString() : "-"}</span>
+                  {selectedListing.approved_at && (
+                    <span>Approved: {new Date(selectedListing.approved_at).toLocaleString()}</span>
+                  )}
+                </div>
               </div>
+
+              {/* Approval Actions */}
+              {(!selectedListing.status || selectedListing.status === "pending" || selectedListing.status === "under_review") && (
+                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-yellow-700">
+                    <Clock className="w-4 h-4" /> Pending Approval
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Review the listing details above and approve or reject this submission.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button 
+                      className="gap-2 bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        handleApprove(selectedListing.id);
+                        setIsDetailsOpen(false);
+                      }}
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve Listing
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      className="gap-2"
+                      onClick={() => {
+                        setRejectingListingId(selectedListing.id);
+                        setIsRejectDialogOpen(true);
+                        setIsDetailsOpen(false);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject Listing
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Payout Management (only for approved listings) */}
+              {selectedListing.status === "approved" && (
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-700">
+                    <Wallet className="w-4 h-4" /> Payout Management
+                  </h4>
+                  
+                  {/* Payout Status Timeline */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                      !selectedListing.payout_status || selectedListing.payout_status === "pending"
+                        ? "bg-yellow-500 text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      <Clock className="w-3 h-3" /> Pending
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                      selectedListing.payout_status === "processing"
+                        ? "bg-blue-500 text-white"
+                        : selectedListing.payout_status === "paid"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-muted/50 text-muted-foreground"
+                    }`}>
+                      <CreditCard className="w-3 h-3" /> Processing
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                      selectedListing.payout_status === "paid"
+                        ? "bg-green-500 text-white"
+                        : "bg-muted/50 text-muted-foreground"
+                    }`}>
+                      <CheckCircle className="w-3 h-3" /> Paid
+                    </div>
+                  </div>
+
+                  {/* Payout Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    {(!selectedListing.payout_status || selectedListing.payout_status === "pending") && (
+                      <Button 
+                        size="sm"
+                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleUpdatePayoutStatus(selectedListing.id, "processing")}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        Mark as Processing
+                      </Button>
+                    )}
+                    {selectedListing.payout_status === "processing" && (
+                      <Button 
+                        size="sm"
+                        className="gap-2 bg-green-600 hover:bg-green-700"
+                        onClick={() => handleUpdatePayoutStatus(selectedListing.id, "paid")}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Mark as Paid
+                      </Button>
+                    )}
+                    {selectedListing.payout_status === "paid" && (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="font-medium">Payout Completed</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejected - Option to Re-approve */}
+              {selectedListing.status === "rejected" && (
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-red-700">
+                    <XCircle className="w-4 h-4" /> Listing Rejected
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    This listing was rejected. You can re-approve it if needed.
+                  </p>
+                  <Button 
+                    className="gap-2 bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      handleApprove(selectedListing.id);
+                      setIsDetailsOpen(false);
+                    }}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Re-approve Listing
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
