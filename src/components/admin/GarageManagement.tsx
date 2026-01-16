@@ -1943,6 +1943,59 @@ export function GarageManagement() {
               </div>
             </div>
 
+            {/* Listing Information - Always Visible for ALL Garages */}
+            <div className="space-y-4">
+              <Separator />
+              <div className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg">Listing Information</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
+                {/* Listing Date - Always from garages.created_at */}
+                <div>
+                  <p className="text-sm text-muted-foreground">Listing Date</p>
+                  <p className="font-medium">
+                    {selectedGarage?.created_at 
+                      ? format(new Date(selectedGarage.created_at), "PPP") 
+                      : "N/A"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    (When added to platform)
+                  </p>
+                </div>
+                
+                {/* Signup Date - From owner if exists */}
+                <div>
+                  <p className="text-sm text-muted-foreground">Owner Signup Date</p>
+                  <p className="font-medium">
+                    {selectedOwner?.signup_date 
+                      ? format(new Date(selectedOwner.signup_date), "PPP") 
+                      : <span className="text-muted-foreground">Unclaimed</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    (When owner registered)
+                  </p>
+                </div>
+                
+                {/* Subscription Status Summary */}
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Subscription Status</p>
+                  {selectedOwner ? (
+                    <Badge variant={selectedOwner.subscription_active ? "default" : "secondary"}>
+                      {selectedOwner.subscription_active 
+                        ? `Active${selectedOwner.subscription_end_date ? ` until ${format(new Date(selectedOwner.subscription_end_date), "PP")}` : ""}`
+                        : "Inactive"}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Unsubscribed
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Owner & Subscription Section */}
             <div className="space-y-4">
               <Separator />
@@ -2197,31 +2250,10 @@ export function GarageManagement() {
                 </div>
               ) : (
                 <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
-                  {/* Listing Information - Always Show for Unclaimed */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-background rounded-lg border">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Listing Date</p>
-                      <p className="font-medium">
-                        {selectedGarage?.created_at 
-                          ? format(new Date(selectedGarage.created_at), "PPP") 
-                          : "N/A"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        (When this garage was added)
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Owner Signup Date</p>
-                      <Badge variant="outline" className="mt-1 text-muted-foreground">
-                        Unclaimed
-                      </Badge>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-muted-foreground mb-2">Subscription Status</p>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Unsubscribed (No owner linked)
-                      </Badge>
-                    </div>
+                  <div className="text-center pb-2">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      No owner is linked to this garage yet.
+                    </p>
                   </div>
                   
                   <Separator />
