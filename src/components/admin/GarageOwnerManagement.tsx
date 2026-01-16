@@ -3,7 +3,6 @@ import {
   Building2, 
   Search, 
   RefreshCw,
-  Eye,
   Edit,
   Trash2,
   CheckCircle,
@@ -11,19 +10,25 @@ import {
   Clock,
   User,
   Phone,
-  Mail,
   Key,
   CreditCard,
-  ToggleLeft,
-  ToggleRight,
   ShieldCheck,
   ShieldX,
-  MapPin,
   ExternalLink,
   AlertTriangle,
-  Save,
-  X
+  X,
+  Calendar,
+  CalendarDays,
+  CalendarCheck,
+  CalendarX2
 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,6 +77,9 @@ interface GarageOwnerData {
   business_name: string | null;
   contact_phone: string | null;
   subscription_active: boolean;
+  signup_date: string | null;
+  listing_date: string | null;
+  subscription_date: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -103,6 +111,22 @@ interface ClaimRequest {
   };
 }
 
+interface ClaimRequest {
+  id: string;
+  garage_id: string;
+  claimant_user_id: string;
+  claimant_name: string;
+  claimant_phone: string;
+  claimant_email: string;
+  status: string;
+  created_at: string;
+  garage?: {
+    name: string;
+    city: string | null;
+    state: string | null;
+  };
+}
+
 export function GarageOwnerManagement() {
   const [owners, setOwners] = useState<GarageOwnerData[]>([]);
   const [claims, setClaims] = useState<ClaimRequest[]>([]);
@@ -116,7 +140,14 @@ export function GarageOwnerManagement() {
   const [editForm, setEditForm] = useState({
     business_name: "",
     contact_phone: "",
+    signup_date: null as Date | null,
+    listing_date: null as Date | null,
+    subscription_date: null as Date | null,
   });
+  const [datePopover, setDatePopover] = useState<{
+    field: "signup_date" | "listing_date" | "subscription_date";
+    owner: GarageOwnerData;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -225,6 +256,9 @@ export function GarageOwnerManagement() {
     setEditForm({
       business_name: owner.business_name || "",
       contact_phone: owner.contact_phone || "",
+      signup_date: owner.signup_date ? parseISO(owner.signup_date) : null,
+      listing_date: owner.listing_date ? parseISO(owner.listing_date) : null,
+      subscription_date: owner.subscription_date ? parseISO(owner.subscription_date) : null,
     });
     setIsEditOpen(true);
   };
@@ -239,6 +273,9 @@ export function GarageOwnerManagement() {
         .update({
           business_name: editForm.business_name || null,
           contact_phone: editForm.contact_phone || null,
+          signup_date: editForm.signup_date ? format(editForm.signup_date, 'yyyy-MM-dd') : null,
+          listing_date: editForm.listing_date ? format(editForm.listing_date, 'yyyy-MM-dd') : null,
+          subscription_date: editForm.subscription_date ? format(editForm.subscription_date, 'yyyy-MM-dd') : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", selectedOwner.id);
@@ -262,6 +299,48 @@ export function GarageOwnerManagement() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handle inline date update
+  const handleDateUpdate = async (
+    owner: GarageOwnerData,
+    field: "signup_date" | "listing_date" | "subscription_date",
+    date: Date | null
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("garage_owners")
+        .update({
+          [field]: date ? format(date, 'yyyy-MM-dd') : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", owner.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Date Updated",
+        description: `${field.replace('_', ' ')} has been updated`,
+      });
+
+      setDatePopover(null);
+      fetchData();
+    } catch (error: any) {
+      console.error("Error updating date:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update date",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Clear a date field
+  const handleClearDate = async (
+    owner: GarageOwnerData,
+    field: "signup_date" | "listing_date" | "subscription_date"
+  ) => {
+    await handleDateUpdate(owner, field, null);
   };
 
   const handleDeleteCredentials = async (owner: GarageOwnerData) => {
@@ -506,7 +585,9 @@ export function GarageOwnerManagement() {
                     <TableHead>Garage</TableHead>
                     <TableHead>Claim Status</TableHead>
                     <TableHead className="text-center">Subscription</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>Sign-Up Date</TableHead>
+                    <TableHead>Listing Date</TableHead>
+                    <TableHead>Subscription Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -551,9 +632,121 @@ export function GarageOwnerManagement() {
                           />
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(owner.created_at)}
+                      {/* Sign-Up Date */}
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {owner.signup_date 
+                                  ? format(parseISO(owner.signup_date), 'dd MMM yyyy')
+                                  : <span className="text-muted-foreground">Not set</span>
+                                }
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={owner.signup_date ? parseISO(owner.signup_date) : undefined}
+                                onSelect={(date) => handleDateUpdate(owner, "signup_date", date || null)}
+                                initialFocus
+                              />
+                              {owner.signup_date && (
+                                <div className="p-2 border-t">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full text-destructive"
+                                    onClick={() => handleClearDate(owner, "signup_date")}
+                                  >
+                                    <CalendarX2 className="w-3 h-3 mr-1" />
+                                    Clear Date
+                                  </Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </TableCell>
+
+                      {/* Listing Date */}
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                                <CalendarDays className="w-3 h-3 mr-1" />
+                                {owner.listing_date 
+                                  ? format(parseISO(owner.listing_date), 'dd MMM yyyy')
+                                  : <span className="text-muted-foreground">Not set</span>
+                                }
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={owner.listing_date ? parseISO(owner.listing_date) : undefined}
+                                onSelect={(date) => handleDateUpdate(owner, "listing_date", date || null)}
+                                initialFocus
+                              />
+                              {owner.listing_date && (
+                                <div className="p-2 border-t">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full text-destructive"
+                                    onClick={() => handleClearDate(owner, "listing_date")}
+                                  >
+                                    <CalendarX2 className="w-3 h-3 mr-1" />
+                                    Clear Date
+                                  </Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </TableCell>
+
+                      {/* Subscription Date */}
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                                <CalendarCheck className="w-3 h-3 mr-1" />
+                                {owner.subscription_date 
+                                  ? format(parseISO(owner.subscription_date), 'dd MMM yyyy')
+                                  : <span className="text-muted-foreground">Not set</span>
+                                }
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={owner.subscription_date ? parseISO(owner.subscription_date) : undefined}
+                                onSelect={(date) => handleDateUpdate(owner, "subscription_date", date || null)}
+                                initialFocus
+                              />
+                              {owner.subscription_date && (
+                                <div className="p-2 border-t">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full text-destructive"
+                                    onClick={() => handleClearDate(owner, "subscription_date")}
+                                  >
+                                    <CalendarX2 className="w-3 h-3 mr-1" />
+                                    Clear Date
+                                  </Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
                       <TableCell>
                         <div className="flex gap-1 justify-end">
                           {owner.garage && (
@@ -570,7 +763,7 @@ export function GarageOwnerManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEditOwner(owner)}
-                            title="Edit Credentials"
+                            title="Edit Details"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -607,11 +800,11 @@ export function GarageOwnerManagement() {
 
       {/* Edit Owner Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Garage Owner</DialogTitle>
             <DialogDescription>
-              Update the garage owner's business details
+              Update the garage owner's business details and important dates
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -633,6 +826,127 @@ export function GarageOwnerManagement() {
                 placeholder="Enter phone number"
               />
             </div>
+            
+            {/* Date Fields Section */}
+            <div className="border-t pt-4 mt-4">
+              <p className="text-sm font-medium mb-3 text-muted-foreground">Important Dates</p>
+              <div className="grid grid-cols-1 gap-3">
+                {/* Sign-Up Date */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm font-medium">Sign-Up Date</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          {editForm.signup_date 
+                            ? format(editForm.signup_date, 'dd MMM yyyy')
+                            : "Select date"
+                          }
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover" align="end">
+                        <CalendarComponent
+                          mode="single"
+                          selected={editForm.signup_date || undefined}
+                          onSelect={(date) => setEditForm(prev => ({ ...prev, signup_date: date || null }))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {editForm.signup_date && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setEditForm(prev => ({ ...prev, signup_date: null }))}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Listing Date */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-green-500" />
+                    <span className="text-sm font-medium">Listing Date</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          {editForm.listing_date 
+                            ? format(editForm.listing_date, 'dd MMM yyyy')
+                            : "Select date"
+                          }
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover" align="end">
+                        <CalendarComponent
+                          mode="single"
+                          selected={editForm.listing_date || undefined}
+                          onSelect={(date) => setEditForm(prev => ({ ...prev, listing_date: date || null }))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {editForm.listing_date && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setEditForm(prev => ({ ...prev, listing_date: null }))}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subscription Date */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CalendarCheck className="w-4 h-4 text-purple-500" />
+                    <span className="text-sm font-medium">Subscription Date</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          {editForm.subscription_date 
+                            ? format(editForm.subscription_date, 'dd MMM yyyy')
+                            : "Select date"
+                          }
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover" align="end">
+                        <CalendarComponent
+                          mode="single"
+                          selected={editForm.subscription_date || undefined}
+                          onSelect={(date) => setEditForm(prev => ({ ...prev, subscription_date: date || null }))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {editForm.subscription_date && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setEditForm(prev => ({ ...prev, subscription_date: null }))}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {selectedOwner?.garage && (
               <div className="bg-muted/50 p-3 rounded-lg">
                 <p className="text-sm text-muted-foreground">Linked Garage:</p>
