@@ -378,13 +378,16 @@ const ListGarage = () => {
       return publicUrl;
     } catch (error: any) {
       console.error('Error uploading photo:', error);
+      const rawMessage = (error?.message || error?.error_description || "").toString();
+      const hint = rawMessage ? ` (${rawMessage})` : "";
+
       // Provide more specific error message
-      if (error?.message?.includes('policy')) {
-        toast.error("Photo upload failed - please try again or contact support");
-      } else if (error?.message?.includes('size')) {
+      if (rawMessage.toLowerCase().includes('policy') || rawMessage.toLowerCase().includes('row-level')) {
+        toast.error(`Photo upload blocked by permissions${hint}. Try again, or skip photo for now.`);
+      } else if (rawMessage.toLowerCase().includes('size')) {
         toast.error("Photo is too large. Please use an image under 5MB");
       } else {
-        toast.error("Failed to upload photo. Your garage will be saved without a photo.");
+        toast.error(`Failed to upload photo${hint}. Your garage will be saved without a photo.`);
       }
       return null;
     } finally {
