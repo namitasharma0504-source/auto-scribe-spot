@@ -243,13 +243,29 @@ export function GarageManagement() {
         }
       });
 
-      // Merge photos and submitter names with garages
+      // Fetch GINs from partner_listings for each garage
+      const garageIds = (garagesData || []).map(g => g.id);
+      const { data: listingsData } = await supabase
+        .from("partner_listings")
+        .select("listing_id, gin")
+        .in("listing_id", garageIds);
+
+      // Create a map of garage_id to GIN
+      const ginMap = new Map<string, string>();
+      (listingsData || []).forEach((listing) => {
+        if (listing.listing_id && listing.gin) {
+          ginMap.set(listing.listing_id, listing.gin);
+        }
+      });
+
+      // Merge photos, submitter names, and GINs with garages
       const enrichedGarages = (garagesData || []).map((garage) => ({
         ...garage,
         photo_url: photoMap.get(garage.id) || garage.photo_url,
         submitter_email: garage.submitted_by 
           ? (nameMap.get(garage.submitted_by) || garage.submitted_by.slice(0, 8))
           : null,
+        gin: ginMap.get(garage.id) || null,
       }));
 
       setGarages(enrichedGarages);
@@ -889,13 +905,9 @@ export function GarageManagement() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {garage.submitter_email ? (
-                              <span className="text-xs text-muted-foreground truncate max-w-[100px] block" title={garage.submitter_email}>
-                                {garage.submitter_email}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(garage.created_at), "dd MMM yyyy")}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
@@ -903,7 +915,6 @@ export function GarageManagement() {
                               <span>{(garage.rating || 5).toFixed(1)}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{garage.review_count || 0}</TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
                               {garage.is_approved === false ? (
