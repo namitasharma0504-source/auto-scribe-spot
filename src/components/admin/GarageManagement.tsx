@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Building2, 
   Search, 
@@ -18,6 +18,8 @@ import {
   Store,
   Users,
   Settings,
+  ArrowUpDown,
+  Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
 import { GarageAllReviews } from "./GarageAllReviews";
@@ -86,7 +88,11 @@ interface Garage {
   created_at: string;
   submitter_email?: string | null;
   owner_id?: string | null;
+  gin?: string | null;
 }
+
+type SortField = "name" | "created_at" | "city" | "rating";
+type SortDirection = "asc" | "desc";
 
 interface Partner {
   id: string;
@@ -124,6 +130,8 @@ export function GarageManagement() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   useEffect(() => {
     fetchGarages();
@@ -480,19 +488,46 @@ export function GarageManagement() {
     fetchPartners();
   };
 
-  const filteredGarages = garages.filter(garage => {
-    const matchesSearch = garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (garage.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (garage.state || "").toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesListingType = listingTypeFilter === "all" || 
-      (listingTypeFilter === "admin" && (!garage.listing_type || garage.listing_type === "admin")) ||
-      garage.listing_type === listingTypeFilter;
+  const filteredGarages = useMemo(() => {
+    const filtered = garages.filter(garage => {
+      const matchesSearch = garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (garage.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (garage.state || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (garage.gin || "").toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesListingType = listingTypeFilter === "all" || 
+        (listingTypeFilter === "admin" && (!garage.listing_type || garage.listing_type === "admin")) ||
+        garage.listing_type === listingTypeFilter;
 
-    const matchesPartner = partnerFilter === "all" || garage.partner_id === partnerFilter;
-    
-    return matchesSearch && matchesListingType && matchesPartner;
-  });
+      const matchesPartner = partnerFilter === "all" || garage.partner_id === partnerFilter;
+      
+      return matchesSearch && matchesListingType && matchesPartner;
+    });
+
+    // Sort the results
+    return filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+      switch (sortField) {
+        case "name": aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+        case "created_at": aVal = new Date(a.created_at).getTime(); bVal = new Date(b.created_at).getTime(); break;
+        case "city": aVal = (a.city || "").toLowerCase(); bVal = (b.city || "").toLowerCase(); break;
+        case "rating": aVal = a.rating || 0; bVal = b.rating || 0; break;
+        default: aVal = a.name; bVal = b.name;
+      }
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   // Count garages per partner for the filter dropdown
   const partnerGarageCounts = partners.reduce((acc, partner) => {
@@ -748,13 +783,46 @@ export function GarageManagement() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Photo</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Location</TableHead>
+                        <TableHead>GIN</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleSort("name")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Name
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleSort("city")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Location
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>Listed By</TableHead>
-                        <TableHead>Submitter</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Reviews</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleSort("created_at")}
+                        >
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Listed On
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => toggleSort("rating")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Rating
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Subscription</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -779,6 +847,9 @@ export function GarageManagement() {
                                 <ImageIcon className="w-5 h-5 text-muted-foreground" />
                               </div>
                             )}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {garage.gin || "-"}
                           </TableCell>
                           <TableCell className="font-medium">{garage.name}</TableCell>
                           <TableCell>
