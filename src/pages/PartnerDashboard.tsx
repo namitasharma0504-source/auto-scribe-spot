@@ -586,30 +586,36 @@ export default function PartnerDashboard() {
           </Card>
         </div>
 
-        {/* Earnings Calendar */}
-        <div className="mb-8">
-          <EarningsCalendar 
-            earnings={dailyEarnings} 
-            onDayClick={(date, earning) => {
-              setSelectedDayData({ date, earning });
-              setStatDialog("day");
-            }}
-          />
-        </div>
+        {/* Split-Screen: Earnings Calendar + My Listings */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Earnings Calendar */}
+          <div className="h-full">
+            <EarningsCalendar 
+              earnings={dailyEarnings} 
+              onDayClick={(date, earning) => {
+                setSelectedDayData({ date, earning });
+                setStatDialog("day");
+              }}
+            />
+          </div>
 
-        {/* My Listings Section with Filters */}
-        <MyListingsSection
-          listings={listings}
-          onStartTask={() => setShowStartTask(true)}
-          onUpsell={(listing) => {
-            setSelectedListing(listing);
-            setShowUpsell(true);
-          }}
-          onDispute={(listing) => {
-            setSelectedListing(listing);
-            setShowDispute(true);
-          }}
-        />
+          {/* My Listings Section with Filters */}
+          <div className="h-full">
+            <MyListingsSection
+              listings={listings}
+              onStartTask={() => setShowStartTask(true)}
+              onUpsell={(listing) => {
+                setSelectedListing(listing);
+                setShowUpsell(true);
+              }}
+              onDispute={(listing) => {
+                setSelectedListing(listing);
+                setShowDispute(true);
+              }}
+              partnerId={partner.id}
+            />
+          </div>
+        </div>
 
         {/* Stat Detail Dialog */}
         <Dialog open={statDialog !== null} onOpenChange={(open) => !open && setStatDialog(null)}>

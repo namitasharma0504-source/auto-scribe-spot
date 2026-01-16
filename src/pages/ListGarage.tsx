@@ -546,24 +546,8 @@ const ListGarage = () => {
           .upsert({ user_id: user.id, role: 'garage_owner' }, { onConflict: 'user_id,role' });
       }
       
-      // If partner, create partner_listings entry with GIN and base earning
-      if (isPartner && partnerId && garageData?.id) {
-        const { error: listingError } = await supabase
-          .from('partner_listings')
-          .insert({
-            partner_id: partnerId,
-            listing_id: garageData.id,
-            status: 'pending',
-            base_earning: 20,
-            total_earning: 20,
-            payout_status: 'pending',
-            submitted_at: new Date().toISOString(),
-          });
-        
-        if (listingError) {
-          console.error('Error creating partner listing:', listingError);
-        }
-      }
+      // Note: partner_listings entry is now created automatically via database trigger
+      // when a garage with partner_id is inserted
       
       if (shouldAutoApprove) {
         if (photoUploadFailed) {
