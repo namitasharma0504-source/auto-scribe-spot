@@ -341,6 +341,7 @@ export function MyListingsSection({
                     <TableHead className="text-xs">GIN</TableHead>
                     <TableHead className="text-xs">Garage</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs">Payout</TableHead>
                     <TableHead className="text-xs text-right">Earnings</TableHead>
                     <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
@@ -360,6 +361,13 @@ export function MyListingsSection({
                           </div>
                         </TableCell>
                         <TableCell className="py-2">{getStatusBadge(listing.status)}</TableCell>
+                        <TableCell className="py-2">
+                          {listing.status === "approved" ? (
+                            getPayoutStatusBadge(listing.payout_status)
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right py-2 font-semibold text-xs text-purple-600">
                           ₹{(listing.total_earning || 0)}
                         </TableCell>
