@@ -273,18 +273,43 @@ export function ClaimManagement() {
           onConflict: "user_id,role" 
         });
 
-      // Create/update garage_owners record (subscription_active defaults to false)
-      await supabase
+      // Check if garage_owner record exists and update/insert accordingly
+      const { data: existingOwner } = await supabase
         .from("garage_owners")
-        .upsert({
-          user_id: claim.claimant_user_id,
-          garage_id: claim.garage_id,
-          business_name: claim.garage?.name,
-          contact_phone: claim.claimant_phone,
-          subscription_active: false // Admin must enable after payment
-        }, {
-          onConflict: "user_id"
-        });
+        .select("id")
+        .eq("user_id", claim.claimant_user_id)
+        .maybeSingle();
+
+      if (existingOwner) {
+        // Update existing record with the claimed garage
+        const { error: updateError } = await supabase
+          .from("garage_owners")
+          .update({
+            garage_id: claim.garage_id,
+            business_name: claim.garage?.name || claim.claimant_name,
+            contact_phone: claim.claimant_phone,
+          })
+          .eq("user_id", claim.claimant_user_id);
+        
+        if (updateError) {
+          console.error("Failed to update garage_owners:", updateError);
+        }
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from("garage_owners")
+          .insert({
+            user_id: claim.claimant_user_id,
+            garage_id: claim.garage_id,
+            business_name: claim.garage?.name || claim.claimant_name,
+            contact_phone: claim.claimant_phone,
+            subscription_active: false, // Admin must enable after payment
+          });
+        
+        if (insertError) {
+          console.error("Failed to insert garage_owners:", insertError);
+        }
+      }
 
       // Send email notification to claimant
       try {
