@@ -12,6 +12,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isPartnerDashboard = location.pathname === "/partner-dashboard";
   const { user, loading, signOut } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
 
@@ -62,18 +63,23 @@ export function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
             <nav className="flex items-center gap-3">
-              <Link to="/search">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Search className="w-4 h-4" />
-                  Browse Garages
-                </Button>
-              </Link>
-              <Link to="/garage-auth">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Garage Login
-                </Button>
-              </Link>
+              {/* Hide Browse Garages and Garage Login on Partner Dashboard */}
+              {!isPartnerDashboard && (
+                <>
+                  <Link to="/search">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <Search className="w-4 h-4" />
+                      Browse Garages
+                    </Button>
+                  </Link>
+                  <Link to="/garage-auth">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Garage Login
+                    </Button>
+                  </Link>
+                </>
+              )}
               {!loading && !roleLoading && (
                 user ? (
                   <>
@@ -122,18 +128,23 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-card rounded-xl shadow-xl mb-4 p-4 animate-scale-in">
             <nav className="flex flex-col gap-2">
-              <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <Search className="w-4 h-4" />
-                  Browse Garages
-                </Button>
-              </Link>
-              <Link to="/garage-auth" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Garage Login
-                </Button>
-              </Link>
+              {/* Hide Browse Garages and Garage Login on Partner Dashboard */}
+              {!isPartnerDashboard && (
+                <>
+                  <Link to="/search" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Search className="w-4 h-4" />
+                      Browse Garages
+                    </Button>
+                  </Link>
+                  <Link to="/garage-auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Garage Login
+                    </Button>
+                  </Link>
+                </>
+              )}
               {!loading && !roleLoading && (
                 user ? (
                   <>
