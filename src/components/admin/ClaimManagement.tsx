@@ -286,6 +286,30 @@ export function ClaimManagement() {
           onConflict: "user_id"
         });
 
+      // Send email notification to claimant
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        await supabase.functions.invoke("send-review-notification", {
+          body: {
+            type: "claim_approved",
+            reviewData: {
+              claimantEmail: claim.claimant_email,
+              claimantName: claim.claimant_name,
+              garageName: claim.garage?.name,
+              garageLocation: [claim.garage?.address, claim.garage?.city, claim.garage?.state].filter(Boolean).join(", "),
+              adminNotes: adminNotes || null,
+            },
+          },
+          headers: {
+            Authorization: `Bearer ${session?.session?.access_token}`,
+          },
+        });
+        console.log("Claim approval email sent to:", claim.claimant_email);
+      } catch (emailError) {
+        console.error("Failed to send approval email:", emailError);
+        // Don't fail the approval if email fails
+      }
+
       toast({
         title: "Claim Approved!",
         description: `${claim.claimant_name} is now the owner of ${claim.garage?.name}. Enable subscription in "Garage Owners" tab to grant dashboard access.`,
@@ -319,6 +343,30 @@ export function ClaimManagement() {
         .eq("id", claim.id);
 
       if (error) throw error;
+
+      // Send email notification to claimant
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        await supabase.functions.invoke("send-review-notification", {
+          body: {
+            type: "claim_rejected",
+            reviewData: {
+              claimantEmail: claim.claimant_email,
+              claimantName: claim.claimant_name,
+              garageName: claim.garage?.name,
+              garageLocation: [claim.garage?.address, claim.garage?.city, claim.garage?.state].filter(Boolean).join(", "),
+              adminNotes: adminNotes || null,
+            },
+          },
+          headers: {
+            Authorization: `Bearer ${session?.session?.access_token}`,
+          },
+        });
+        console.log("Claim rejection email sent to:", claim.claimant_email);
+      } catch (emailError) {
+        console.error("Failed to send rejection email:", emailError);
+        // Don't fail the rejection if email fails
+      }
 
       toast({
         title: "Claim Rejected",
