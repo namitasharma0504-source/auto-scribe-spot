@@ -79,6 +79,39 @@ export function ClaimGarageDialog({ garageId, garageName }: ClaimGarageDialogPro
     checkExistingClaim();
   }, [user, garageId]);
 
+  // Pre-fill form with user data when dialog opens
+  useEffect(() => {
+    const prefillUserData = async () => {
+      if (!user || !open) return;
+
+      // Pre-fill email from auth
+      const userEmail = user.email || "";
+
+      // Fetch profile for full name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Fetch garage owner data for phone if available
+      const { data: garageOwner } = await supabase
+        .from("garage_owners")
+        .select("contact_phone, business_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      setFormData(prev => ({
+        ...prev,
+        claimantEmail: userEmail,
+        claimantName: profile?.full_name || prev.claimantName,
+        claimantPhone: garageOwner?.contact_phone || prev.claimantPhone,
+      }));
+    };
+
+    prefillUserData();
+  }, [user, open]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
