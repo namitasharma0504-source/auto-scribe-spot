@@ -313,21 +313,21 @@ export default function GarageSignup() {
     {
       id: "garage_owner" as RoleType,
       icon: Store,
-      title: "Garage Owner",
+      title: "I am a Garage Owner",
       description: "I want to list my own garage so customers can review it",
       color: "primary",
     },
     {
       id: "customer" as RoleType,
       icon: User,
-      title: "Customer",
+      title: "I am a Customer",
       description: "I want to list and rate a garage I recently visited",
       color: "secondary",
     },
     {
       id: "partner" as RoleType,
       icon: Users,
-      title: "Garage Partner",
+      title: "I am a Garage Partner",
       description: "I'm a MeriGarage partner who lists multiple garages",
       color: "blue",
     },
@@ -356,7 +356,7 @@ export default function GarageSignup() {
           {/* Step 1: Role Selection */}
           {!selectedRole ? (
             <div className="space-y-4">
-              <p className="text-center text-sm text-muted-foreground mb-4">Who are you?</p>
+              <h3 className="text-center text-lg font-semibold text-foreground mb-4">Who are you?</h3>
               <div className="space-y-3">
                 {roleCards.map((role) => (
                   <button
