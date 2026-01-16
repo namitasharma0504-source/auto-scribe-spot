@@ -53,6 +53,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface UserRole {
   id: string;
@@ -128,30 +129,47 @@ export function EnhancedUserManagement() {
       setProfiles(profilesResult.data || []);
       setPartners(partnersResult.data || []);
       
-      // Try to get emails from garage_claim_requests for garage owners
+      // Fetch emails from auth.users via edge function (most reliable source)
       const userIds = (rolesResult.data || []).map(r => r.user_id);
-      const { data: claimsData } = await supabase
-        .from("garage_claim_requests")
-        .select("claimant_user_id, claimant_email")
-        .in("claimant_user_id", userIds);
       
-      // Get partner emails
-      const partnersData = partnersResult.data || [];
-      const partnerEmails: UserEmail[] = partnersData
-        .filter(p => p.user_id && p.email)
-        .map(p => ({ user_id: p.user_id!, email: p.email! }));
-      
-      // Combine claim emails and partner emails
-      const claimEmails: UserEmail[] = (claimsData || [])
-        .filter(c => c.claimant_email)
-        .map(c => ({ user_id: c.claimant_user_id, email: c.claimant_email }));
-      
-      // Merge all emails (remove duplicates by user_id, prioritize claim emails)
-      const emailMap = new Map<string, string>();
-      partnerEmails.forEach(e => emailMap.set(e.user_id, e.email));
-      claimEmails.forEach(e => emailMap.set(e.user_id, e.email)); // Override with claim email if exists
-      
-      setUserEmails(Array.from(emailMap.entries()).map(([user_id, email]) => ({ user_id, email })));
+      try {
+        const { data: authData, error: authError } = await supabase.functions.invoke("get-user-emails", {
+          body: { user_ids: userIds },
+        });
+        
+        if (!authError && authData?.users) {
+          // Use auth.users emails as primary source
+          const authEmails: UserEmail[] = authData.users.map((u: { user_id: string; email: string }) => ({
+            user_id: u.user_id,
+            email: u.email,
+          }));
+          setUserEmails(authEmails);
+        } else {
+          // Fallback: Try to get emails from garage_claim_requests and partners
+          console.log("Falling back to claim/partner emails");
+          const { data: claimsData } = await supabase
+            .from("garage_claim_requests")
+            .select("claimant_user_id, claimant_email")
+            .in("claimant_user_id", userIds);
+          
+          const partnersData = partnersResult.data || [];
+          const partnerEmails: UserEmail[] = partnersData
+            .filter(p => p.user_id && p.email)
+            .map(p => ({ user_id: p.user_id!, email: p.email! }));
+          
+          const claimEmails: UserEmail[] = (claimsData || [])
+            .filter(c => c.claimant_email)
+            .map(c => ({ user_id: c.claimant_user_id, email: c.claimant_email }));
+          
+          const emailMap = new Map<string, string>();
+          partnerEmails.forEach(e => emailMap.set(e.user_id, e.email));
+          claimEmails.forEach(e => emailMap.set(e.user_id, e.email));
+          
+          setUserEmails(Array.from(emailMap.entries()).map(([user_id, email]) => ({ user_id, email })));
+        }
+      } catch (emailFetchError) {
+        console.error("Error fetching emails:", emailFetchError);
+      }
 
       // Calculate earnings per partner
       const earningsMap = new Map<string, { total: number; pending: number }>();
@@ -206,6 +224,25 @@ export function EnhancedUserManagement() {
   const getUserCreatedAt = (userId: string): string | null => {
     const profile = profiles.find(p => p.user_id === userId);
     return profile?.created_at || null;
+  };
+
+  // Generate role-based unique ID
+  const getRoleBasedId = (userId: string, role: string): string => {
+    // Take first 6 chars of UUID and make alphanumeric uppercase
+    const shortId = userId.replace(/-/g, "").substring(0, 6).toUpperCase();
+    
+    switch (role) {
+      case "garage_owner":
+        return `GID-${shortId}`;
+      case "customer":
+        return `CID-${shortId}`;
+      case "partner":
+        return `PID-${shortId}`;
+      case "admin":
+        return `AID-${shortId}`;
+      default:
+        return `UID-${shortId}`;
+    }
   };
 
   const handleCreateUser = async () => {
@@ -618,8 +655,14 @@ export function EnhancedUserManagement() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <code className="text-xs bg-muted px-2 py-1 rounded">
-                                {role.user_id.slice(0, 8)}...
+                              <code className={cn(
+                                "text-xs px-2 py-1 rounded font-mono",
+                                role.role === "garage_owner" && "bg-green-100 text-green-700",
+                                role.role === "customer" && "bg-blue-100 text-blue-700",
+                                role.role === "partner" && "bg-purple-100 text-purple-700",
+                                role.role === "admin" && "bg-red-100 text-red-700"
+                              )}>
+                                {getRoleBasedId(role.user_id, role.role)}
                               </code>
                             </TableCell>
                             <TableCell>
