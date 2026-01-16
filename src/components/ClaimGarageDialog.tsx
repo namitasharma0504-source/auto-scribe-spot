@@ -202,6 +202,15 @@ export function ClaimGarageDialog({ garageId, garageName }: ClaimGarageDialogPro
       return;
     }
 
+    if (uploadedFiles.length === 0) {
+      toast({
+        title: "Document Required",
+        description: "Please upload at least one proof of ownership document (e.g., GST certificate, business registration, utility bill).",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Upload files first
@@ -389,12 +398,15 @@ export function ClaimGarageDialog({ garageId, garageName }: ClaimGarageDialogPro
 
           {/* Document Upload */}
           <div className="space-y-2">
-            <Label>Upload Documents (Optional)</Label>
+            <Label>Upload Documents *</Label>
             <div className="border-2 border-dashed border-border rounded-lg p-4">
               <div className="flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground text-center">
-                  Upload proof of ownership
+                  Upload proof of ownership <span className="text-red-500">*</span>
+                </p>
+                <p className="text-xs text-muted-foreground text-center">
+                  GST certificate, business license, utility bill, or any official document
                 </p>
                 <p className="text-xs text-muted-foreground">
                   JPG, PNG, WEBP, or PDF (max 5MB each, up to 3 files)
