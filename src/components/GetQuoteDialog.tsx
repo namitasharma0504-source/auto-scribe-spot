@@ -14,8 +14,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface GetQuoteDialogProps {
   garageName: string;
@@ -43,6 +49,7 @@ export function GetQuoteDialog({
   });
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isGarageOwner } = useUserRole();
   const navigate = useNavigate();
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -100,6 +107,30 @@ export function GetQuoteDialog({
       setLoading(false);
     }
   };
+
+  // If garage owner, show disabled button with tooltip
+  if (isGarageOwner) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={className}>
+            <Button 
+              variant={variant === "primary" ? "default" : "outline"} 
+              size={size}
+              className="w-full opacity-50 cursor-not-allowed"
+              disabled
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Get Quote
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="bg-popover text-popover-foreground">
+          <p>Please login as a customer to request a quote</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
