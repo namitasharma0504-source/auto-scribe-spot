@@ -16,8 +16,10 @@ import { ClaimGarageDialog } from "@/components/ClaimGarageDialog";
 import { SEOHead } from "@/components/SEOHead";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 
 interface Garage {
@@ -69,6 +71,7 @@ const isUUID = (str: string) => {
 const GarageDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isGarageOwner } = useUserRole();
   const [showAllTags, setShowAllTags] = useState(false);
   const [reviewSort, setReviewSort] = useState("recent");
   const [garage, setGarage] = useState<Garage | null>(null);
@@ -523,12 +526,33 @@ const GarageDetails = () => {
                   className="w-full h-14 text-lg rounded-xl shadow-glow"
                 />
 
-                <Link to={`/garage/${garage.slug || slug}/review`}>
-                  <Button variant="outline" size="lg" className="w-full gap-2 h-14 text-lg rounded-xl">
-                    <PenSquare className="w-5 h-5" />
-                    Write a Review
-                  </Button>
-                </Link>
+                {isGarageOwner ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button 
+                          variant="outline" 
+                          size="lg" 
+                          className="w-full gap-2 h-14 text-lg rounded-xl opacity-50 cursor-not-allowed"
+                          disabled
+                        >
+                          <PenSquare className="w-5 h-5" />
+                          Write a Review
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-popover text-popover-foreground">
+                      <p>Please login as a customer to write a review</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Link to={`/garage/${garage.slug || slug}/review`}>
+                    <Button variant="outline" size="lg" className="w-full gap-2 h-14 text-lg rounded-xl">
+                      <PenSquare className="w-5 h-5" />
+                      Write a Review
+                    </Button>
+                  </Link>
+                )}
                 
                 <div className="flex gap-3">
                   <ShareDialog
