@@ -119,7 +119,10 @@ const ListGarage = () => {
   const [isLoadingRole, setIsLoadingRole] = useState(true);
   
   // Get prefilled data from navigation state (from GarageAccount)
-  const prefillData = (location.state as { prefill?: { businessName?: string; phone?: string } })?.prefill;
+  const prefillData = (location.state as { prefill?: { businessName?: string; phone?: string; email?: string } })?.prefill;
+  
+  // Get user email from session as fallback
+  const userEmail = user?.email || "";
 
   // Auto-detect user role from signup to skip role selection
   useEffect(() => {
