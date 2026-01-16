@@ -145,7 +145,7 @@ const Index = () => {
                     Write a Review
                   </Button>
                 </Link>
-                <Link to="/list-garage">
+                <Link to="/garage-signup">
                   <Button size="lg" variant="secondary" className="text-base px-6 h-12 rounded-xl w-full sm:w-auto min-w-[180px]">
                     <Award className="w-4 h-4 mr-2" />
                     List Your Garage
@@ -498,7 +498,7 @@ const Index = () => {
             <p className="text-xl text-background/70 mb-8 max-w-2xl mx-auto">
               Join thousands of garages and start collecting reviews from your customers today.
             </p>
-            <Link to="/list-garage">
+            <Link to="/garage-signup">
               <Button size="lg" className="text-lg px-8 h-14 rounded-xl">
                 List Your Garage
               </Button>
@@ -551,7 +551,7 @@ const Index = () => {
                     <span className="text-sm font-medium text-foreground">Get More Customers</span>
                   </div>
                 </div>
-                <Link to="/list-garage">
+                <Link to="/garage-signup">
                   <Button size="lg" className="gap-2">
                     <Award className="w-5 h-5" />
                     List Your Garage Free

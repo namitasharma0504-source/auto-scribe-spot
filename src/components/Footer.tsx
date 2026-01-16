@@ -53,7 +53,7 @@ export const Footer = () => {
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
-              <li><Link to="/list-garage" className="hover:text-primary transition-colors">List Your Garage</Link></li>
+              <li><Link to="/garage-signup" className="hover:text-primary transition-colors">List Your Garage</Link></li>
               <li><Link to="/advertise" className="hover:text-primary transition-colors">Advertise With Us</Link></li>
               <li><Link to="/garage-auth" className="hover:text-primary transition-colors">Garage Login</Link></li>
               {user && (
