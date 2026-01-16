@@ -69,6 +69,7 @@ export default function GarageAccount() {
   const [submittedGarages, setSubmittedGarages] = useState<SubmittedGarage[]>([]);
   const [claimRequests, setClaimRequests] = useState<ClaimRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -80,6 +81,8 @@ export default function GarageAccount() {
         navigate("/garage-auth");
         return;
       }
+
+      setUserEmail(session.user.email || "");
 
       // Get garage owner profile
       const { data: owner, error: ownerError } = await supabase
@@ -443,7 +446,8 @@ export default function GarageAccount() {
                       state: { 
                         prefill: {
                           businessName: garageOwner?.business_name || "",
-                          phone: garageOwner?.contact_phone || ""
+                          phone: garageOwner?.contact_phone || "",
+                          email: userEmail
                         }
                       }
                     })}
