@@ -401,10 +401,10 @@ export function ClaimGarageDialog({ garageId, garageName }: ClaimGarageDialogPro
                 </p>
                 <Input
                   type="file"
-                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,application/pdf,image/jpeg,image/png,image/webp"
                   multiple
                   onChange={handleFileChange}
-                  className="max-w-[200px]"
+                  className="max-w-[200px] cursor-pointer"
                   disabled={uploadedFiles.length >= 3}
                 />
               </div>
