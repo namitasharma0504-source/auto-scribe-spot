@@ -2,13 +2,22 @@ import { useState, useMemo } from "react";
 import { 
   Building2, Search, Calendar as CalendarIcon, 
   Plus, Play, Flag, CheckCircle, XCircle, Clock,
-  Database, Star, Laptop, IndianRupee
+  Database, Star, Laptop, IndianRupee, Eye, Edit, MapPin, Phone, X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -31,10 +40,13 @@ import {
 } from "@/components/ui/table";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PartnerListing {
   id: string;
   gin: string | null;
+  listing_id: string | null;
   submitted_at: string | null;
   approved_at: string | null;
   status: string | null;
@@ -50,7 +62,14 @@ interface PartnerListing {
   gms_verified: boolean | null;
   total_earning: number | null;
   payout_status: string | null;
-  garages?: { name: string; city: string | null } | null;
+  garages?: { 
+    name: string; 
+    city: string | null; 
+    address: string | null;
+    phone: string | null;
+    state: string | null;
+    services: string[] | null;
+  } | null;
 }
 
 interface MyListingsSectionProps {
@@ -58,6 +77,7 @@ interface MyListingsSectionProps {
   onStartTask: () => void;
   onUpsell: (listing: PartnerListing, upsellType?: 'reputation' | 'gms') => void;
   onDispute: (listing: PartnerListing) => void;
+  onListingsRefresh?: () => void;
   partnerId?: string;
 }
 
@@ -71,6 +91,7 @@ export function MyListingsSection({
   onStartTask, 
   onUpsell, 
   onDispute,
+  onListingsRefresh,
   partnerId
 }: MyListingsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,6 +100,18 @@ export function MyListingsSection({
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Detail/Edit dialog state
+  const [selectedListing, setSelectedListing] = useState<PartnerListing | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editCity, setEditCity] = useState("");
 
   // Filter listings based on all criteria
   const filteredListings = useMemo(() => {
@@ -125,6 +158,55 @@ export function MyListingsSection({
       return searchMatch && statusMatch && categoryMatch && dateMatch && payoutMatch;
     });
   }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter]);
+
+  // Open listing detail
+  const handleOpenDetail = (listing: PartnerListing) => {
+    setSelectedListing(listing);
+    setEditName(listing.garages?.name || "");
+    setEditPhone(listing.garages?.phone || "");
+    setEditAddress(listing.garages?.address || "");
+    setEditCity(listing.garages?.city || "");
+    setIsEditing(false);
+    setIsDetailOpen(true);
+  };
+
+  // Check if listing can be edited (only unverified listings)
+  const canEditListing = (listing: PartnerListing) => {
+    return listing.status !== "approved";
+  };
+
+  // Save edited listing
+  const handleSaveEdit = async () => {
+    if (!selectedListing || !selectedListing.listing_id) {
+      toast.error("Cannot update: garage not found");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("garages")
+        .update({
+          name: editName.trim(),
+          phone: editPhone.trim() || null,
+          address: editAddress.trim() || null,
+          city: editCity.trim() || null,
+        })
+        .eq("id", selectedListing.listing_id);
+
+      if (error) throw error;
+
+      toast.success("Garage details updated successfully!");
+      setIsEditing(false);
+      setIsDetailOpen(false);
+      onListingsRefresh?.();
+    } catch (error: any) {
+      console.error("Error updating garage:", error);
+      toast.error(error.message || "Failed to update garage");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Calculate total payout for a listing (only verified items count)
   const calculateTotalPayout = (listing: PartnerListing) => {
@@ -498,14 +580,21 @@ export function MyListingsSection({
                     const totalPayout = calculateTotalPayout(listing);
 
                     return (
-                      <TableRow key={listing.id} className="hover:bg-muted/20">
+                      <TableRow 
+                        key={listing.id} 
+                        className="hover:bg-muted/20 cursor-pointer"
+                        onClick={() => handleOpenDetail(listing)}
+                      >
                         <TableCell className="py-2 text-[10px] text-muted-foreground whitespace-nowrap">
                           {listing.submitted_at ? format(new Date(listing.submitted_at), "dd MMM yyyy") : "-"}
                         </TableCell>
                         <TableCell className="py-2">
-                          <div>
-                            <p className="text-xs font-medium truncate max-w-[100px]">{listing.garages?.name || "Processing..."}</p>
-                            <p className="text-[10px] text-muted-foreground">{listing.garages?.city || "-"}</p>
+                          <div className="flex items-center gap-2">
+                            <Eye className="w-3 h-3 text-muted-foreground" />
+                            <div>
+                              <p className="text-xs font-medium truncate max-w-[100px]">{listing.garages?.name || "Processing..."}</p>
+                              <p className="text-[10px] text-muted-foreground">{listing.garages?.city || "-"}</p>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-[10px] py-2 text-purple-600">{listing.gin || "-"}</TableCell>
@@ -524,7 +613,10 @@ export function MyListingsSection({
                                 size="sm" 
                                 variant="ghost" 
                                 className="text-orange-600 h-6 px-2 text-xs"
-                                onClick={() => onDispute(listing)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDispute(listing);
+                                }}
                               >
                                 <Flag className="w-3 h-3" />
                               </Button>
@@ -545,6 +637,187 @@ export function MyListingsSection({
           )}
         </div>
       </CardContent>
+
+      {/* Listing Detail/Edit Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-500" />
+              Garage Details
+            </DialogTitle>
+            <DialogDescription>
+              {selectedListing?.gin && (
+                <span className="font-mono text-purple-600">{selectedListing.gin}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedListing && (
+            <div className="space-y-4">
+              {/* Status Badge */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                {getDataCollectionStatus(selectedListing)}
+              </div>
+
+              {/* Editable Fields */}
+              {isEditing ? (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Garage Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Garage name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="edit-phone"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="Phone number"
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-city">City</Label>
+                    <Input
+                      id="edit-city"
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-address">Address</Label>
+                    <Input
+                      id="edit-address"
+                      value={editAddress}
+                      onChange={(e) => setEditAddress(e.target.value)}
+                      placeholder="Full address"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 bg-muted/30 rounded-lg p-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Garage Name</p>
+                    <p className="font-medium">{selectedListing.garages?.name || "-"}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">City</p>
+                      <p className="text-sm">{selectedListing.garages?.city || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">State</p>
+                      <p className="text-sm">{selectedListing.garages?.state || "-"}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    <p className="text-sm flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {selectedListing.garages?.phone || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Address</p>
+                    <p className="text-sm flex items-start gap-1">
+                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      {selectedListing.garages?.address || "-"}
+                    </p>
+                  </div>
+                  {selectedListing.garages?.services && selectedListing.garages.services.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Services</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedListing.garages.services.map((service, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px]">
+                            {service}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Earnings Summary */}
+              <div className="border-t pt-3">
+                <p className="text-xs text-muted-foreground mb-2">Earnings Breakdown</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-purple-50 rounded p-2">
+                    <p className="text-[10px] text-purple-600">Data</p>
+                    <p className="font-bold text-purple-700">
+                      ₹{selectedListing.status === "approved" ? DATA_COLLECTION_AMOUNT : 0}
+                    </p>
+                  </div>
+                  <div className="bg-violet-50 rounded p-2">
+                    <p className="text-[10px] text-violet-600">Reputation</p>
+                    <p className="font-bold text-violet-700">
+                      ₹{selectedListing.reputation_verified ? REPUTATION_AMOUNT : 0}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 rounded p-2">
+                    <p className="text-[10px] text-blue-600">GMS</p>
+                    <p className="font-bold text-blue-700">
+                      ₹{selectedListing.gms_verified ? GMS_AMOUNT : 0}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rejection Reason */}
+              {selectedListing.status === "rejected" && selectedListing.rejection_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-xs text-red-600 font-medium mb-1">Rejection Reason</p>
+                  <p className="text-sm text-red-700">{selectedListing.rejection_reason}</p>
+                </div>
+              )}
+
+              {/* Edit Notice */}
+              {!canEditListing(selectedListing) && !isEditing && (
+                <p className="text-xs text-muted-foreground text-center italic">
+                  ✓ Verified listings cannot be edited
+                </p>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
+                  Close
+                </Button>
+                {selectedListing && canEditListing(selectedListing) && (
+                  <Button onClick={() => setIsEditing(true)} className="gap-1">
+                    <Edit className="w-4 h-4" />
+                    Edit Details
+                  </Button>
+                )}
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
