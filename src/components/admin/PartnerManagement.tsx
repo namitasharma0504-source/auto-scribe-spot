@@ -417,13 +417,19 @@ export function PartnerManagement() {
     if (!rejectingListingId) return;
     
     try {
+      // Note: total_earning is a generated column, so we only update component earnings
       const { error } = await supabase
         .from("partner_listings")
         .update({ 
           status: "rejected", 
           rejection_reason: rejectionReason || "Listing does not meet quality standards",
           base_earning: 0,
-          total_earning: 0,
+          reputation_earning: 0,
+          gms_earning: 0,
+          reputation_upsell: false,
+          gms_upsell: false,
+          reputation_verified: false,
+          gms_verified: false,
         })
         .eq("id", rejectingListingId);
 
