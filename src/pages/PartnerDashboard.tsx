@@ -53,6 +53,7 @@ interface Partner {
 interface PartnerListing {
   id: string;
   gin: string | null;
+  listing_id: string | null;
   submitted_at: string | null;
   approved_at: string | null;
   status: string | null;
@@ -68,7 +69,14 @@ interface PartnerListing {
   gms_verified: boolean | null;
   total_earning: number | null;
   payout_status: string | null;
-  garages?: { name: string; city: string | null } | null;
+  garages?: { 
+    name: string; 
+    city: string | null; 
+    address: string | null;
+    phone: string | null;
+    state: string | null;
+    services: string[] | null;
+  } | null;
 }
 
 interface Payout {
@@ -179,7 +187,7 @@ export default function PartnerDashboard() {
         .from("partner_listings")
         .select(`
           *,
-          garages:listing_id (name, city)
+          garages:listing_id (name, city, address, phone, state, services)
         `)
         .eq("partner_id", partnerData.id)
         .order("submitted_at", { ascending: false });
@@ -813,6 +821,7 @@ export default function PartnerDashboard() {
                 setSelectedListing(listing);
                 setShowDispute(true);
               }}
+              onListingsRefresh={checkPartnerAndFetchData}
               partnerId={partner.id}
             />
           </TabsContent>
