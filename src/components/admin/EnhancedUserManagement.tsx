@@ -18,7 +18,10 @@ import {
   Clock,
   IndianRupee,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  Power,
+  PowerOff
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +68,7 @@ interface Profile {
   user_id: string;
   full_name: string | null;
   created_at: string;
+  is_active: boolean;
 }
 
 interface UserEmail {
@@ -103,6 +107,12 @@ export function EnhancedUserManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
+  // Edit user dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<{ userId: string; name: string; email: string | null } | null>(null);
+  const [editName, setEditName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  
   // New user form
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
@@ -115,7 +125,7 @@ export function EnhancedUserManagement() {
     try {
       const [rolesResult, profilesResult, partnersResult, listingsResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
-        supabase.from("profiles").select("user_id, full_name, created_at"),
+        supabase.from("profiles").select("user_id, full_name, created_at, is_active"),
         supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
         supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status")
       ]);
@@ -226,6 +236,11 @@ export function EnhancedUserManagement() {
     return profile?.created_at || null;
   };
 
+  const getUserIsActive = (userId: string): boolean => {
+    const profile = profiles.find(p => p.user_id === userId);
+    return profile?.is_active ?? true;
+  };
+
   // Generate role-based unique ID
   const getRoleBasedId = (userId: string, role: string): string => {
     // Take first 6 chars of UUID and make alphanumeric uppercase
@@ -242,6 +257,81 @@ export function EnhancedUserManagement() {
         return `AID-${shortId}`;
       default:
         return `UID-${shortId}`;
+    }
+  };
+
+  const handleToggleAccess = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_active: !currentStatus })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentStatus ? "Access Disabled" : "Access Enabled",
+        description: currentStatus 
+          ? "User can no longer access the platform" 
+          : "User can now access the platform",
+      });
+
+      // Update local state
+      setProfiles(prev => prev.map(p => 
+        p.user_id === userId ? { ...p, is_active: !currentStatus } : p
+      ));
+    } catch (error: any) {
+      console.error("Error toggling access:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update access status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (userId: string) => {
+    const name = getUserName(userId);
+    const email = getUserEmail(userId);
+    setEditingUser({ userId, name, email });
+    setEditName(name === "Unknown User" ? "" : name);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveUserDetails = async () => {
+    if (!editingUser) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: editName.trim() || null })
+        .eq("user_id", editingUser.userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "User Updated",
+        description: "User details have been saved",
+      });
+
+      // Update local state
+      setProfiles(prev => prev.map(p => 
+        p.user_id === editingUser.userId ? { ...p, full_name: editName.trim() || null } : p
+      ));
+      
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      setEditName("");
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -589,6 +679,57 @@ export function EnhancedUserManagement() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            {/* Edit User Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit User Details</DialogTitle>
+                  <DialogDescription>
+                    Update the user's name and other details
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Full Name</Label>
+                    <div className="relative">
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="edit-name"
+                        placeholder="Enter full name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  {editingUser?.email && (
+                    <div className="space-y-2">
+                      <Label>Email (Read-only)</Label>
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-md text-sm">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span>{editingUser.email}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveUserDetails} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -628,6 +769,7 @@ export function EnhancedUserManagement() {
                         <TableHead>Email ID</TableHead>
                         <TableHead>User ID</TableHead>
                         <TableHead>Current Role</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Change Role</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -638,8 +780,9 @@ export function EnhancedUserManagement() {
                         const Icon = roleIcons[role.role];
                         const email = getUserEmail(role.user_id);
                         const createdAt = getUserCreatedAt(role.user_id);
+                        const isActive = getUserIsActive(role.user_id);
                         return (
-                          <TableRow key={role.id}>
+                          <TableRow key={role.id} className={!isActive ? "opacity-60 bg-muted/30" : ""}>
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -675,6 +818,17 @@ export function EnhancedUserManagement() {
                               </Badge>
                             </TableCell>
                             <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={isActive 
+                                  ? "bg-green-500/10 text-green-600 border-green-500/30" 
+                                  : "bg-red-500/10 text-red-600 border-red-500/30"
+                                }
+                              >
+                                {isActive ? "Active" : "Disabled"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               {createdAt ? (
                                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                                   <Calendar className="w-3 h-3" />
@@ -701,14 +855,38 @@ export function EnhancedUserManagement() {
                               </Select>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteRole(role.id, role.user_id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => openEditDialog(role.user_id)}
+                                  title="Edit user details"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={isActive 
+                                    ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" 
+                                    : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  }
+                                  onClick={() => handleToggleAccess(role.user_id, isActive)}
+                                  title={isActive ? "Disable access" : "Enable access"}
+                                >
+                                  {isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteRole(role.id, role.user_id)}
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
