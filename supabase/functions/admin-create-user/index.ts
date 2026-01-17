@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     // Get request body
-    const { email, password, fullName, role } = await req.json();
+    const { email, password, fullName, state, role } = await req.json();
 
     if (!email || !password) {
       return new Response(
@@ -115,20 +115,19 @@ Deno.serve(async (req) => {
       // Don't fail the whole operation, just log it
     }
 
-    // Create profile if name provided
-    if (fullName) {
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .upsert({
-          user_id: newUser.user.id,
-          full_name: fullName,
-        }, {
-          onConflict: "user_id",
-        });
+    // Create profile with name and state
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert({
+        user_id: newUser.user.id,
+        full_name: fullName || null,
+        state: state || null,
+      }, {
+        onConflict: "user_id",
+      });
 
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-      }
+    if (profileError) {
+      console.error("Error creating profile:", profileError);
     }
 
     // If role is 'partner', also create entry in partners table

@@ -21,7 +21,8 @@ import {
   TrendingUp,
   Edit,
   Power,
-  PowerOff
+  PowerOff,
+  MapPin
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ interface Profile {
   full_name: string | null;
   created_at: string;
   is_active: boolean;
+  state: string | null;
 }
 
 interface UserEmail {
@@ -117,6 +119,7 @@ export function EnhancedUserManagement() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
+  const [newUserState, setNewUserState] = useState("");
   const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -125,7 +128,7 @@ export function EnhancedUserManagement() {
     try {
       const [rolesResult, profilesResult, partnersResult, listingsResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
-        supabase.from("profiles").select("user_id, full_name, created_at, is_active"),
+        supabase.from("profiles").select("user_id, full_name, created_at, is_active, state"),
         supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
         supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status")
       ]);
@@ -239,6 +242,11 @@ export function EnhancedUserManagement() {
   const getUserIsActive = (userId: string): boolean => {
     const profile = profiles.find(p => p.user_id === userId);
     return profile?.is_active ?? true;
+  };
+
+  const getUserState = (userId: string): string | null => {
+    const profile = profiles.find(p => p.user_id === userId);
+    return profile?.state || null;
   };
 
   // Generate role-based unique ID
@@ -362,6 +370,7 @@ export function EnhancedUserManagement() {
           email: newUserEmail,
           password: newUserPassword,
           fullName: newUserName || null,
+          state: newUserState || null,
           role: newUserRole,
         },
       });
@@ -381,6 +390,7 @@ export function EnhancedUserManagement() {
       setNewUserEmail("");
       setNewUserPassword("");
       setNewUserName("");
+      setNewUserState("");
       setNewUserRole("admin");
       fetchUsers();
     } catch (error: any) {
@@ -648,6 +658,19 @@ export function EnhancedUserManagement() {
                     </div>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="state"
+                        placeholder="e.g. Maharashtra, Delhi"
+                        value={newUserState}
+                        onChange={(e) => setNewUserState(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="role">Role *</Label>
                     <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as any)}>
                       <SelectTrigger>
@@ -769,6 +792,7 @@ export function EnhancedUserManagement() {
                         <TableHead>Email ID</TableHead>
                         <TableHead>User ID</TableHead>
                         <TableHead>Current Role</TableHead>
+                        <TableHead>State</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Change Role</TableHead>
@@ -781,6 +805,7 @@ export function EnhancedUserManagement() {
                         const email = getUserEmail(role.user_id);
                         const createdAt = getUserCreatedAt(role.user_id);
                         const isActive = getUserIsActive(role.user_id);
+                        const userState = getUserState(role.user_id);
                         return (
                           <TableRow key={role.id} className={!isActive ? "opacity-60 bg-muted/30" : ""}>
                             <TableCell>
@@ -816,6 +841,16 @@ export function EnhancedUserManagement() {
                               <Badge variant="outline" className={roleColors[role.role]}>
                                 {role.role.replace("_", " ")}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {userState ? (
+                                <div className="flex items-center gap-1.5 text-sm">
+                                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                                  <span className="truncate max-w-[100px]">{userState}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Badge 
