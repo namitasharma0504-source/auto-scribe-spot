@@ -648,12 +648,16 @@ const ListGarage = () => {
       
       // Upload photo first if selected
       let photoUrl = null;
-      let photoUploadFailed = false;
       if (photoFile) {
         photoUrl = await uploadPhoto();
         if (!photoUrl) {
-          photoUploadFailed = true;
-          // Continue with submission but notify user
+          // For partners, photo is MANDATORY - block submission
+          if (listingType === "partner") {
+            toast.error("Photo upload failed. Please try again with a different image (max 5MB).");
+            setIsSubmitting(false);
+            return;
+          }
+          // For non-partners, continue but log warning
           console.warn('Photo upload failed, continuing without photo');
         }
       }
@@ -732,7 +736,7 @@ const ListGarage = () => {
       // when a garage with partner_id is inserted
       
       if (shouldAutoApprove) {
-        if (photoUploadFailed) {
+        if (!photoUrl && photoFile) {
           toast.success("Your garage has been listed! Note: Photo upload failed - you can add photos later.");
         } else {
           toast.success("Your garage has been listed successfully! It's now live on the platform.");

@@ -437,10 +437,21 @@ export function PartnerListingsManagement() {
       matchesUpsell = listing.reputation_upsell === true && listing.gms_upsell === true;
     } else if (upsellFilter === "any") {
       matchesUpsell = listing.reputation_upsell === true || listing.gms_upsell === true;
+    } else if (upsellFilter === "pending_verification") {
+      // Pending upsell verification: upsell submitted but not yet verified
+      matchesUpsell = 
+        (listing.reputation_upsell === true && listing.reputation_verified === false) ||
+        (listing.gms_upsell === true && listing.gms_verified === false);
     }
     
     return matchesSearch && matchesStatus && matchesPayout && matchesUpsell;
   });
+  
+  // Count pending upsell verifications
+  const pendingUpsellCount = listings.filter(l => 
+    (l.reputation_upsell === true && l.reputation_verified === false) ||
+    (l.gms_upsell === true && l.gms_verified === false)
+  ).length;
 
   // Stats
   const pendingCount = listings.filter(l => !l.status || l.status === "pending").length;
@@ -565,11 +576,16 @@ export function PartnerListingsManagement() {
           </SelectContent>
         </Select>
         <Select value={upsellFilter} onValueChange={setUpsellFilter}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Upsells" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Listings</SelectItem>
+            <SelectItem value="pending_verification">
+              <span className="flex items-center gap-2">
+                ⚠️ Pending Verification ({pendingUpsellCount})
+              </span>
+            </SelectItem>
             <SelectItem value="any">With Any Upsell</SelectItem>
             <SelectItem value="reputation">Reputation Only</SelectItem>
             <SelectItem value="gms">GMS Only</SelectItem>
