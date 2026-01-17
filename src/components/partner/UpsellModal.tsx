@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Laptop, QrCode, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +20,7 @@ interface UpsellModalProps {
   listingId: string;
   garageName: string;
   garageGin: string;
+  preselectedService?: 'reputation' | 'gms';
   onUpsellConfirm: (listingId: string, reputationSold: boolean, gmsSold: boolean, paymentIds: { reputation?: string; gms?: string }, paymentProofUrl?: string) => void;
 }
 
@@ -36,6 +37,7 @@ export function UpsellModal({
   listingId, 
   garageName, 
   garageGin,
+  preselectedService,
   onUpsellConfirm 
 }: UpsellModalProps) {
   const [reputationSelected, setReputationSelected] = useState(false);
@@ -44,6 +46,19 @@ export function UpsellModal({
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+
+  // Pre-select service when modal opens based on which button was clicked
+  useEffect(() => {
+    if (open && preselectedService) {
+      if (preselectedService === 'reputation') {
+        setReputationSelected(true);
+        setGmsSelected(false);
+      } else if (preselectedService === 'gms') {
+        setGmsSelected(true);
+        setReputationSelected(false);
+      }
+    }
+  }, [open, preselectedService]);
 
   const getAmountToCollect = () => {
     if (reputationSelected && gmsSelected) return COMBINED_PRICE;

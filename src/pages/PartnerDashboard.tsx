@@ -119,6 +119,7 @@ export default function PartnerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [statDialog, setStatDialog] = useState<StatDialogType>(null);
   const [selectedListing, setSelectedListing] = useState<PartnerListing | null>(null);
+  const [selectedUpsellType, setSelectedUpsellType] = useState<'reputation' | 'gms' | undefined>(undefined);
   
   // Modal states
   const [showStartTask, setShowStartTask] = useState(false);
@@ -231,22 +232,27 @@ export default function PartnerDashboard() {
     paymentIds: { reputation?: string; gms?: string },
     paymentProofUrl?: string
   ) => {
+    console.log("=== UPSELL SUBMISSION STARTED ===");
+    console.log("Listing ID:", listingId);
+    console.log("Reputation Sold:", reputationSold);
+    console.log("GMS Sold:", gmsSold);
+    console.log("Payment Proof URL:", paymentProofUrl);
+
     try {
-      const updates: Record<string, any> = {
-        // Set status to pending verification when upsell is submitted
-        status: 'under_review'
-      };
+      const updates: Record<string, any> = {};
       
       if (reputationSold) {
         updates.reputation_upsell = true;
         updates.reputation_earning = 450;
         updates.reputation_payment_id = paymentIds.reputation;
+        updates.reputation_verified = false; // Pending admin verification
       }
       
       if (gmsSold) {
         updates.gms_upsell = true;
         updates.gms_earning = 1800;
         updates.gms_payment_id = paymentIds.gms;
+        updates.gms_verified = false; // Pending admin verification
       }
 
       // Store payment proof URL in dedicated column
@@ -254,7 +260,7 @@ export default function PartnerDashboard() {
         updates.payment_proof_url = paymentProofUrl;
       }
       
-      // Calculate new total
+      // Calculate new total (potential earnings - will be credited after verification)
       const listing = listings.find(l => l.id === listingId);
       if (listing) {
         const baseEarning = listing.base_earning || 0;
@@ -263,10 +269,15 @@ export default function PartnerDashboard() {
         updates.total_earning = baseEarning + repEarning + gmsEarning;
       }
 
-      const { error } = await supabase
+      console.log("Updates to apply:", updates);
+
+      const { data, error } = await supabase
         .from("partner_listings")
         .update(updates)
-        .eq("id", listingId);
+        .eq("id", listingId)
+        .select();
+
+      console.log("Update result:", { data, error });
 
       if (error) throw error;
 
@@ -799,8 +810,9 @@ export default function PartnerDashboard() {
             <MyListingsSection
               listings={listings}
               onStartTask={() => setShowStartTask(true)}
-              onUpsell={(listing) => {
+              onUpsell={(listing, upsellType) => {
                 setSelectedListing(listing);
+                setSelectedUpsellType(upsellType);
                 setShowUpsell(true);
               }}
               onDispute={(listing) => {
@@ -1017,10 +1029,14 @@ export default function PartnerDashboard() {
         <>
           <UpsellModal
             open={showUpsell}
-            onOpenChange={setShowUpsell}
+            onOpenChange={(open) => {
+              setShowUpsell(open);
+              if (!open) setSelectedUpsellType(undefined);
+            }}
             listingId={selectedListing.id}
             garageName={selectedListing.garages?.name || "Unknown Garage"}
             garageGin={selectedListing.gin || ""}
+            preselectedService={selectedUpsellType}
             onUpsellConfirm={handleUpsellConfirm}
           />
           <DisputeModal
