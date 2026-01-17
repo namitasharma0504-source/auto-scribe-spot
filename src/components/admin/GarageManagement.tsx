@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { 
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
+import {
   Building2, 
   Search, 
   RefreshCw,
@@ -610,6 +612,9 @@ export function GarageManagement() {
     });
   }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection]);
 
+  // Pagination
+  const pagination = usePagination({ data: filteredGarages, itemsPerPage: 20 });
+
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
@@ -919,7 +924,7 @@ export function GarageManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredGarages.map((garage) => (
+                      {pagination.paginatedData.map((garage) => (
                         <TableRow 
                           key={garage.id} 
                           className="cursor-pointer hover:bg-muted/50"

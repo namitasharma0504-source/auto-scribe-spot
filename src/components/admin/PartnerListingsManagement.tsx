@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { 
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
+import {
   Search, 
   RefreshCw,
   CheckCircle,
@@ -446,6 +448,9 @@ export function PartnerListingsManagement() {
     
     return matchesSearch && matchesStatus && matchesPayout && matchesUpsell;
   });
+
+  // Pagination
+  const pagination = usePagination({ data: filteredListings, itemsPerPage: 20 });
   
   // Count pending upsell verifications
   const pendingUpsellCount = listings.filter(l => 
@@ -634,7 +639,7 @@ export function PartnerListingsManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredListings.map((listing) => {
+                  {pagination.paginatedData.map((listing) => {
                     // Calculate verified total payout
                     let verifiedPayout = 0;
                     if (listing.status === "approved") verifiedPayout += 20;
@@ -799,6 +804,16 @@ export function PartnerListingsManagement() {
                   })}
                 </TableBody>
               </Table>
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                startIndex={pagination.startIndex}
+                endIndex={pagination.endIndex}
+                totalItems={pagination.totalItems}
+                itemsPerPage={pagination.itemsPerPage}
+                onPageChange={pagination.goToPage}
+                onItemsPerPageChange={pagination.setItemsPerPage}
+              />
             </div>
           )}
         </CardContent>
