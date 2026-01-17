@@ -22,8 +22,10 @@ import {
   Edit,
   Power,
   PowerOff,
-  MapPin
+  MapPin,
+  Building
 } from "lucide-react";
+import { indiaStates } from "@/data/indiaLocations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +122,7 @@ export function EnhancedUserManagement() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
   const [newUserState, setNewUserState] = useState("");
+  const [newUserCity, setNewUserCity] = useState("");
   const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -391,6 +394,7 @@ export function EnhancedUserManagement() {
       setNewUserPassword("");
       setNewUserName("");
       setNewUserState("");
+      setNewUserCity("");
       setNewUserRole("admin");
       fetchUsers();
     } catch (error: any) {
@@ -657,17 +661,37 @@ export function EnhancedUserManagement() {
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="state"
-                        placeholder="e.g. Maharashtra, Delhi"
-                        value={newUserState}
-                        onChange={(e) => setNewUserState(e.target.value)}
-                        className="pl-10"
-                      />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      <Select value={newUserState} onValueChange={setNewUserState}>
+                        <SelectTrigger>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-muted-foreground" />
+                            <SelectValue placeholder="Select State" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {indiaStates.map((state) => (
+                            <SelectItem key={state.value} value={state.label}>
+                              {state.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <div className="relative">
+                        <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="city"
+                          placeholder="Enter city"
+                          value={newUserCity}
+                          onChange={(e) => setNewUserCity(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-2">
