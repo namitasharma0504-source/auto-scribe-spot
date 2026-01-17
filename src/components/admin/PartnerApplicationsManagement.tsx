@@ -324,9 +324,19 @@ export const PartnerApplicationsManagement = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {pendingApplications.map((app) => (
+              {pendingPagination.paginatedData.map((app) => (
                 <ApplicationCard key={app.id} application={app} />
               ))}
+              <PaginationControls
+                currentPage={pendingPagination.currentPage}
+                totalPages={pendingPagination.totalPages}
+                startIndex={pendingPagination.startIndex}
+                endIndex={pendingPagination.endIndex}
+                totalItems={pendingPagination.totalItems}
+                itemsPerPage={pendingPagination.itemsPerPage}
+                onPageChange={pendingPagination.goToPage}
+                onItemsPerPageChange={pendingPagination.setItemsPerPage}
+              />
             </div>
           )}
         </TabsContent>
@@ -341,9 +351,19 @@ export const PartnerApplicationsManagement = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {approvedApplications.map((app) => (
+              {approvedPagination.paginatedData.map((app) => (
                 <ApplicationCard key={app.id} application={app} />
               ))}
+              <PaginationControls
+                currentPage={approvedPagination.currentPage}
+                totalPages={approvedPagination.totalPages}
+                startIndex={approvedPagination.startIndex}
+                endIndex={approvedPagination.endIndex}
+                totalItems={approvedPagination.totalItems}
+                itemsPerPage={approvedPagination.itemsPerPage}
+                onPageChange={approvedPagination.goToPage}
+                onItemsPerPageChange={approvedPagination.setItemsPerPage}
+              />
             </div>
           )}
         </TabsContent>
@@ -358,9 +378,19 @@ export const PartnerApplicationsManagement = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {rejectedApplications.map((app) => (
+              {rejectedPagination.paginatedData.map((app) => (
                 <ApplicationCard key={app.id} application={app} />
               ))}
+              <PaginationControls
+                currentPage={rejectedPagination.currentPage}
+                totalPages={rejectedPagination.totalPages}
+                startIndex={rejectedPagination.startIndex}
+                endIndex={rejectedPagination.endIndex}
+                totalItems={rejectedPagination.totalItems}
+                itemsPerPage={rejectedPagination.itemsPerPage}
+                onPageChange={rejectedPagination.goToPage}
+                onItemsPerPageChange={rejectedPagination.setItemsPerPage}
+              />
             </div>
           )}
         </TabsContent>

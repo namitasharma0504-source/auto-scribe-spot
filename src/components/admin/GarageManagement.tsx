@@ -1079,6 +1079,16 @@ export function GarageManagement() {
                       ))}
                     </TableBody>
                   </Table>
+                  <PaginationControls
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    startIndex={pagination.startIndex}
+                    endIndex={pagination.endIndex}
+                    totalItems={pagination.totalItems}
+                    itemsPerPage={pagination.itemsPerPage}
+                    onPageChange={pagination.goToPage}
+                    onItemsPerPageChange={pagination.setItemsPerPage}
+                  />
                 </div>
               )}
             </CardContent>
