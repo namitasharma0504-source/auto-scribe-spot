@@ -232,48 +232,48 @@ export default function PartnerDashboard() {
     paymentIds: { reputation?: string; gms?: string },
     paymentProofUrl?: string
   ) => {
-    console.log("=== UPSELL SUBMISSION STARTED ===");
+    console.log("=== UPSELL SUBMISSION VIA EDGE FUNCTION ===");
     console.log("Listing ID:", listingId);
     console.log("Reputation Sold:", reputationSold);
     console.log("GMS Sold:", gmsSold);
     console.log("Payment Proof URL:", paymentProofUrl);
 
+    // Validate inputs before sending
+    if (!listingId) {
+      toast.error("Missing listing ID");
+      return;
+    }
+
+    if (!reputationSold && !gmsSold) {
+      toast.error("At least one upsell must be selected");
+      return;
+    }
+
+    if (!paymentProofUrl) {
+      toast.error("Payment proof is required");
+      return;
+    }
+
     try {
-      const updates: Record<string, any> = {};
-      
-      if (reputationSold) {
-        updates.reputation_upsell = true;
-        updates.reputation_payment_id = paymentIds.reputation;
-        updates.reputation_verified = false; // Pending admin verification
-        // Note: reputation_earning stays at 0 until admin verifies
+      // Use edge function to avoid any issues with generated columns
+      const { data, error } = await supabase.functions.invoke("partner-submit-upsell", {
+        body: {
+          listingId,
+          reputationSold,
+          gmsSold,
+          paymentProofPath: paymentProofUrl,
+        },
+      });
+
+      console.log("Edge function response:", { data, error });
+
+      if (error) {
+        throw new Error(error.message || "Failed to submit upsell");
       }
-      
-      if (gmsSold) {
-        updates.gms_upsell = true;
-        updates.gms_payment_id = paymentIds.gms;
-        updates.gms_verified = false; // Pending admin verification
-        // Note: gms_earning stays at 0 until admin verifies
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
-
-      // Store payment proof URL in dedicated column
-      if (paymentProofUrl) {
-        updates.payment_proof_url = paymentProofUrl;
-      }
-      
-      // Note: total_earning is a generated column - we don't update it directly
-      // It will automatically reflect the sum of base_earning + reputation_earning + gms_earning
-
-      console.log("Updates to apply:", updates);
-
-      const { data, error } = await supabase
-        .from("partner_listings")
-        .update(updates)
-        .eq("id", listingId)
-        .select();
-
-      console.log("Update result:", { data, error });
-
-      if (error) throw error;
 
       toast.success("Upsell submitted for verification! You'll earn commission once admin approves the payment.");
       checkPartnerAndFetchData();
