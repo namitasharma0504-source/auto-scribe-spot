@@ -877,6 +877,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
+          state: string | null
           total_points: number | null
           updated_at: string
           user_id: string
@@ -887,6 +888,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          state?: string | null
           total_points?: number | null
           updated_at?: string
           user_id: string
@@ -897,6 +899,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          state?: string | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
