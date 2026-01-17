@@ -481,40 +481,34 @@ export function MyListingsSection({
           </div>
         </div>
 
-        {/* Compact Stats Summary */}
-        <div className="grid grid-cols-6 gap-2">
-          <div className="p-2 rounded-lg bg-muted/50 text-center">
-            <p className="text-sm font-bold">{totalCount}</p>
-            <p className="text-[10px] text-muted-foreground">Total</p>
+        {/* Compact Stats Summary - Single Row */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="px-3 py-1 rounded-full bg-muted/50 flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold">{totalCount}</span>
+            <span className="text-[10px] text-muted-foreground">Total</span>
           </div>
-          <div className="p-2 rounded-lg bg-green-500/10 text-center">
-            <p className="text-sm font-bold text-green-600">{approvedCount}</p>
-            <p className="text-[10px] text-muted-foreground">Approved</p>
+          <div className="px-3 py-1 rounded-full bg-green-500/10 flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold text-green-600">{approvedCount}</span>
+            <span className="text-[10px] text-green-600">Approved</span>
           </div>
-          <div className="p-2 rounded-lg bg-yellow-500/10 text-center">
-            <p className="text-sm font-bold text-yellow-600">{pendingCount}</p>
-            <p className="text-[10px] text-muted-foreground">Pending</p>
+          <div className="px-3 py-1 rounded-full bg-yellow-500/10 flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold text-yellow-600">{pendingCount}</span>
+            <span className="text-[10px] text-yellow-600">Pending</span>
           </div>
-          <div className="p-2 rounded-lg bg-red-500/10 text-center">
-            <p className="text-sm font-bold text-red-600">{rejectedCount}</p>
-            <p className="text-[10px] text-muted-foreground">Rejected</p>
+          <div className="px-3 py-1 rounded-full bg-red-500/10 flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold text-red-600">{rejectedCount}</span>
+            <span className="text-[10px] text-red-600">Rejected</span>
           </div>
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-center">
-            <p className="text-sm font-bold text-emerald-600">{paidCount}</p>
-            <p className="text-[10px] text-muted-foreground">Paid</p>
-          </div>
-          <div className="p-2 rounded-lg bg-purple-500/10 text-center">
-            <p className="text-sm font-bold text-purple-600">₹{totalEarnings}</p>
-            <p className="text-[10px] text-muted-foreground">Earned</p>
+          <div className="px-3 py-1 rounded-full bg-purple-500/10 flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold text-purple-600">₹{totalEarnings}</span>
+            <span className="text-[10px] text-purple-600">Earned</span>
           </div>
         </div>
 
-        {/* Color Legend */}
-        <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground px-1">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Verified/Active</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Pending Approval</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Unverified</span>
-        </div>
+        {/* Click hint for table */}
+        <p className="text-[10px] text-muted-foreground text-center">
+          👆 Click any row below to view or edit details
+        </p>
 
         {/* Listings Table - Scrollable */}
         <div className="flex-1 min-h-0 overflow-auto">
@@ -582,7 +576,7 @@ export function MyListingsSection({
                     return (
                       <TableRow 
                         key={listing.id} 
-                        className="hover:bg-muted/20 cursor-pointer"
+                        className="hover:bg-purple-50 dark:hover:bg-purple-950/20 cursor-pointer transition-colors border-l-2 border-l-transparent hover:border-l-purple-500"
                         onClick={() => handleOpenDetail(listing)}
                       >
                         <TableCell className="py-2 text-[10px] text-muted-foreground whitespace-nowrap">
