@@ -4,6 +4,8 @@ import {
   Plus, Play, Flag, CheckCircle, XCircle, Clock,
   Database, Star, Laptop, IndianRupee, Eye, Edit, MapPin, Phone, X
 } from "lucide-react";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,7 +161,8 @@ export function MyListingsSection({
     });
   }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter]);
 
-  // Open listing detail
+  // Pagination
+  const pagination = usePagination({ data: filteredListings, itemsPerPage: 10 });
   const handleOpenDetail = (listing: PartnerListing) => {
     setSelectedListing(listing);
     setEditName(listing.garages?.name || "");
@@ -569,7 +572,7 @@ export function MyListingsSection({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredListings.slice(0, 10).map((listing) => {
+                  {pagination.paginatedData.map((listing) => {
                     const canDispute = listing.status === "rejected";
                     const totalPayout = calculateTotalPayout(listing);
 
@@ -622,11 +625,16 @@ export function MyListingsSection({
                   })}
                 </TableBody>
               </Table>
-              {filteredListings.length > 10 && (
-                <div className="p-2 text-center text-xs text-muted-foreground bg-muted/30 border-t">
-                  Showing 10 of {filteredListings.length} listings
-                </div>
-              )}
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                startIndex={pagination.startIndex}
+                endIndex={pagination.endIndex}
+                totalItems={pagination.totalItems}
+                itemsPerPage={pagination.itemsPerPage}
+                onPageChange={pagination.goToPage}
+                onItemsPerPageChange={pagination.setItemsPerPage}
+              />
             </div>
           )}
         </div>

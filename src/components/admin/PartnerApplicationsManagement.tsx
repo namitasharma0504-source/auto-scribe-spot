@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -143,6 +145,11 @@ export const PartnerApplicationsManagement = () => {
   const pendingApplications = filteredApplications.filter(a => a.status === "pending");
   const approvedApplications = filteredApplications.filter(a => a.status === "approved");
   const rejectedApplications = filteredApplications.filter(a => a.status === "rejected");
+
+  // Pagination for each tab
+  const pendingPagination = usePagination({ data: pendingApplications, itemsPerPage: 10 });
+  const approvedPagination = usePagination({ data: approvedApplications, itemsPerPage: 10 });
+  const rejectedPagination = usePagination({ data: rejectedApplications, itemsPerPage: 10 });
 
   const stats = {
     total: applications.length,
