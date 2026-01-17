@@ -243,16 +243,16 @@ export default function PartnerDashboard() {
       
       if (reputationSold) {
         updates.reputation_upsell = true;
-        updates.reputation_earning = 450;
         updates.reputation_payment_id = paymentIds.reputation;
         updates.reputation_verified = false; // Pending admin verification
+        // Note: reputation_earning stays at 0 until admin verifies
       }
       
       if (gmsSold) {
         updates.gms_upsell = true;
-        updates.gms_earning = 1800;
         updates.gms_payment_id = paymentIds.gms;
         updates.gms_verified = false; // Pending admin verification
+        // Note: gms_earning stays at 0 until admin verifies
       }
 
       // Store payment proof URL in dedicated column
@@ -260,14 +260,8 @@ export default function PartnerDashboard() {
         updates.payment_proof_url = paymentProofUrl;
       }
       
-      // Calculate new total (potential earnings - will be credited after verification)
-      const listing = listings.find(l => l.id === listingId);
-      if (listing) {
-        const baseEarning = listing.base_earning || 0;
-        const repEarning = reputationSold ? 450 : (listing.reputation_earning || 0);
-        const gmsEarning = gmsSold ? 1800 : (listing.gms_earning || 0);
-        updates.total_earning = baseEarning + repEarning + gmsEarning;
-      }
+      // Note: total_earning is a generated column - we don't update it directly
+      // It will automatically reflect the sum of base_earning + reputation_earning + gms_earning
 
       console.log("Updates to apply:", updates);
 
