@@ -44,6 +44,7 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface PartnerListing {
   id: string;
@@ -102,6 +103,7 @@ export function MyListingsSection({
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [statFilter, setStatFilter] = useState<string>("all");
   
   // Detail/Edit dialog state
   const [selectedListing, setSelectedListing] = useState<PartnerListing | null>(null);
@@ -157,9 +159,21 @@ export function MyListingsSection({
         }
       }
 
-      return searchMatch && statusMatch && categoryMatch && dateMatch && payoutMatch;
+      // Stat filter (from clickable cards)
+      let statMatch = true;
+      if (statFilter === "approved") {
+        statMatch = listing.status === "approved";
+      } else if (statFilter === "pending") {
+        statMatch = listing.status === "pending" || !listing.status;
+      } else if (statFilter === "rejected") {
+        statMatch = listing.status === "rejected";
+      } else if (statFilter === "paid") {
+        statMatch = listing.status === "approved" && listing.payout_status === "paid";
+      }
+
+      return searchMatch && statusMatch && categoryMatch && dateMatch && payoutMatch && statMatch;
     });
-  }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter]);
+  }, [listings, searchQuery, statusFilter, categoryFilter, dateRange, payoutFilter, statFilter]);
 
   // Pagination
   const pagination = usePagination({ data: filteredListings, itemsPerPage: 10 });
@@ -338,13 +352,13 @@ export function MyListingsSection({
     );
   };
 
-  // Stats
-  const totalCount = filteredListings.length;
-  const approvedCount = filteredListings.filter(l => l.status === "approved").length;
-  const pendingCount = filteredListings.filter(l => l.status === "pending" || !l.status).length;
-  const rejectedCount = filteredListings.filter(l => l.status === "rejected").length;
-  const paidCount = filteredListings.filter(l => l.status === "approved" && l.payout_status === "paid").length;
-  const totalEarnings = filteredListings.reduce((sum, l) => sum + calculateTotalPayout(l), 0);
+  // Stats - use original listings for counts
+  const totalCount = listings.length;
+  const approvedCount = listings.filter(l => l.status === "approved").length;
+  const pendingCount = listings.filter(l => l.status === "pending" || !l.status).length;
+  const rejectedCount = listings.filter(l => l.status === "rejected").length;
+  const paidCount = listings.filter(l => l.status === "approved" && l.payout_status === "paid").length;
+  const totalEarnings = listings.reduce((sum, l) => sum + calculateTotalPayout(l), 0);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -352,9 +366,10 @@ export function MyListingsSection({
     setCategoryFilter("all");
     setPayoutFilter("all");
     setDateRange(undefined);
+    setStatFilter("all");
   };
 
-  const hasActiveFilters = searchQuery || statusFilter !== "all" || categoryFilter !== "all" || payoutFilter !== "all" || dateRange;
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || categoryFilter !== "all" || payoutFilter !== "all" || dateRange || statFilter !== "all";
 
   return (
     <Card className="h-full flex flex-col">
@@ -484,24 +499,58 @@ export function MyListingsSection({
           </div>
         </div>
 
-        {/* Compact Stats Summary - Single Row */}
+        {/* Compact Stats Summary - Clickable Pills */}
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <div className="px-3 py-1 rounded-full bg-muted/50 flex items-center gap-1.5 whitespace-nowrap">
+          <button 
+            onClick={() => setStatFilter("all")}
+            className={cn(
+              "px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all",
+              statFilter === "all" ? "bg-muted ring-2 ring-primary" : "bg-muted/50 hover:bg-muted"
+            )}
+          >
             <span className="text-xs font-bold">{totalCount}</span>
             <span className="text-[10px] text-muted-foreground">Total</span>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-green-500/10 flex items-center gap-1.5 whitespace-nowrap">
+          </button>
+          <button 
+            onClick={() => setStatFilter(statFilter === "approved" ? "all" : "approved")}
+            className={cn(
+              "px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all",
+              statFilter === "approved" ? "bg-green-500/20 ring-2 ring-green-500" : "bg-green-500/10 hover:bg-green-500/20"
+            )}
+          >
             <span className="text-xs font-bold text-green-600">{approvedCount}</span>
             <span className="text-[10px] text-green-600">Approved</span>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-yellow-500/10 flex items-center gap-1.5 whitespace-nowrap">
+          </button>
+          <button 
+            onClick={() => setStatFilter(statFilter === "pending" ? "all" : "pending")}
+            className={cn(
+              "px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all",
+              statFilter === "pending" ? "bg-yellow-500/20 ring-2 ring-yellow-500" : "bg-yellow-500/10 hover:bg-yellow-500/20"
+            )}
+          >
             <span className="text-xs font-bold text-yellow-600">{pendingCount}</span>
             <span className="text-[10px] text-yellow-600">Pending</span>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-red-500/10 flex items-center gap-1.5 whitespace-nowrap">
+          </button>
+          <button 
+            onClick={() => setStatFilter(statFilter === "rejected" ? "all" : "rejected")}
+            className={cn(
+              "px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all",
+              statFilter === "rejected" ? "bg-red-500/20 ring-2 ring-red-500" : "bg-red-500/10 hover:bg-red-500/20"
+            )}
+          >
             <span className="text-xs font-bold text-red-600">{rejectedCount}</span>
             <span className="text-[10px] text-red-600">Rejected</span>
-          </div>
+          </button>
+          <button 
+            onClick={() => setStatFilter(statFilter === "paid" ? "all" : "paid")}
+            className={cn(
+              "px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all",
+              statFilter === "paid" ? "bg-purple-500/20 ring-2 ring-purple-500" : "bg-purple-500/10 hover:bg-purple-500/20"
+            )}
+          >
+            <span className="text-xs font-bold text-purple-600">{paidCount}</span>
+            <span className="text-[10px] text-purple-600">Paid</span>
+          </button>
           <div className="px-3 py-1 rounded-full bg-purple-500/10 flex items-center gap-1.5 whitespace-nowrap">
             <span className="text-xs font-bold text-purple-600">₹{totalEarnings}</span>
             <span className="text-[10px] text-purple-600">Earned</span>

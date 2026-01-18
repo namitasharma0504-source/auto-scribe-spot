@@ -140,6 +140,7 @@ export function GarageManagement() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
+  const [statFilter, setStatFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
@@ -593,7 +594,17 @@ export function GarageManagement() {
 
       const matchesPartner = partnerFilter === "all" || garage.partner_id === partnerFilter;
       
-      return matchesSearch && matchesListingType && matchesPartner;
+      // Stat filter
+      let matchesStat = true;
+      if (statFilter === "pending") {
+        matchesStat = garage.is_approved === false;
+      } else if (statFilter === "verified") {
+        matchesStat = garage.is_verified === true;
+      } else if (statFilter === "with_reviews") {
+        matchesStat = (garage.review_count || 0) > 0;
+      }
+      
+      return matchesSearch && matchesListingType && matchesPartner && matchesStat;
     });
 
     // Sort the results
@@ -610,7 +621,7 @@ export function GarageManagement() {
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-  }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection]);
+  }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection, statFilter]);
 
   // Pagination
   const pagination = usePagination({ data: filteredGarages, itemsPerPage: 20 });
@@ -730,9 +741,15 @@ export function GarageManagement() {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats - Clickable Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                statFilter === "all" && "ring-2 ring-primary"
+              )}
+              onClick={() => setStatFilter("all")}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -743,7 +760,13 @@ export function GarageManagement() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-yellow-500/30 bg-yellow-500/5">
+            <Card 
+              className={cn(
+                "border-yellow-500/30 bg-yellow-500/5 cursor-pointer transition-all hover:shadow-md",
+                statFilter === "pending" && "ring-2 ring-yellow-500"
+              )}
+              onClick={() => setStatFilter(statFilter === "pending" ? "all" : "pending")}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -754,7 +777,13 @@ export function GarageManagement() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                statFilter === "verified" && "ring-2 ring-green-500"
+              )}
+              onClick={() => setStatFilter(statFilter === "verified" ? "all" : "verified")}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -765,7 +794,13 @@ export function GarageManagement() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                statFilter === "with_reviews" && "ring-2 ring-blue-500"
+              )}
+              onClick={() => setStatFilter(statFilter === "with_reviews" ? "all" : "with_reviews")}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -777,6 +812,19 @@ export function GarageManagement() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Active filter indicator */}
+          {statFilter !== "all" && (
+            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+              <span className="text-sm text-muted-foreground">Filtering by:</span>
+              <Badge variant="secondary" className="gap-1">
+                {statFilter === "pending" && "Pending Approval"}
+                {statFilter === "verified" && "Verified"}
+                {statFilter === "with_reviews" && "With Reviews"}
+                <button onClick={() => setStatFilter("all")} className="ml-1 hover:text-destructive">×</button>
+              </Badge>
+            </div>
+          )}
 
           {/* Pending Garages Section */}
           {garages.filter(g => g.is_approved === false).length > 0 && (
