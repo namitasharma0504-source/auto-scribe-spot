@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface GaragePhoto {
   id: string;
@@ -99,6 +100,7 @@ export function PartnerListingsManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
   const [upsellFilter, setUpsellFilter] = useState<string>("all");
+  const [statFilter, setStatFilter] = useState<string>("all");
   
   // Rejection dialog
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -446,7 +448,19 @@ export function PartnerListingsManagement() {
         (listing.gms_upsell === true && listing.gms_verified === false);
     }
     
-    return matchesSearch && matchesStatus && matchesPayout && matchesUpsell;
+    // Stat filter (from clickable cards)
+    let matchesStat = true;
+    if (statFilter === "pending") {
+      matchesStat = !listing.status || listing.status === "pending";
+    } else if (statFilter === "approved") {
+      matchesStat = listing.status === "approved";
+    } else if (statFilter === "rejected") {
+      matchesStat = listing.status === "rejected";
+    } else if (statFilter === "pending_payout") {
+      matchesStat = listing.status === "approved" && listing.payout_status !== "paid";
+    }
+    
+    return matchesSearch && matchesStatus && matchesPayout && matchesUpsell && matchesStat;
   });
 
   // Pagination
@@ -473,9 +487,15 @@ export function PartnerListingsManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
+      {/* Stats - Clickable Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
+        <Card 
+          className={cn(
+            "border-yellow-500/30 bg-yellow-500/5 cursor-pointer transition-all hover:shadow-md",
+            statFilter === "pending" && "ring-2 ring-yellow-500"
+          )}
+          onClick={() => setStatFilter(statFilter === "pending" ? "all" : "pending")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -486,7 +506,13 @@ export function PartnerListingsManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-green-500/30 bg-green-500/5">
+        <Card 
+          className={cn(
+            "border-green-500/30 bg-green-500/5 cursor-pointer transition-all hover:shadow-md",
+            statFilter === "approved" && "ring-2 ring-green-500"
+          )}
+          onClick={() => setStatFilter(statFilter === "approved" ? "all" : "approved")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -497,7 +523,13 @@ export function PartnerListingsManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-500/30 bg-red-500/5">
+        <Card 
+          className={cn(
+            "border-red-500/30 bg-red-500/5 cursor-pointer transition-all hover:shadow-md",
+            statFilter === "rejected" && "ring-2 ring-red-500"
+          )}
+          onClick={() => setStatFilter(statFilter === "rejected" ? "all" : "rejected")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -508,7 +540,13 @@ export function PartnerListingsManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <Card 
+          className={cn(
+            "border-emerald-500/30 bg-emerald-500/5 cursor-pointer transition-all hover:shadow-md",
+            statFilter === "all" && "ring-2 ring-emerald-500"
+          )}
+          onClick={() => setStatFilter("all")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -519,7 +557,13 @@ export function PartnerListingsManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-orange-500/30 bg-orange-500/5">
+        <Card 
+          className={cn(
+            "border-orange-500/30 bg-orange-500/5 cursor-pointer transition-all hover:shadow-md",
+            statFilter === "pending_payout" && "ring-2 ring-orange-500"
+          )}
+          onClick={() => setStatFilter(statFilter === "pending_payout" ? "all" : "pending_payout")}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -531,6 +575,20 @@ export function PartnerListingsManagement() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Active filter indicator */}
+      {statFilter !== "all" && (
+        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+          <span className="text-sm text-muted-foreground">Filtering by:</span>
+          <Badge variant="secondary" className="gap-1">
+            {statFilter === "pending" && "Pending Review"}
+            {statFilter === "approved" && "Approved"}
+            {statFilter === "rejected" && "Rejected"}
+            {statFilter === "pending_payout" && "Pending Payout"}
+            <button onClick={() => setStatFilter("all")} className="ml-1 hover:text-destructive">×</button>
+          </Badge>
+        </div>
+      )}
       
       {/* Upsell Summary */}
       <div className="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
