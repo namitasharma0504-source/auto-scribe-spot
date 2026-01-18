@@ -187,7 +187,7 @@ export default function PartnerDashboard() {
         .from("partner_listings")
         .select(`
           *,
-          garages:listing_id (name, city, address, phone, state, services)
+          garages:listing_id (name, city, address, phone, state, services, photo_url)
         `)
         .eq("partner_id", partnerData.id)
         .order("submitted_at", { ascending: false });
