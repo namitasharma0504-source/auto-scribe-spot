@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { 
   Building2, Search, Calendar as CalendarIcon, 
   Plus, Play, Flag, CheckCircle, XCircle, Clock,
-  Database, Star, Laptop, IndianRupee, Eye, Edit, MapPin, Phone, X
+  Database, Star, Laptop, IndianRupee, Eye, Edit, MapPin, Phone, X,
+  Image, Upload, Loader2, Trash2
 } from "lucide-react";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/PaginationControls";
@@ -45,6 +46,8 @@ import { DateRange } from "react-day-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { GaragePhotoGallery } from "@/components/GaragePhotoGallery";
+import defaultPlaceholder from "@/assets/default-garage-placeholder.png";
 
 interface PartnerListing {
   id: string;
@@ -72,6 +75,7 @@ interface PartnerListing {
     phone: string | null;
     state: string | null;
     services: string[] | null;
+    photo_url?: string | null;
   } | null;
 }
 
@@ -110,6 +114,12 @@ export function MyListingsSection({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Photo viewing/uploading state
+  const [garagePhotos, setGaragePhotos] = useState<string[]>([]);
+  const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -177,7 +187,33 @@ export function MyListingsSection({
 
   // Pagination
   const pagination = usePagination({ data: filteredListings, itemsPerPage: 10 });
-  const handleOpenDetail = (listing: PartnerListing) => {
+  
+  // Fetch photos for a garage
+  const fetchGaragePhotos = async (garageId: string, mainPhotoUrl?: string | null) => {
+    try {
+      const { data } = await supabase
+        .from("garage_photos")
+        .select("photo_url")
+        .eq("garage_id", garageId)
+        .order("display_order", { ascending: true });
+      
+      const photos: string[] = [];
+      if (mainPhotoUrl) photos.push(mainPhotoUrl);
+      if (data) {
+        data.forEach(p => {
+          if (p.photo_url && !photos.includes(p.photo_url)) {
+            photos.push(p.photo_url);
+          }
+        });
+      }
+      setGaragePhotos(photos);
+    } catch (error) {
+      console.error("Error fetching garage photos:", error);
+      if (mainPhotoUrl) setGaragePhotos([mainPhotoUrl]);
+    }
+  };
+  
+  const handleOpenDetail = async (listing: PartnerListing) => {
     setSelectedListing(listing);
     setEditName(listing.garages?.name || "");
     setEditPhone(listing.garages?.phone || "");
@@ -185,6 +221,68 @@ export function MyListingsSection({
     setEditCity(listing.garages?.city || "");
     setIsEditing(false);
     setIsDetailOpen(true);
+    
+    // Fetch photos for this garage
+    if (listing.listing_id) {
+      await fetchGaragePhotos(listing.listing_id, listing.garages?.photo_url);
+    }
+  };
+
+  // Handle photo upload
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedListing?.listing_id) return;
+    
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+    
+    setIsUploadingPhoto(true);
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 8);
+      const ext = file.name.split('.').pop();
+      const fileName = `garage-listings/${timestamp}-${randomStr}.${ext}`;
+      
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("garage-photos")
+        .upload(fileName, file, { upsert: false });
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("garage-photos")
+        .getPublicUrl(fileName);
+        
+      const newPhotoUrl = urlData.publicUrl;
+      
+      // Update garage photo_url
+      const { error: updateError } = await supabase
+        .from("garages")
+        .update({ photo_url: newPhotoUrl })
+        .eq("id", selectedListing.listing_id);
+        
+      if (updateError) throw updateError;
+      
+      toast.success("Photo uploaded successfully!");
+      setGaragePhotos(prev => [newPhotoUrl, ...prev.filter(p => p !== selectedListing.garages?.photo_url)]);
+      onListingsRefresh?.();
+    } catch (error: any) {
+      console.error("Error uploading photo:", error);
+      toast.error(error.message || "Failed to upload photo");
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
   };
 
   // Check if listing can be edited (only unverified listings)
@@ -691,7 +789,7 @@ export function MyListingsSection({
 
       {/* Listing Detail/Edit Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-purple-500" />
@@ -706,6 +804,78 @@ export function MyListingsSection({
           
           {selectedListing && (
             <div className="space-y-4">
+              {/* Photo Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-medium">Garage Photo</p>
+                  {garagePhotos.length > 1 && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {garagePhotos.length} photos
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
+                  {garagePhotos.length > 0 ? (
+                    <>
+                      <img 
+                        src={garagePhotos[0]} 
+                        alt={selectedListing.garages?.name || "Garage"} 
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => setIsPhotoGalleryOpen(true)}
+                      />
+                      {/* View Gallery Button */}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute bottom-2 right-2 h-7 text-xs gap-1 bg-background/90"
+                        onClick={() => setIsPhotoGalleryOpen(true)}
+                      >
+                        <Eye className="w-3 h-3" />
+                        View {garagePhotos.length > 1 ? `All (${garagePhotos.length})` : 'Photo'}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+                      <Image className="w-12 h-12 mb-2 opacity-50" />
+                      <p className="text-xs">No photo uploaded</p>
+                    </div>
+                  )}
+                  
+                  {/* Upload/Replace Button (only for unverified listings) */}
+                  {canEditListing(selectedListing) && (
+                    <div className="absolute top-2 right-2">
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 text-xs gap-1 bg-background/90"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={isUploadingPhoto}
+                      >
+                        {isUploadingPhoto ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3 h-3" />
+                            {garagePhotos.length > 0 ? 'Replace' : 'Upload'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               {/* Status Badge */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status:</span>
@@ -869,6 +1039,14 @@ export function MyListingsSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Photo Gallery Modal */}
+      <GaragePhotoGallery
+        photos={garagePhotos}
+        garageName={selectedListing?.garages?.name || "Garage"}
+        isOpen={isPhotoGalleryOpen}
+        onClose={() => setIsPhotoGalleryOpen(false)}
+      />
     </Card>
   );
 }
