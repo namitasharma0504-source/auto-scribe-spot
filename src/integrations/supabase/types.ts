@@ -545,6 +545,8 @@ export type Database = {
       partner_applications: {
         Row: {
           admin_notes: string | null
+          approved_partner: boolean | null
+          attendance: boolean | null
           city: string | null
           created_at: string
           education: string
@@ -564,6 +566,8 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          approved_partner?: boolean | null
+          attendance?: boolean | null
           city?: string | null
           created_at?: string
           education: string
@@ -583,6 +587,8 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          approved_partner?: boolean | null
+          attendance?: boolean | null
           city?: string | null
           created_at?: string
           education?: string
