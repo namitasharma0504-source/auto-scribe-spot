@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,8 @@ interface PartnerApplication {
   reviewed_at: string | null;
   webinar_slot: string | null;
   webinar_booked_at: string | null;
+  attendance: boolean | null;
+  approved_partner: boolean | null;
 }
 
 export const PartnerApplicationsManagement = () => {
@@ -120,6 +123,40 @@ export const PartnerApplicationsManagement = () => {
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleCheckboxUpdate = async (
+    id: string, 
+    field: "attendance" | "approved_partner", 
+    value: boolean
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("partner_applications")
+        .update({ [field]: value })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === id ? { ...app, [field]: value } : app
+        )
+      );
+
+      toast({
+        title: "Updated",
+        description: `${field === "attendance" ? "Attendance" : "Approved Partner"} status updated.`,
+      });
+    } catch (error: any) {
+      console.error("Error updating checkbox:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -201,7 +238,7 @@ export const PartnerApplicationsManagement = () => {
               {application.webinar_slot ? (
                 <Badge className="gap-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
                   <Video className="w-3 h-3" />
-                  Webinar: {application.webinar_slot === "2026-01-17" ? "17 Jan" : "18 Jan"}
+                  Webinar: {application.webinar_slot === "2026-01-24" ? "24 Jan" : "25 Jan"}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="gap-1 text-muted-foreground">
@@ -209,6 +246,46 @@ export const PartnerApplicationsManagement = () => {
                   No webinar booked
                 </Badge>
               )}
+            </div>
+
+            {/* Admin Checkboxes */}
+            <div className="flex flex-wrap gap-6 pt-2 border-t mt-2">
+              <div 
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  id={`attendance-${application.id}`}
+                  checked={application.attendance || false}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxUpdate(application.id, "attendance", checked as boolean)
+                  }
+                />
+                <label 
+                  htmlFor={`attendance-${application.id}`}
+                  className="text-sm font-medium cursor-pointer select-none"
+                >
+                  Attendance
+                </label>
+              </div>
+              <div 
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  id={`approved-partner-${application.id}`}
+                  checked={application.approved_partner || false}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxUpdate(application.id, "approved_partner", checked as boolean)
+                  }
+                />
+                <label 
+                  htmlFor={`approved-partner-${application.id}`}
+                  className="text-sm font-medium cursor-pointer select-none"
+                >
+                  Approved Partner
+                </label>
+              </div>
             </div>
           </div>
 
@@ -474,9 +551,9 @@ export const PartnerApplicationsManagement = () => {
                 {selectedApplication.webinar_slot ? (
                   <div>
                     <p className="font-medium text-sm text-purple-600">
-                      {selectedApplication.webinar_slot === "2026-01-17" 
-                        ? "Friday, 17th January 2026, 4-5 PM" 
-                        : "Saturday, 18th January 2026, 4-5 PM"}
+                      {selectedApplication.webinar_slot === "2026-01-24" 
+                        ? "Saturday, 24th January 2026, 4-5 PM" 
+                        : "Sunday, 25th January 2026, 4-5 PM"}
                     </p>
                     {selectedApplication.webinar_booked_at && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -493,6 +570,51 @@ export const PartnerApplicationsManagement = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4" />
                 Applied on {format(new Date(selectedApplication.created_at), "dd MMM yyyy, h:mm a")}
+              </div>
+
+              {/* Admin Checkboxes in Dialog */}
+              <div className="p-3 bg-muted/30 rounded-lg border">
+                <p className="text-sm font-medium mb-3">Admin Tracking</p>
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`dialog-attendance-${selectedApplication.id}`}
+                      checked={selectedApplication.attendance || false}
+                      onCheckedChange={(checked) => {
+                        handleCheckboxUpdate(selectedApplication.id, "attendance", checked as boolean);
+                        setSelectedApplication({
+                          ...selectedApplication,
+                          attendance: checked as boolean
+                        });
+                      }}
+                    />
+                    <label 
+                      htmlFor={`dialog-attendance-${selectedApplication.id}`}
+                      className="text-sm font-medium cursor-pointer select-none"
+                    >
+                      Attendance
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`dialog-approved-partner-${selectedApplication.id}`}
+                      checked={selectedApplication.approved_partner || false}
+                      onCheckedChange={(checked) => {
+                        handleCheckboxUpdate(selectedApplication.id, "approved_partner", checked as boolean);
+                        setSelectedApplication({
+                          ...selectedApplication,
+                          approved_partner: checked as boolean
+                        });
+                      }}
+                    />
+                    <label 
+                      htmlFor={`dialog-approved-partner-${selectedApplication.id}`}
+                      className="text-sm font-medium cursor-pointer select-none"
+                    >
+                      Approved Partner
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Admin Notes */}
