@@ -11,6 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -34,6 +41,9 @@ import {
   Calendar,
   Eye,
   Video,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -57,6 +67,11 @@ interface PartnerApplication {
   approved_partner: boolean | null;
 }
 
+const WEBINAR_SLOTS = [
+  { id: "2026-01-24", label: "Saturday, 24th January 2026, 4-5 PM" },
+  { id: "2026-01-25", label: "Sunday, 25th January 2026, 4-5 PM" },
+];
+
 export const PartnerApplicationsManagement = () => {
   const { toast } = useToast();
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
@@ -65,6 +80,8 @@ export const PartnerApplicationsManagement = () => {
   const [selectedApplication, setSelectedApplication] = useState<PartnerApplication | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isEditingWebinar, setIsEditingWebinar] = useState(false);
+  const [editWebinarSlot, setEditWebinarSlot] = useState<string | null>(null);
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -157,6 +174,60 @@ export const PartnerApplicationsManagement = () => {
         description: "Failed to update status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleWebinarUpdate = async (id: string, newSlot: string | null) => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("partner_applications")
+        .update({ 
+          webinar_slot: newSlot,
+          webinar_booked_at: newSlot ? new Date().toISOString() : null
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === id ? { 
+            ...app, 
+            webinar_slot: newSlot,
+            webinar_booked_at: newSlot ? new Date().toISOString() : null
+          } : app
+        )
+      );
+
+      // Update selected application
+      if (selectedApplication && selectedApplication.id === id) {
+        setSelectedApplication({
+          ...selectedApplication,
+          webinar_slot: newSlot,
+          webinar_booked_at: newSlot ? new Date().toISOString() : null
+        });
+      }
+
+      setIsEditingWebinar(false);
+      setEditWebinarSlot(null);
+
+      toast({
+        title: "Webinar Updated",
+        description: newSlot 
+          ? `Webinar date updated to ${WEBINAR_SLOTS.find(s => s.id === newSlot)?.label || newSlot}`
+          : "Webinar booking removed",
+      });
+    } catch (error: any) {
+      console.error("Error updating webinar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update webinar date",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -544,16 +615,72 @@ export const PartnerApplicationsManagement = () => {
 
               {/* Webinar Booking */}
               <div className={`p-3 rounded-lg ${selectedApplication.webinar_slot ? "bg-purple-500/10 border border-purple-500/30" : "bg-muted/50"}`}>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                  <Video className="w-3 h-3" />
-                  Webinar Booking
-                </p>
-                {selectedApplication.webinar_slot ? (
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Video className="w-3 h-3" />
+                    Webinar Booking
+                  </p>
+                  {selectedApplication.status === "approved" && !isEditingWebinar && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        setIsEditingWebinar(true);
+                        setEditWebinarSlot(selectedApplication.webinar_slot);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                
+                {isEditingWebinar && selectedApplication.status === "approved" ? (
+                  <div className="space-y-2">
+                    <Select
+                      value={editWebinarSlot || "none"}
+                      onValueChange={(value) => setEditWebinarSlot(value === "none" ? null : value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select webinar date" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No webinar</SelectItem>
+                        {WEBINAR_SLOTS.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id}>
+                            {slot.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleWebinarUpdate(selectedApplication.id, editWebinarSlot)}
+                        disabled={isProcessing}
+                      >
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingWebinar(false);
+                          setEditWebinarSlot(null);
+                        }}
+                        disabled={isProcessing}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : selectedApplication.webinar_slot ? (
                   <div>
                     <p className="font-medium text-sm text-purple-600">
-                      {selectedApplication.webinar_slot === "2026-01-24" 
-                        ? "Saturday, 24th January 2026, 4-5 PM" 
-                        : "Sunday, 25th January 2026, 4-5 PM"}
+                      {WEBINAR_SLOTS.find(s => s.id === selectedApplication.webinar_slot)?.label || selectedApplication.webinar_slot}
                     </p>
                     {selectedApplication.webinar_booked_at && (
                       <p className="text-xs text-muted-foreground mt-1">
