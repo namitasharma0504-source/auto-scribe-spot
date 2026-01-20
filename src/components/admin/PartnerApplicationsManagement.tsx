@@ -69,7 +69,7 @@ interface PartnerApplication {
 
 const WEBINAR_SLOTS = [
   { id: "2026-01-24", label: "Saturday, 24th January 2026, 4-5 PM" },
-  { id: "2026-01-25", label: "Sunday, 25th January 2026, 4-5 PM" },
+  { id: "2026-01-25", label: "Sunday, 25th January 2026, 4-5 PM (FULL)", disabled: true },
 ];
 
 export const PartnerApplicationsManagement = () => {

@@ -17,6 +17,7 @@ const WEBINAR_SLOTS = [
     dayName: "Saturday",
     displayDate: "24th January 2026",
     time: "4:00 PM - 5:00 PM",
+    isFull: false,
   },
   {
     id: "2026-01-25",
@@ -24,6 +25,7 @@ const WEBINAR_SLOTS = [
     dayName: "Sunday",
     displayDate: "25th January 2026",
     time: "4:00 PM - 5:00 PM",
+    isFull: true,
   },
 ];
 
@@ -238,11 +240,19 @@ const Webinar = () => {
                   {WEBINAR_SLOTS.map((slot) => (
                     <Card
                       key={slot.id}
-                      className="hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer group border-2"
+                      className={`transition-all border-2 ${
+                        slot.isFull 
+                          ? "opacity-60 cursor-not-allowed border-gray-300" 
+                          : "hover:border-primary/50 hover:shadow-lg cursor-pointer group"
+                      }`}
                     >
                       <CardContent className="p-6 text-center">
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                          <Calendar className="w-8 h-8 text-primary" />
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform ${
+                          slot.isFull 
+                            ? "bg-gray-200 dark:bg-gray-700" 
+                            : "bg-gradient-to-br from-primary/20 to-primary/10 group-hover:scale-110"
+                        }`}>
+                          <Calendar className={`w-8 h-8 ${slot.isFull ? "text-gray-400" : "text-primary"}`} />
                         </div>
                         <h3 className="text-xl font-semibold text-foreground mb-1">
                           {slot.dayName}
@@ -252,21 +262,27 @@ const Webinar = () => {
                           <Clock className="w-4 h-4" />
                           <span>{slot.time}</span>
                         </div>
-                        <Button
-                          onClick={() => handleBookSlot(slot.id)}
-                          disabled={isBooking}
-                          className="w-full h-12 text-base"
-                          size="lg"
-                        >
-                          {isBooking && selectedSlot === slot.id ? (
-                            <span className="flex items-center gap-2">
-                              <span className="animate-spin">⏳</span>
-                              Booking...
-                            </span>
-                          ) : (
-                            "Book This Slot"
-                          )}
-                        </Button>
+                        {slot.isFull ? (
+                          <div className="w-full h-12 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-md text-gray-500 font-medium">
+                            Slot Full
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleBookSlot(slot.id)}
+                            disabled={isBooking}
+                            className="w-full h-12 text-base"
+                            size="lg"
+                          >
+                            {isBooking && selectedSlot === slot.id ? (
+                              <span className="flex items-center gap-2">
+                                <span className="animate-spin">⏳</span>
+                                Booking...
+                              </span>
+                            ) : (
+                              "Book This Slot"
+                            )}
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

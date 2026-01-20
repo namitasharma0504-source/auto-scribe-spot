@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_SLOTS = ["2026-01-24", "2026-01-25"];
+const VALID_SLOTS = ["2026-01-24"];  // Only Saturday is available; Sunday (2026-01-25) is full
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
