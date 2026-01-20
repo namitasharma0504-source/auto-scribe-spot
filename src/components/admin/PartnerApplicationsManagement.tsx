@@ -84,6 +84,7 @@ export const PartnerApplicationsManagement = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingWebinar, setIsEditingWebinar] = useState(false);
   const [editWebinarSlot, setEditWebinarSlot] = useState<string | null>(null);
+  const [webinarFilter, setWebinarFilter] = useState<string>("all");
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -244,13 +245,21 @@ export const PartnerApplicationsManagement = () => {
     }
   };
 
-  const filteredApplications = applications.filter(app =>
-    app.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    app.phone.includes(searchQuery) ||
-    app.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (app.city || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredApplications = applications.filter(app => {
+    const matchesSearch = 
+      app.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.phone.includes(searchQuery) ||
+      app.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (app.city || "").toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesWebinar = 
+      webinarFilter === "all" ||
+      (webinarFilter === "not_booked" && !app.webinar_slot) ||
+      app.webinar_slot === webinarFilter;
+    
+    return matchesSearch && matchesWebinar;
+  });
 
   const pendingApplications = filteredApplications.filter(a => a.status === "pending");
   const approvedApplications = filteredApplications.filter(a => a.status === "approved");
@@ -260,6 +269,16 @@ export const PartnerApplicationsManagement = () => {
   const pendingPagination = usePagination({ data: pendingApplications, itemsPerPage: 10 });
   const approvedPagination = usePagination({ data: approvedApplications, itemsPerPage: 10 });
   const rejectedPagination = usePagination({ data: rejectedApplications, itemsPerPage: 10 });
+
+  // Webinar booking stats
+  const webinarStats = {
+    total: applications.filter(a => a.webinar_slot).length,
+    jan17: applications.filter(a => a.webinar_slot === "2026-01-17").length,
+    jan18: applications.filter(a => a.webinar_slot === "2026-01-18").length,
+    jan24: applications.filter(a => a.webinar_slot === "2026-01-24").length,
+    jan25: applications.filter(a => a.webinar_slot === "2026-01-25").length,
+    notBooked: applications.filter(a => !a.webinar_slot).length,
+  };
 
   const stats = {
     total: applications.length,
@@ -311,7 +330,13 @@ export const PartnerApplicationsManagement = () => {
               {application.webinar_slot ? (
                 <Badge className="gap-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
                   <Video className="w-3 h-3" />
-                  Webinar: {application.webinar_slot === "2026-01-24" ? "24 Jan" : "25 Jan"}
+                  Webinar: {
+                    application.webinar_slot === "2026-01-17" ? "17 Jan" :
+                    application.webinar_slot === "2026-01-18" ? "18 Jan" :
+                    application.webinar_slot === "2026-01-24" ? "24 Jan" :
+                    application.webinar_slot === "2026-01-25" ? "25 Jan" :
+                    application.webinar_slot
+                  }
                 </Badge>
               ) : (
                 <Badge variant="outline" className="gap-1 text-muted-foreground">
@@ -442,7 +467,72 @@ export const PartnerApplicationsManagement = () => {
         </Button>
       </div>
 
-      {/* Status Tabs */}
+      {/* Webinar Date Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Webinar Batch:</span>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={webinarFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("all")}
+            className="h-8"
+          >
+            All ({webinarStats.total})
+          </Button>
+          <Button
+            variant={webinarFilter === "2026-01-17" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("2026-01-17")}
+            className="h-8"
+          >
+            17 Jan ({webinarStats.jan17})
+          </Button>
+          <Button
+            variant={webinarFilter === "2026-01-18" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("2026-01-18")}
+            className="h-8"
+          >
+            18 Jan ({webinarStats.jan18})
+          </Button>
+          <Button
+            variant={webinarFilter === "2026-01-24" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("2026-01-24")}
+            className="h-8"
+          >
+            24 Jan ({webinarStats.jan24})
+          </Button>
+          <Button
+            variant={webinarFilter === "2026-01-25" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("2026-01-25")}
+            className="h-8"
+          >
+            25 Jan ({webinarStats.jan25})
+          </Button>
+          <Button
+            variant={webinarFilter === "not_booked" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setWebinarFilter("not_booked")}
+            className="h-8"
+          >
+            Not Booked ({webinarStats.notBooked})
+          </Button>
+        </div>
+        {webinarFilter !== "all" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setWebinarFilter("all")}
+            className="h-8 text-muted-foreground"
+          >
+            <X className="w-3 h-3 mr-1" />
+            Clear
+          </Button>
+        )}
+      </div>
+
       <Tabs defaultValue="pending">
         <TabsList className="flex-wrap">
           <TabsTrigger value="pending" className="gap-2">
