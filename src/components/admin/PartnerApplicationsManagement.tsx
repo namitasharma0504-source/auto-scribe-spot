@@ -712,7 +712,7 @@ export const PartnerApplicationsManagement = () => {
                     <Video className="w-3 h-3" />
                     Webinar Booking
                   </p>
-                  {selectedApplication.status === "approved" && !isEditingWebinar && (
+                  {!isEditingWebinar && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -728,7 +728,7 @@ export const PartnerApplicationsManagement = () => {
                   )}
                 </div>
                 
-                {isEditingWebinar && selectedApplication.status === "approved" ? (
+                {isEditingWebinar ? (
                   <div className="space-y-2">
                     <Select
                       value={editWebinarSlot || "none"}
