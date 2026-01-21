@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Share2, Copy, Check, Facebook, Twitter, Linkedin, Mail, MessageCircle, QrCode, Download } from "lucide-react";
+import { Share2, Copy, Check, Facebook, Twitter, Linkedin, Mail, MessageCircle, QrCode, Download, FileImage } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
+import { QRPosterGenerator } from "./QRPosterGenerator";
 
 interface ShareDialogProps {
   url: string;
@@ -104,7 +105,7 @@ export function ShareDialog({ url, title, description, className }: ShareDialogP
         </DialogHeader>
 
         <Tabs defaultValue="share" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="share" className="gap-2">
               <Share2 className="w-4 h-4" />
               Share
@@ -112,6 +113,10 @@ export function ShareDialog({ url, title, description, className }: ShareDialogP
             <TabsTrigger value="qr" className="gap-2">
               <QrCode className="w-4 h-4" />
               QR Code
+            </TabsTrigger>
+            <TabsTrigger value="poster" className="gap-2">
+              <FileImage className="w-4 h-4" />
+              Poster
             </TabsTrigger>
           </TabsList>
 
@@ -215,6 +220,10 @@ export function ShareDialog({ url, title, description, className }: ShareDialogP
                 Download QR Code
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="poster" className="mt-4">
+            <QRPosterGenerator garageName={title} url={url} />
           </TabsContent>
         </Tabs>
       </DialogContent>
