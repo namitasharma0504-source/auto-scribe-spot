@@ -60,25 +60,27 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
     ctx.fill();
     ctx.shadowColor = "transparent";
 
-    // Load and draw logo at top
+    // Load and draw logo at top - use absolute URL for Canvas API compatibility
     const logo = new Image();
     logo.crossOrigin = "anonymous";
     
     await new Promise<void>((resolve) => {
       logo.onload = () => {
-        const logoHeight = 45;
+        const logoHeight = 50;
         const logoWidth = (logo.width / logo.height) * logoHeight;
-        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, 50, logoWidth, logoHeight);
+        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, 45, logoWidth, logoHeight);
         resolve();
       };
       logo.onerror = () => {
+        // Fallback: Draw text logo if image fails
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 24px Arial, sans-serif";
+        ctx.font = "bold 28px Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("MeriGarage Reviews", posterWidth / 2, 80);
         resolve();
       };
-      logo.src = meriGarageLogo;
+      // Use absolute path from public folder for Canvas compatibility
+      logo.src = window.location.origin + "/merigarage-logo.png";
     });
 
     // Garage name with decorative line
