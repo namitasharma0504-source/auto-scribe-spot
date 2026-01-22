@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Users, 
   Shield, 
@@ -23,7 +23,10 @@ import {
   Power,
   PowerOff,
   MapPin,
-  Building
+  Building,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { indiaStates } from "@/data/indiaLocations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +63,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
+
+type SortField = "name" | "email" | "role" | "status" | "state" | "date";
+type SortDirection = "asc" | "desc";
 
 interface UserRole {
   id: string;
@@ -110,6 +118,10 @@ export function EnhancedUserManagement() {
   const [partnerSearchQuery, setPartnerSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
   // Edit user dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -486,11 +498,75 @@ export function EnhancedUserManagement() {
     partner: Users,
   };
 
-  const filteredRoles = userRoles.filter(role => {
-    const userName = getUserName(role.user_id).toLowerCase();
-    return userName.includes(searchQuery.toLowerCase()) || 
-           role.role.includes(searchQuery.toLowerCase());
-  });
+  // Helper function to toggle sort
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="w-3 h-3 ml-1" /> 
+      : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
+  // Filter and sort roles
+  const sortedAndFilteredRoles = useMemo(() => {
+    // First filter
+    const filtered = userRoles.filter(role => {
+      const userName = getUserName(role.user_id).toLowerCase();
+      const email = (getUserEmail(role.user_id) || "").toLowerCase();
+      const query = searchQuery.toLowerCase();
+      return userName.includes(query) || 
+             role.role.includes(query) ||
+             email.includes(query);
+    });
+
+    // Then sort
+    return [...filtered].sort((a, b) => {
+      let aValue: string | number | boolean = "";
+      let bValue: string | number | boolean = "";
+
+      switch (sortField) {
+        case "name":
+          aValue = getUserName(a.user_id).toLowerCase();
+          bValue = getUserName(b.user_id).toLowerCase();
+          break;
+        case "email":
+          aValue = (getUserEmail(a.user_id) || "").toLowerCase();
+          bValue = (getUserEmail(b.user_id) || "").toLowerCase();
+          break;
+        case "role":
+          aValue = a.role;
+          bValue = b.role;
+          break;
+        case "status":
+          aValue = getUserIsActive(a.user_id) ? "active" : "disabled";
+          bValue = getUserIsActive(b.user_id) ? "active" : "disabled";
+          break;
+        case "state":
+          aValue = (getUserState(a.user_id) || "").toLowerCase();
+          bValue = (getUserState(b.user_id) || "").toLowerCase();
+          break;
+        case "date":
+          aValue = getUserCreatedAt(a.user_id) || "";
+          bValue = getUserCreatedAt(b.user_id) || "";
+          break;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [userRoles, searchQuery, sortField, sortDirection, profiles, userEmails]);
+
+  // Pagination for roles
+  const rolesPagination = usePagination({ data: sortedAndFilteredRoles, itemsPerPage: 10 });
 
   const filteredPartners = partners.filter(partner => {
     const query = partnerSearchQuery.toLowerCase();
@@ -793,8 +869,11 @@ export function EnhancedUserManagement() {
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>User Roles ({filteredRoles.length})</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>User Roles ({sortedAndFilteredRoles.length})</CardTitle>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Showing {rolesPagination.startIndex}–{rolesPagination.endIndex} of {rolesPagination.totalItems}</span>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -802,156 +881,231 @@ export function EnhancedUserManagement() {
                   <RefreshCw className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
                   <p className="text-muted-foreground">Loading users...</p>
                 </div>
-              ) : filteredRoles.length === 0 ? (
+              ) : sortedAndFilteredRoles.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No user roles found</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Email ID</TableHead>
-                        <TableHead>User ID</TableHead>
-                        <TableHead>Current Role</TableHead>
-                        <TableHead>State</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Change Role</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRoles.map((role) => {
-                        const Icon = roleIcons[role.role];
-                        const email = getUserEmail(role.user_id);
-                        const createdAt = getUserCreatedAt(role.user_id);
-                        const isActive = getUserIsActive(role.user_id);
-                        const userState = getUserState(role.user_id);
-                        return (
-                          <TableRow key={role.id} className={!isActive ? "opacity-60 bg-muted/30" : ""}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                  <Icon className="w-4 h-4 text-muted-foreground" />
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("name")}
+                            >
+                              User
+                              {getSortIcon("name")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("email")}
+                            >
+                              Email ID
+                              {getSortIcon("email")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>User ID</TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("role")}
+                            >
+                              Current Role
+                              {getSortIcon("role")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("state")}
+                            >
+                              State
+                              {getSortIcon("state")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("status")}
+                            >
+                              Status
+                              {getSortIcon("status")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 -ml-3 font-medium hover:bg-muted"
+                              onClick={() => toggleSort("date")}
+                            >
+                              Created
+                              {getSortIcon("date")}
+                            </Button>
+                          </TableHead>
+                          <TableHead>Change Role</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rolesPagination.paginatedData.map((role) => {
+                          const Icon = roleIcons[role.role];
+                          const email = getUserEmail(role.user_id);
+                          const createdAt = getUserCreatedAt(role.user_id);
+                          const isActive = getUserIsActive(role.user_id);
+                          const userState = getUserState(role.user_id);
+                          return (
+                            <TableRow key={role.id} className={!isActive ? "opacity-60 bg-muted/30" : ""}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                    <Icon className="w-4 h-4 text-muted-foreground" />
+                                  </div>
+                                  <span className="font-medium">{getUserName(role.user_id)}</span>
                                 </div>
-                                <span className="font-medium">{getUserName(role.user_id)}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {email ? (
-                                <div className="flex items-center gap-1.5 text-sm">
-                                  <Mail className="w-3 h-3 text-muted-foreground" />
-                                  <span className="truncate max-w-[160px]">{email}</span>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm italic">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <code className={cn(
-                                "text-xs px-2 py-1 rounded font-mono",
-                                role.role === "garage_owner" && "bg-green-100 text-green-700",
-                                role.role === "customer" && "bg-blue-100 text-blue-700",
-                                role.role === "partner" && "bg-purple-100 text-purple-700",
-                                role.role === "admin" && "bg-red-100 text-red-700"
-                              )}>
-                                {getRoleBasedId(role.user_id, role.role)}
-                              </code>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={roleColors[role.role]}>
-                                {role.role.replace("_", " ")}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {userState ? (
-                                <div className="flex items-center gap-1.5 text-sm">
-                                  <MapPin className="w-3 h-3 text-muted-foreground" />
-                                  <span className="truncate max-w-[100px]">{userState}</span>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm italic">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={isActive 
-                                  ? "bg-green-500/10 text-green-600 border-green-500/30" 
-                                  : "bg-red-500/10 text-red-600 border-red-500/30"
-                                }
-                              >
-                                {isActive ? "Active" : "Disabled"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {createdAt ? (
-                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                  <Calendar className="w-3 h-3" />
-                                  {format(new Date(createdAt), "dd MMM yyyy")}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm italic">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={role.role}
-                                onValueChange={(newRole) => handleChangeRole(role.id, role.user_id, newRole as any)}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="partner">Partner</SelectItem>
-                                  <SelectItem value="customer">Customer</SelectItem>
-                                  <SelectItem value="garage_owner">Garage Owner</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => openEditDialog(role.user_id)}
-                                  title="Edit user details"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
+                              </TableCell>
+                              <TableCell>
+                                {email ? (
+                                  <div className="flex items-center gap-1.5 text-sm">
+                                    <Mail className="w-3 h-3 text-muted-foreground" />
+                                    <span className="truncate max-w-[160px]">{email}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm italic">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <code className={cn(
+                                  "text-xs px-2 py-1 rounded font-mono",
+                                  role.role === "garage_owner" && "bg-green-100 text-green-700",
+                                  role.role === "customer" && "bg-blue-100 text-blue-700",
+                                  role.role === "partner" && "bg-purple-100 text-purple-700",
+                                  role.role === "admin" && "bg-red-100 text-red-700"
+                                )}>
+                                  {getRoleBasedId(role.user_id, role.role)}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={roleColors[role.role]}>
+                                  {role.role.replace("_", " ")}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {userState ? (
+                                  <div className="flex items-center gap-1.5 text-sm">
+                                    <MapPin className="w-3 h-3 text-muted-foreground" />
+                                    <span className="truncate max-w-[100px]">{userState}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm italic">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant="outline" 
                                   className={isActive 
-                                    ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" 
-                                    : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    ? "bg-green-500/10 text-green-600 border-green-500/30" 
+                                    : "bg-red-500/10 text-red-600 border-red-500/30"
                                   }
-                                  onClick={() => handleToggleAccess(role.user_id, isActive)}
-                                  title={isActive ? "Disable access" : "Enable access"}
                                 >
-                                  {isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeleteRole(role.id, role.user_id)}
-                                  title="Delete user"
+                                  {isActive ? "Active" : "Disabled"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {createdAt ? (
+                                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                    <Calendar className="w-3 h-3" />
+                                    {format(new Date(createdAt), "dd MMM yyyy")}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm italic">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={role.role}
+                                  onValueChange={(newRole) => handleChangeRole(role.id, role.user_id, newRole as any)}
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                                  <SelectTrigger className="w-[140px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="partner">Partner</SelectItem>
+                                    <SelectItem value="customer">Customer</SelectItem>
+                                    <SelectItem value="garage_owner">Garage Owner</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => openEditDialog(role.user_id)}
+                                    title="Edit user details"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={isActive 
+                                      ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" 
+                                      : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    }
+                                    onClick={() => handleToggleAccess(role.user_id, isActive)}
+                                    title={isActive ? "Disable access" : "Enable access"}
+                                  >
+                                    {isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleDeleteRole(role.id, role.user_id)}
+                                    title="Delete user"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  {rolesPagination.totalPages > 1 && (
+                    <PaginationControls
+                      currentPage={rolesPagination.currentPage}
+                      totalPages={rolesPagination.totalPages}
+                      startIndex={rolesPagination.startIndex}
+                      endIndex={rolesPagination.endIndex}
+                      totalItems={rolesPagination.totalItems}
+                      itemsPerPage={rolesPagination.itemsPerPage}
+                      onPageChange={rolesPagination.goToPage}
+                      onItemsPerPageChange={rolesPagination.setItemsPerPage}
+                    />
+                  )}
                 </div>
               )}
             </CardContent>
