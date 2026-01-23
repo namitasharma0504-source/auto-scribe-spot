@@ -45,11 +45,40 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
     ctx.arc(posterWidth + 50, posterHeight - 150, 250, 0, Math.PI * 2);
     ctx.fill();
 
-    // White card container
+    // Draw garage name on colored background FIRST (before white card)
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 34px Arial, sans-serif";
+    ctx.textAlign = "center";
+    
+    const maxNameWidth = posterWidth - 80;
+    const words = garageName.split(" ");
+    let line = "";
+    let nameY = 55;
+    const nameLines: string[] = [];
+    
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + " ";
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxNameWidth && i > 0) {
+        nameLines.push(line.trim());
+        line = words[i] + " ";
+      } else {
+        line = testLine;
+      }
+    }
+    nameLines.push(line.trim());
+    
+    // Draw garage name lines on blue background
+    for (const nameLine of nameLines) {
+      ctx.fillText(nameLine, posterWidth / 2, nameY);
+      nameY += 42;
+    }
+
+    // White card container - starts after garage name
     const cardX = 40;
-    const cardY = 120;
+    const cardY = nameY + 15;
     const cardWidth = posterWidth - 80;
-    const cardHeight = 650;
+    const cardHeight = posterHeight - cardY - 120;
     
     ctx.fillStyle = "#FFFFFF";
     ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
@@ -59,67 +88,44 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
     ctx.fill();
     ctx.shadowColor = "transparent";
 
-    // Load and draw logo at top - use absolute URL for Canvas API compatibility
+    // Load and draw logo INSIDE white card
     const logo = new Image();
     logo.crossOrigin = "anonymous";
     
     await new Promise<void>((resolve) => {
       logo.onload = () => {
-        const logoHeight = 60;
+        const logoHeight = 55;
         const logoWidth = (logo.width / logo.height) * logoHeight;
-        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, 35, logoWidth, logoHeight);
+        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, cardY + 20, logoWidth, logoHeight);
         resolve();
       };
       logo.onerror = () => {
         // Fallback: Draw text logo if image fails
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 28px Arial, sans-serif";
+        ctx.fillStyle = "#1E3A8A";
+        ctx.font = "bold 24px Arial, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("MeriGarageReviews.com", posterWidth / 2, 80);
+        ctx.fillText("MeriGarageReviews.com", posterWidth / 2, cardY + 50);
         resolve();
       };
       // Use absolute path from public folder for Canvas compatibility
       logo.src = window.location.origin + "/merigarage-reviews-logo.png";
     });
 
-    // Garage name with decorative line
-    ctx.fillStyle = "#1E3A8A";
-    ctx.font = "bold 32px Arial, sans-serif";
-    ctx.textAlign = "center";
-    
-    const maxWidth = cardWidth - 60;
-    const words = garageName.split(" ");
-    let line = "";
-    let y = 190;
-    
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + " ";
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && i > 0) {
-        ctx.fillText(line.trim(), posterWidth / 2, y);
-        line = words[i] + " ";
-        y += 40;
-      } else {
-        line = testLine;
-      }
-    }
-    ctx.fillText(line.trim(), posterWidth / 2, y);
-
-    // Decorative line under garage name
-    const lineY = y + 25;
+    // Decorative line under logo
+    const lineY = cardY + 90;
     const lineGradient = ctx.createLinearGradient(posterWidth / 2 - 60, 0, posterWidth / 2 + 60, 0);
     lineGradient.addColorStop(0, "rgba(30, 58, 138, 0)");
     lineGradient.addColorStop(0.5, "#1E3A8A");
     lineGradient.addColorStop(1, "rgba(30, 58, 138, 0)");
     ctx.strokeStyle = lineGradient;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(posterWidth / 2 - 80, lineY);
     ctx.lineTo(posterWidth / 2 + 80, lineY);
     ctx.stroke();
 
     // Stars
-    const starsY = lineY + 40;
+    const starsY = lineY + 30;
     ctx.fillStyle = "#F59E0B";
     const starSize = 18;
     const starSpacing = 35;
@@ -254,17 +260,19 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
         <div className="absolute -left-10 top-10 w-32 h-32 bg-white/5 rounded-full" />
         <div className="absolute -right-10 bottom-20 w-40 h-40 bg-white/5 rounded-full" />
         
-        {/* Logo */}
-        <div className="pt-4 pb-2 flex justify-center relative z-10">
-          <img src={meriGarageReviewsLogo} alt="MeriGarageReviews.com" className="h-8 object-contain" />
+        {/* Garage Name on colored background */}
+        <div className="pt-4 pb-3 px-4 relative z-10">
+          <h3 className="text-lg font-bold text-white text-center leading-tight">
+            {garageName}
+          </h3>
         </div>
 
         {/* White Card */}
         <div className="mx-4 mb-4 bg-white rounded-2xl shadow-xl p-4 relative z-10">
-          {/* Garage Name */}
-          <h3 className="text-lg font-bold text-primary text-center leading-tight mb-2">
-            {garageName}
-          </h3>
+          {/* Logo inside white card */}
+          <div className="flex justify-center mb-2">
+            <img src={meriGarageReviewsLogo} alt="MeriGarageReviews.com" className="h-8 object-contain" />
+          </div>
 
           {/* Decorative line */}
           <div className="flex justify-center mb-3">
