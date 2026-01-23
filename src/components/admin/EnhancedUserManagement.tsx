@@ -137,6 +137,13 @@ export function EnhancedUserManagement() {
   const [editName, setEditName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   
+  // Reset password dialog
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<{ userId: string; email: string | null; name: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  
   // New user form
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
@@ -547,6 +554,66 @@ export function EnhancedUserManagement() {
         description: error.message || "Failed to delete user",
         variant: "destructive",
       });
+    }
+  };
+
+  const openResetPasswordDialog = (userId: string) => {
+    const email = getUserEmail(userId);
+    const name = getUserName(userId);
+    setResetPasswordUser({ userId, email, name });
+    setNewPassword("");
+    setShowNewPassword(false);
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) {
+      toast({
+        title: "Password Required",
+        description: "Please enter a new password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: { userId: resetPasswordUser.userId, newPassword },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Password Updated",
+        description: `Password has been updated for ${resetPasswordUser.email || resetPasswordUser.name}`,
+      });
+
+      setIsResetPasswordDialogOpen(false);
+      setResetPasswordUser(null);
+      setNewPassword("");
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -1247,6 +1314,15 @@ export function EnhancedUserManagement() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                    onClick={() => openResetPasswordDialog(role.user_id)}
+                                    title="Reset password"
+                                  >
+                                    <Key className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className={isActive 
                                       ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" 
                                       : "text-green-600 hover:text-green-700 hover:bg-green-50"
@@ -1490,6 +1566,78 @@ export function EnhancedUserManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-amber-500" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for {resetPasswordUser?.name || "this user"}
+              {resetPasswordUser?.email && (
+                <span className="block text-xs mt-1 font-mono">{resetPasswordUser.email}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Min 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 6 characters long
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsResetPasswordDialogOpen(false)}
+              disabled={isResettingPassword}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleResetPassword} 
+              disabled={isResettingPassword || !newPassword || newPassword.length < 6}
+              className="gap-2"
+            >
+              {isResettingPassword ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Key className="w-4 h-4" />
+                  Set Password
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
