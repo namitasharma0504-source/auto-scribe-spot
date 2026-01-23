@@ -136,6 +136,10 @@ Deno.serve(async (req) => {
       const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") + 
         Math.floor(Math.random() * 1000);
       
+      // Generate a unique placeholder phone to avoid unique constraint issues
+      const placeholderPhone = `TEMP_${newUser.user.id.slice(0, 8)}_${Date.now()}`;
+        Math.floor(Math.random() * 1000);
+      
       // Use the database function to generate a proper partner ID
       const { data: partnerIdResult, error: partnerIdError } = await supabaseAdmin
         .rpc('generate_partner_id');
@@ -154,7 +158,7 @@ Deno.serve(async (req) => {
             username: username,
             full_name: fullName || email.split("@")[0],
             email: email,
-            phone: "",
+            phone: placeholderPhone,
             status: "active",
             kyc_status: "pending",
           });
@@ -183,7 +187,7 @@ Deno.serve(async (req) => {
             username: username,
             full_name: fullName || email.split("@")[0],
             email: email,
-            phone: "",
+            phone: placeholderPhone,
             status: "active",
             kyc_status: "pending",
           });
