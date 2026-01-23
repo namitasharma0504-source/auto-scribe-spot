@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, User, Eye, EyeOff, Wrench, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Wrench, AlertCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [garageEmailError, setGarageEmailError] = useState<string | null>(null);
@@ -155,13 +156,20 @@ export default function Auth() {
         return;
       }
 
-      // After successful signup, add customer role
+      // After successful signup, add customer role and update profile with phone
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (newUser) {
         await supabase.from("user_roles").insert({
           user_id: newUser.id,
           role: "customer",
         });
+        
+        // Update profile with phone number if provided
+        if (phone.trim()) {
+          await supabase.from("profiles").update({
+            phone: phone.trim(),
+          }).eq("user_id", newUser.id);
+        }
       }
       
       toast({
@@ -337,6 +345,20 @@ export default function Auth() {
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Phone Number (Optional)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="+91 9876543210"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="pl-10"
                     />
                   </div>
                 </div>
