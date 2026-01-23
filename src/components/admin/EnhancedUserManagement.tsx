@@ -1354,14 +1354,20 @@ export function EnhancedUserManagement() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                {getUserPhone(role.user_id) ? (
-                                  <div className="flex items-center gap-1.5 text-sm">
-                                    <Phone className="w-3 h-3 text-muted-foreground" />
-                                    <span>{getUserPhone(role.user_id)}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground text-sm italic">—</span>
-                                )}
+                                <button
+                                  onClick={() => openEditDialog(role.user_id, role.id, role.role)}
+                                  className="flex items-center gap-1.5 text-sm hover:text-primary hover:underline cursor-pointer transition-colors"
+                                  title="Click to edit phone number"
+                                >
+                                  {getUserPhone(role.user_id) ? (
+                                    <>
+                                      <Phone className="w-3 h-3 text-muted-foreground" />
+                                      <span>{getUserPhone(role.user_id)}</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm italic hover:text-primary">+ Add phone</span>
+                                  )}
+                                </button>
                               </TableCell>
                               <TableCell>
                                 <code className={cn(
