@@ -65,6 +65,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/PaginationControls";
+import { Switch } from "@/components/ui/switch";
 
 type SortField = "name" | "email" | "role" | "status" | "state" | "date";
 type SortDirection = "asc" | "desc";
@@ -144,6 +145,14 @@ export function EnhancedUserManagement() {
   const [newUserCity, setNewUserCity] = useState("");
   const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Signup settings
+  const [signupSettings, setSignupSettings] = useState({
+    customer_signup_enabled: true,
+    garage_signup_enabled: true,
+    partner_signup_enabled: true,
+  });
+  const [isUpdatingSignupSettings, setIsUpdatingSignupSettings] = useState(false);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -270,8 +279,57 @@ export function EnhancedUserManagement() {
     }
   };
 
+  const fetchSignupSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "signup_settings")
+        .single();
+
+      if (!error && data?.value) {
+        setSignupSettings(data.value as typeof signupSettings);
+      }
+    } catch (error) {
+      console.error("Error fetching signup settings:", error);
+    }
+  };
+
+  const updateSignupSettings = async (key: keyof typeof signupSettings, value: boolean) => {
+    setIsUpdatingSignupSettings(true);
+    try {
+      const newSettings = { ...signupSettings, [key]: value };
+      
+      const { error } = await supabase
+        .from("app_settings")
+        .update({ 
+          value: newSettings,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("key", "signup_settings");
+
+      if (error) throw error;
+
+      setSignupSettings(newSettings);
+      toast({
+        title: value ? "Signup Enabled" : "Signup Disabled",
+        description: `${key.replace(/_/g, " ").replace("enabled", "").trim()} signup has been ${value ? "enabled" : "disabled"}.`,
+      });
+    } catch (error: any) {
+      console.error("Error updating signup settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update signup settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingSignupSettings(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchSignupSettings();
   }, []);
 
   const getUserName = (userId: string): string => {
@@ -694,6 +752,77 @@ export function EnhancedUserManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Signup Controls */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Power className="w-5 h-5 text-primary" />
+            Signup Controls
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Enable or disable signups for each user type. Disabling will prevent new registrations while keeping existing user data.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Customer Signup</p>
+                  <p className="text-xs text-muted-foreground">
+                    {signupSettings.customer_signup_enabled ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={signupSettings.customer_signup_enabled}
+                onCheckedChange={(checked) => updateSignupSettings("customer_signup_enabled", checked)}
+                disabled={isUpdatingSignupSettings}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Garage Signup</p>
+                  <p className="text-xs text-muted-foreground">
+                    {signupSettings.garage_signup_enabled ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={signupSettings.garage_signup_enabled}
+                onCheckedChange={(checked) => updateSignupSettings("garage_signup_enabled", checked)}
+                disabled={isUpdatingSignupSettings}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Partner Signup</p>
+                  <p className="text-xs text-muted-foreground">
+                    {signupSettings.partner_signup_enabled ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={signupSettings.partner_signup_enabled}
+                onCheckedChange={(checked) => updateSignupSettings("partner_signup_enabled", checked)}
+                disabled={isUpdatingSignupSettings}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="roles" className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
