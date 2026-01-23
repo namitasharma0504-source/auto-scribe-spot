@@ -1,11 +1,28 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, LayoutDashboard, Building2, LogOut, Search } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, Building2, LogOut, Search, ShieldCheck, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import logoMain from "@/assets/merigarage-logo-main.png";
+
+// Helper to get role display info
+const getRoleDisplay = (role: string | null) => {
+  switch (role) {
+    case "admin":
+      return { label: "Admin", icon: ShieldCheck, className: "bg-destructive/10 text-destructive border-destructive/30" };
+    case "garage_owner":
+      return { label: "Garage Owner", icon: Building2, className: "bg-primary/10 text-primary border-primary/30" };
+    case "partner":
+      return { label: "Partner", icon: Users, className: "bg-accent/10 text-accent border-accent/30" };
+    case "customer":
+      return { label: "Customer", icon: User, className: "bg-green-500/10 text-green-600 border-green-500/30" };
+    default:
+      return null;
+  }
+};
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,6 +100,23 @@ export function Header() {
               {!loading && !roleLoading && (
                 user ? (
                   <>
+                    {/* Role Badge */}
+                    {role && getRoleDisplay(role) && (
+                      <Badge 
+                        variant="outline" 
+                        className={cn("gap-1.5 py-1", getRoleDisplay(role)?.className)}
+                      >
+                        {getRoleDisplay(role)?.icon && (
+                          <span className="w-3 h-3">
+                            {(() => {
+                              const IconComponent = getRoleDisplay(role)?.icon;
+                              return IconComponent ? <IconComponent className="w-3 h-3" /> : null;
+                            })()}
+                          </span>
+                        )}
+                        {getRoleDisplay(role)?.label}
+                      </Badge>
+                    )}
                     <Link to={getDashboardPath()}>
                       <Button variant="ghost" size="sm" className="gap-2">
                         <LayoutDashboard className="w-4 h-4" />
@@ -148,6 +182,25 @@ export function Header() {
               {!loading && !roleLoading && (
                 user ? (
                   <>
+                    {/* Role Badge for Mobile */}
+                    {role && getRoleDisplay(role) && (
+                      <div className="flex justify-center py-2">
+                        <Badge 
+                          variant="outline" 
+                          className={cn("gap-1.5 py-1", getRoleDisplay(role)?.className)}
+                        >
+                          {getRoleDisplay(role)?.icon && (
+                            <span className="w-3 h-3">
+                              {(() => {
+                                const IconComponent = getRoleDisplay(role)?.icon;
+                                return IconComponent ? <IconComponent className="w-3 h-3" /> : null;
+                              })()}
+                            </span>
+                          )}
+                          Logged in as {getRoleDisplay(role)?.label}
+                        </Badge>
+                      </div>
+                    )}
                     <Link to={getDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <LayoutDashboard className="w-4 h-4" />
