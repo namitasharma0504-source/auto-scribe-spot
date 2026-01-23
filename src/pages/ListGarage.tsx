@@ -160,6 +160,34 @@ const ListGarage = () => {
     
     fetchUserRole();
   }, [user]);
+
+  // Fetch garage owner profile to pre-fill form (for garage owners who just signed up)
+  useEffect(() => {
+    const fetchGarageOwnerProfile = async () => {
+      // Skip if no user, not a garage owner, or already have prefill data from navigation
+      if (!user || listingType !== 'owner' || prefillData) return;
+      
+      try {
+        const { data: ownerProfile } = await supabase
+          .from('garage_owners')
+          .select('business_name, contact_phone')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (ownerProfile) {
+          setFormData(prev => ({
+            ...prev,
+            garageName: prev.garageName || ownerProfile.business_name || "",
+            phone: prev.phone || ownerProfile.contact_phone || "",
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching garage owner profile:', error);
+      }
+    };
+    
+    fetchGarageOwnerProfile();
+  }, [user, listingType, prefillData]);
   
   const [formData, setFormData] = useState({
     garageName: prefillData?.businessName || "",
