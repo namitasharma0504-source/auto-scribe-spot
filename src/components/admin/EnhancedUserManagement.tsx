@@ -150,6 +150,7 @@ export function EnhancedUserManagement() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserState, setNewUserState] = useState("");
   const [newUserCity, setNewUserCity] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
   const [newUserRole, setNewUserRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("admin");
   const [showPassword, setShowPassword] = useState(false);
   
@@ -491,6 +492,7 @@ export function EnhancedUserManagement() {
           password: newUserPassword,
           fullName: newUserName || null,
           state: newUserState || null,
+          phone: newUserPhone || null,
           role: newUserRole,
         },
       });
@@ -512,6 +514,7 @@ export function EnhancedUserManagement() {
       setNewUserName("");
       setNewUserState("");
       setNewUserCity("");
+      setNewUserPhone("");
       setNewUserRole("admin");
       fetchUsers();
     } catch (error: any) {
@@ -1004,6 +1007,20 @@ export function EnhancedUserManagement() {
                           className="pl-10"
                         />
                       </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="Enter phone number"
+                        value={newUserPhone}
+                        onChange={(e) => setNewUserPhone(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">

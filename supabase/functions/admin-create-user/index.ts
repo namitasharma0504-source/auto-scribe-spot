@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     // Get request body
-    const { email, password, fullName, state, role } = await req.json();
+    const { email, password, fullName, state, phone, role } = await req.json();
 
     if (!email || !password) {
       return new Response(
@@ -136,8 +136,8 @@ Deno.serve(async (req) => {
       const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") + 
         Math.floor(Math.random() * 1000);
       
-      // Generate a unique placeholder phone to avoid unique constraint issues
-      const placeholderPhone = `TEMP_${newUser.user.id.slice(0, 8)}_${Date.now()}`;
+      // Use provided phone or generate a unique placeholder to avoid unique constraint issues
+      const partnerPhone = phone?.trim() || `TEMP_${newUser.user.id.slice(0, 8)}_${Date.now()}`;
         Math.floor(Math.random() * 1000);
       
       // Use the database function to generate a proper partner ID
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
             username: username,
             full_name: fullName || email.split("@")[0],
             email: email,
-            phone: placeholderPhone,
+            phone: partnerPhone,
             status: "active",
             kyc_status: "pending",
           });
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
             username: username,
             full_name: fullName || email.split("@")[0],
             email: email,
-            phone: placeholderPhone,
+            phone: partnerPhone,
             status: "active",
             kyc_status: "pending",
           });
