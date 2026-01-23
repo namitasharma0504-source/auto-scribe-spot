@@ -136,23 +136,72 @@ Deno.serve(async (req) => {
       const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") + 
         Math.floor(Math.random() * 1000);
       
-      const { error: partnerError } = await supabaseAdmin
-        .from("partners")
-        .insert({
-          id: `MG${new Date().getFullYear()}P${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`,
-          user_id: newUser.user.id,
-          username: username,
-          full_name: fullName || email.split("@")[0],
-          email: email,
-          phone: "",
-          status: "active",
-          kyc_status: "pending",
-        });
+      // Use the database function to generate a proper partner ID
+      const { data: partnerIdResult, error: partnerIdError } = await supabaseAdmin
+        .rpc('generate_partner_id');
+      
+      if (partnerIdError) {
+        console.error("Error generating partner ID:", partnerIdError);
+        // Fallback to manual ID generation if RPC fails
+        const fallbackId = `MG${new Date().getFullYear()}P${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+        console.log("Using fallback partner ID:", fallbackId);
+        
+        const { error: partnerError } = await supabaseAdmin
+          .from("partners")
+          .insert({
+            id: fallbackId,
+            user_id: newUser.user.id,
+            username: username,
+            full_name: fullName || email.split("@")[0],
+            email: email,
+            phone: "",
+            status: "active",
+            kyc_status: "pending",
+          });
 
-      if (partnerError) {
-        console.error("Error creating partner profile:", partnerError);
+        if (partnerError) {
+          console.error("Error creating partner profile:", partnerError);
+          // Return error but don't fail the whole operation - user is created
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              userId: newUser.user.id,
+              message: `User ${email} created with ${role} role, but partner profile creation failed: ${partnerError.message}`,
+              warning: "Partner profile not created - please create manually"
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       } else {
-        console.log(`Partner profile created for ${email}`);
+        const partnerId = partnerIdResult || `MG${new Date().getFullYear()}P${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+        
+        const { error: partnerError } = await supabaseAdmin
+          .from("partners")
+          .insert({
+            id: partnerId,
+            user_id: newUser.user.id,
+            username: username,
+            full_name: fullName || email.split("@")[0],
+            email: email,
+            phone: "",
+            status: "active",
+            kyc_status: "pending",
+          });
+
+        if (partnerError) {
+          console.error("Error creating partner profile:", partnerError);
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              userId: newUser.user.id,
+              message: `User ${email} created with ${role} role, but partner profile creation failed: ${partnerError.message}`,
+              warning: "Partner profile not created - please create manually"
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          console.log(`Partner profile created for ${email} with ID: ${partnerId}`);
+        }
       }
     }
 

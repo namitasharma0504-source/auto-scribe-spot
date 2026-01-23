@@ -685,12 +685,27 @@ const ListGarage = () => {
       // For partners, get their partner record
       let partnerId: string | null = null;
       if (isPartner) {
-        const { data: partnerData } = await supabase
+        const { data: partnerData, error: partnerFetchError } = await supabase
           .from('partners')
           .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
-        partnerId = partnerData?.id || null;
+        
+        if (partnerFetchError) {
+          console.error('Error fetching partner profile:', partnerFetchError);
+          toast.error("Unable to verify your partner account. Please contact support.");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (!partnerData?.id) {
+          console.error('Partner profile not found for user:', user.id);
+          toast.error("Partner profile not found. Please contact support to set up your account.");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        partnerId = partnerData.id;
       }
       
       const { data: garageData, error } = await supabase
@@ -986,14 +1001,16 @@ const ListGarage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  className="px-0 h-auto text-sm"
-                  onClick={() => setUseCustomCity(true)}
-                >
-                  Can't find your city/village? Enter manually
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  City/village not in list?{" "}
+                  <button 
+                    type="button" 
+                    className="text-primary hover:underline font-medium"
+                    onClick={() => setUseCustomCity(true)}
+                  >
+                    Enter manually
+                  </button>
+                </p>
               </div>
             )}
 
