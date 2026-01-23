@@ -23,11 +23,28 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [garageEmailError, setGarageEmailError] = useState<string | null>(null);
+  const [signupEnabled, setSignupEnabled] = useState(true);
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
+
+  // Check if customer signup is enabled
+  useEffect(() => {
+    const checkSignupSettings = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "signup_settings")
+        .single();
+      
+      if (data?.value) {
+        setSignupEnabled((data.value as any).customer_signup_enabled ?? true);
+      }
+    };
+    checkSignupSettings();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -114,6 +131,17 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if signup is enabled
+    if (!signupEnabled) {
+      toast({
+        title: "Signup Disabled",
+        description: "Customer signups are currently disabled. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!validateInputs(true)) return;
 
     setIsLoading(true);
@@ -317,6 +345,14 @@ export default function Auth() {
             </TabsContent>
             
             <TabsContent value="signup">
+              {!signupEnabled && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Customer signups are currently disabled. Please try again later or contact support.
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name</Label>

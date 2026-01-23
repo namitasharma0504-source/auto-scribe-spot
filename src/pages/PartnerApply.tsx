@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -23,8 +23,10 @@ import {
   CheckCircle2,
   Clock,
   Wallet,
-  TrendingDown
+  TrendingDown,
+  AlertCircle
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const whyJoinOptions = [
   { value: "flexible-income", label: "Looking for flexible income opportunity" },
@@ -72,6 +74,23 @@ const PartnerApply = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState({ name: "", email: "" });
+  const [signupEnabled, setSignupEnabled] = useState(true);
+
+  // Check if partner signup is enabled
+  useEffect(() => {
+    const checkSignupSettings = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "signup_settings")
+        .single();
+      
+      if (data?.value) {
+        setSignupEnabled((data.value as any).partner_signup_enabled ?? true);
+      }
+    };
+    checkSignupSettings();
+  }, []);
 
   const cities = formData.state ? indiaDistricts[formData.state] || [] : [];
 
@@ -84,6 +103,12 @@ const PartnerApply = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if partner signup is enabled
+    if (!signupEnabled) {
+      toast.error("Partner applications are currently closed. Please try again later.");
+      return;
+    }
     
     if (!formData.fullName || !formData.email || !formData.phone || !formData.state || !formData.education || !formData.whyJoin) {
       toast.error("Please fill in all required fields");
@@ -249,6 +274,14 @@ const PartnerApply = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {!signupEnabled && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Partner applications are currently closed. Please check back later.
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Personal Details */}
                 <div className="space-y-3">

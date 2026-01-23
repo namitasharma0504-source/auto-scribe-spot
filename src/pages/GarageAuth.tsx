@@ -22,8 +22,25 @@ export default function GarageAuth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [customerEmailError, setCustomerEmailError] = useState<string | null>(null);
+  const [signupEnabled, setSignupEnabled] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if garage signup is enabled
+  useEffect(() => {
+    const checkSignupSettings = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "signup_settings")
+        .single();
+      
+      if (data?.value) {
+        setSignupEnabled((data.value as any).garage_signup_enabled ?? true);
+      }
+    };
+    checkSignupSettings();
+  }, []);
 
   useEffect(() => {
     // Check if already logged in as garage owner
@@ -131,6 +148,17 @@ export default function GarageAuth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if signup is enabled
+    if (!signupEnabled) {
+      toast({
+        title: "Signup Disabled",
+        description: "Garage signups are currently disabled. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!validateInputs(true)) return;
 
     setIsLoading(true);
@@ -455,6 +483,14 @@ export default function GarageAuth() {
             </TabsContent>
             
             <TabsContent value="signup">
+              {!signupEnabled && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Garage signups are currently disabled. Please try again later or contact support.
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-business">Business Name</Label>
