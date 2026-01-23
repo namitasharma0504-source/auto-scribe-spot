@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Star, Laptop, QrCode, Upload, X, Image as ImageIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Star, Laptop, QrCode, Upload, X, Image as ImageIcon, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,9 @@ export function UpsellModal({
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-select service when modal opens based on which button was clicked
   useEffect(() => {
@@ -120,6 +123,12 @@ export function UpsellModal({
   const removePaymentProof = () => {
     setPaymentProof(null);
     setPaymentProofUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
   };
 
   const handleConfirm = () => {
@@ -272,22 +281,54 @@ export function UpsellModal({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Upload Payment Proof</Label>
                 {!paymentProof ? (
-                  <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-purple-400 transition-colors">
+                  <div className="border-2 border-dashed border-border rounded-lg p-4">
+                    <div className="flex justify-center gap-4">
+                      {/* Camera Capture Button */}
+                      <div 
+                        className="flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl border-2 border-purple-400 bg-purple-500/10 hover:bg-purple-500/20 transition-all hover:scale-105"
+                        onClick={() => !uploading && cameraInputRef.current?.click()}
+                      >
+                        <Camera className="h-8 w-8 mb-2 text-purple-600" />
+                        <p className="text-sm font-medium text-purple-700">
+                          {uploading ? "Uploading..." : "Take Photo"}
+                        </p>
+                      </div>
+                      
+                      {/* Gallery Upload Button */}
+                      <div 
+                        className="flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl border-2 border-muted-foreground/30 bg-muted/30 hover:bg-muted/50 transition-all hover:scale-105"
+                        onClick={() => !uploading && fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          From Gallery
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      Take a photo or select from gallery (Max 5MB)
+                    </p>
+                    
+                    {/* Camera input - opens device camera */}
                     <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    {/* Gallery input - opens file picker */}
+                    <input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/*,.pdf"
                       onChange={handleFileUpload}
                       className="hidden"
-                      id="payment-proof"
                       disabled={uploading}
                     />
-                    <label htmlFor="payment-proof" className="cursor-pointer">
-                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        {uploading ? "Uploading..." : "Click to upload screenshot or PDF"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">Max 5MB</p>
-                    </label>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
