@@ -86,6 +86,90 @@ const WriteReview = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Check for pending review data after auth redirect
+  useEffect(() => {
+    const checkPendingReview = async () => {
+      const pendingReview = localStorage.getItem('pendingReview');
+      if (pendingReview) {
+        try {
+          const reviewData = JSON.parse(pendingReview);
+          // Only restore if it's for the same garage
+          if (reviewData.garageSlug === slug) {
+            setOverallRating(reviewData.overallRating || 0);
+            setCategoryScores(reviewData.categoryScores || {});
+            setReviewText(reviewData.reviewText || "");
+            setSelectedTags(reviewData.selectedTags || []);
+            
+            // Check if user is now logged in
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              // Clear the pending data
+              localStorage.removeItem('pendingReview');
+              
+              // Auto-submit after a brief delay to show the restored data
+              toast({
+                title: "Welcome back!",
+                description: "Submitting your review now...",
+              });
+              
+              setTimeout(() => {
+                submitReview(user.id, reviewData);
+              }, 1000);
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing pending review:", e);
+          localStorage.removeItem('pendingReview');
+        }
+      }
+    };
+    
+    if (garageName) {
+      checkPendingReview();
+    }
+  }, [garageName, slug]);
+
+  const submitReview = async (userId: string, reviewData?: { overallRating: number; reviewText: string }) => {
+    const rating = reviewData?.overallRating || overallRating;
+    const text = reviewData?.reviewText || reviewText;
+    
+    try {
+      const { error: insertError } = await supabase
+        .from("user_reviews")
+        .insert({
+          user_id: userId,
+          garage_name: garageName,
+          garage_location: garageLocation,
+          rating: rating,
+          review_text: text,
+          is_verified: false,
+          points_earned: 50,
+          status: "pending",
+        });
+
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+
+      toast({
+        title: "Review Submitted!",
+        description: "Your review is pending approval. You'll be notified once it's live.",
+      });
+
+      setTimeout(() => {
+        navigate(`/garage/${garageSlug || slug}`);
+      }, 1500);
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (overallRating === 0) {
       toast({
@@ -112,42 +196,29 @@ const WriteReview = () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
+        // Save review data to localStorage before redirecting
+        const pendingReviewData = {
+          garageSlug: slug,
+          garageName,
+          garageLocation,
+          overallRating,
+          categoryScores,
+          reviewText,
+          selectedTags,
+        };
+        localStorage.setItem('pendingReview', JSON.stringify(pendingReviewData));
+        
         toast({
-          title: "Authentication Required",
-          description: "Please log in to submit a review.",
-          variant: "destructive",
+          title: "Please sign in",
+          description: "Sign in to submit your review. Your data will be saved.",
         });
-        navigate("/auth");
+        
+        // Redirect to auth with return URL
+        navigate(`/auth?returnUrl=${encodeURIComponent(`/write-review/${slug}`)}`);
         return;
       }
 
-      // Insert review with pending status
-      const { error: insertError } = await supabase
-        .from("user_reviews")
-        .insert({
-          user_id: user.id,
-          garage_name: garageName,
-          garage_location: garageLocation,
-          rating: overallRating,
-          review_text: reviewText,
-          is_verified: false,
-          points_earned: 50,
-          status: "pending",
-        });
-
-      if (insertError) {
-        console.error("Insert error:", insertError);
-        throw insertError;
-      }
-
-      toast({
-        title: "Review Submitted!",
-        description: "Your review is pending approval. You'll be notified once it's live.",
-      });
-
-      setTimeout(() => {
-        navigate(`/garage/${garageSlug || slug}`);
-      }, 1500);
+      await submitReview(user.id);
     } catch (error: any) {
       console.error("Submit error:", error);
       toast({
