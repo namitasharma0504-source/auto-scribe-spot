@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.partner-submit-upsell]
 verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = true
+
+[functions.admin-delete-user]
+verify_jwt = true
+
+[functions.get-user-emails]
+verify_jwt = true
+
+[functions.parse-google-maps]
+verify_jwt = false
