@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Wrench, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +25,17 @@ export default function Auth() {
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
 
   useEffect(() => {
     if (user) {
+      // If there's a return URL (e.g., from review page), redirect there
+      if (returnUrl) {
+        navigate(returnUrl);
+        return;
+      }
+      
       // Check if user is a garage owner - if so, redirect to garage dashboard
       const checkUserType = async () => {
         const { data: garageOwner } = await supabase
@@ -48,7 +56,7 @@ export default function Auth() {
       };
       checkUserType();
     }
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, returnUrl]);
 
   const validateInputs = (isSignUp: boolean) => {
     try {
@@ -160,7 +168,9 @@ export default function Auth() {
         title: "Account Created!",
         description: "Welcome to GarageReviews! You are now signed in.",
       });
-      navigate("/dashboard");
+      
+      // Redirect to return URL if present, otherwise dashboard
+      navigate(returnUrl || "/dashboard");
     } catch (err) {
       console.error("Signup error:", err);
     } finally {
@@ -172,7 +182,12 @@ export default function Auth() {
     setIsLoading(true);
     setGarageEmailError(null);
     
-    const { error } = await signInWithGoogle(`${window.location.origin}/dashboard`);
+    // Use returnUrl if available, otherwise default to dashboard
+    const redirectTo = returnUrl 
+      ? `${window.location.origin}${returnUrl}`
+      : `${window.location.origin}/dashboard`;
+    
+    const { error } = await signInWithGoogle(redirectTo);
     
     if (error) {
       setIsLoading(false);
