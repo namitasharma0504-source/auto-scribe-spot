@@ -5,7 +5,7 @@ import {
   Settings, Image, Wrench, ExternalLink, BarChart3,
   Award, Users, Calendar, ArrowUp, ArrowDown, BadgeCheck,
   Percent, ShieldCheck, Clock, Info, Rocket, Sparkles,
-  AlertTriangle, MapPin
+  AlertTriangle, MapPin, QrCode
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -23,6 +23,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { BoostPanel } from "@/components/garage/BoostPanel";
 import { StatDetailDialog } from "@/components/garage/StatDetailDialog";
 import { GarageLeadsSection } from "@/components/garage/GarageLeadsSection";
+import { QRPosterGenerator } from "@/components/QRPosterGenerator";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -765,7 +766,7 @@ export default function GarageDashboard() {
         />
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-9 max-w-5xl">
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -785,6 +786,10 @@ export default function GarageDashboard() {
               <Rocket className="w-4 h-4" />
               <span className="hidden sm:inline">Boost</span>
               <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-star" />
+            </TabsTrigger>
+            <TabsTrigger value="poster" className="gap-2">
+              <QrCode className="w-4 h-4" />
+              <span className="hidden sm:inline">Poster</span>
             </TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -809,7 +814,34 @@ export default function GarageDashboard() {
             <GarageLeadsSection garageId={garage?.id || ""} />
           </TabsContent>
 
-          {/* Profile Tab */}
+          {/* Poster Tab */}
+          <TabsContent value="poster">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5" />
+                  Printable QR Poster
+                </CardTitle>
+                <CardDescription>
+                  Download and print this poster to display at your garage. Customers can scan the QR code to leave reviews.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center py-8">
+                {garage?.slug ? (
+                  <QRPosterGenerator 
+                    garageName={garage.name || "Your Garage"} 
+                    url={`/garage/${garage.slug}`} 
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground py-12">
+                    <QrCode className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Save your garage profile to generate a QR poster</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="profile">
             <Card>
               <CardHeader>
