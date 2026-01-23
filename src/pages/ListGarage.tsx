@@ -115,6 +115,7 @@ const ListGarage = () => {
   const location = useLocation();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [listingType, setListingType] = useState<"owner" | "customer" | "partner" | "">("");
@@ -530,6 +531,9 @@ const ListGarage = () => {
     setPhotoPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
     }
   };
 
@@ -1253,29 +1257,75 @@ const ListGarage = () => {
                     )}
                   </div>
                 ) : (
-                  <div 
-                    className={cn(
-                      "flex flex-col items-center justify-center py-8 cursor-pointer rounded-lg transition-colors",
-                      listingType === "partner" ? "hover:bg-purple-500/10" : "hover:bg-muted/50"
-                    )}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className={cn(
-                      "h-10 w-10 mb-2",
-                      listingType === "partner" ? "text-purple-600" : "text-muted-foreground"
-                    )} />
+                  <div className="flex flex-col items-center justify-center py-6 gap-4">
+                    <div className="flex gap-4">
+                      {/* Camera Capture Button */}
+                      <div 
+                        className={cn(
+                          "flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all hover:scale-105",
+                          listingType === "partner" 
+                            ? "border-purple-400 bg-purple-500/10 hover:bg-purple-500/20" 
+                            : "border-primary/50 bg-primary/5 hover:bg-primary/10"
+                        )}
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        <Camera className={cn(
+                          "h-8 w-8 mb-2",
+                          listingType === "partner" ? "text-purple-600" : "text-primary"
+                        )} />
+                        <p className={cn(
+                          "text-sm font-medium",
+                          listingType === "partner" ? "text-purple-700" : "text-primary"
+                        )}>
+                          Take Photo
+                        </p>
+                      </div>
+                      
+                      {/* Gallery Upload Button */}
+                      <div 
+                        className={cn(
+                          "flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all hover:scale-105",
+                          listingType === "partner" 
+                            ? "border-purple-400 bg-purple-500/10 hover:bg-purple-500/20" 
+                            : "border-muted-foreground/30 bg-muted/30 hover:bg-muted/50"
+                        )}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className={cn(
+                          "h-8 w-8 mb-2",
+                          listingType === "partner" ? "text-purple-600" : "text-muted-foreground"
+                        )} />
+                        <p className={cn(
+                          "text-sm font-medium",
+                          listingType === "partner" ? "text-purple-700" : "text-muted-foreground"
+                        )}>
+                          From Gallery
+                        </p>
+                      </div>
+                    </div>
+                    
                     <p className={cn(
-                      "text-sm",
-                      listingType === "partner" ? "text-purple-700 font-medium" : "text-muted-foreground"
+                      "text-sm text-center",
+                      listingType === "partner" ? "text-purple-700" : "text-muted-foreground"
                     )}>
                       {listingType === "partner" 
-                        ? "Upload garage board or visiting card photo" 
-                        : "Click to upload garage photo"
+                        ? "Capture or upload garage board / visiting card" 
+                        : "Take a photo or choose from gallery"
                       }
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG up to 5MB</p>
                   </div>
                 )}
+                {/* Camera input - opens device camera */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+                {/* Gallery input - opens file picker */}
                 <input
                   ref={fileInputRef}
                   type="file"
