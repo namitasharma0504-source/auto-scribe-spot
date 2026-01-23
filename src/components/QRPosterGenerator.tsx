@@ -2,8 +2,7 @@ import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Download, Star, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import meriGarageLogo from "@/assets/merigarage-logo-main.png";
-
+import meriGarageReviewsLogo from "@/assets/merigarage-reviews-logo.png";
 interface QRPosterGeneratorProps {
   garageName: string;
   url: string;
@@ -66,9 +65,9 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
     
     await new Promise<void>((resolve) => {
       logo.onload = () => {
-        const logoHeight = 50;
+        const logoHeight = 60;
         const logoWidth = (logo.width / logo.height) * logoHeight;
-        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, 45, logoWidth, logoHeight);
+        ctx.drawImage(logo, (posterWidth - logoWidth) / 2, 35, logoWidth, logoHeight);
         resolve();
       };
       logo.onerror = () => {
@@ -76,11 +75,11 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "bold 28px Arial, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("MeriGarage Reviews", posterWidth / 2, 80);
+        ctx.fillText("MeriGarageReviews.com", posterWidth / 2, 80);
         resolve();
       };
       // Use absolute path from public folder for Canvas compatibility
-      logo.src = window.location.origin + "/merigarage-logo.png";
+      logo.src = window.location.origin + "/merigarage-reviews-logo.png";
     });
 
     // Garage name with decorative line
@@ -257,7 +256,7 @@ export function QRPosterGenerator({ garageName, url }: QRPosterGeneratorProps) {
         
         {/* Logo */}
         <div className="pt-4 pb-2 flex justify-center relative z-10">
-          <img src={meriGarageLogo} alt="MeriGarage Reviews" className="h-7 object-contain brightness-0 invert" />
+          <img src={meriGarageReviewsLogo} alt="MeriGarageReviews.com" className="h-8 object-contain" />
         </div>
 
         {/* White Card */}
