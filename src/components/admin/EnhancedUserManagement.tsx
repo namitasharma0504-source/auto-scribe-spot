@@ -133,8 +133,22 @@ export function EnhancedUserManagement() {
   
   // Edit user dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<{ userId: string; name: string; email: string | null } | null>(null);
+  const [editingUser, setEditingUser] = useState<{ 
+    userId: string; 
+    roleId: string;
+    name: string; 
+    email: string | null;
+    phone: string | null;
+    state: string | null;
+    role: "admin" | "customer" | "garage_owner" | "partner";
+    isActive: boolean;
+  } | null>(null);
   const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editState, setEditState] = useState("");
+  const [editRole, setEditRole] = useState<"admin" | "customer" | "garage_owner" | "partner">("customer");
+  const [editIsActive, setEditIsActive] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   // Reset password dialog
@@ -419,11 +433,20 @@ export function EnhancedUserManagement() {
     }
   };
 
-  const openEditDialog = (userId: string) => {
+  const openEditDialog = (userId: string, roleId: string, role: "admin" | "customer" | "garage_owner" | "partner") => {
     const name = getUserName(userId);
     const email = getUserEmail(userId);
-    setEditingUser({ userId, name, email });
+    const phone = getUserPhone(userId);
+    const state = getUserState(userId);
+    const isActive = getUserIsActive(userId);
+    
+    setEditingUser({ userId, roleId, name, email, phone, state, role, isActive });
     setEditName(name === "Unknown User" ? "" : name);
+    setEditEmail(email || "");
+    setEditPhone(phone || "");
+    setEditState(state || "");
+    setEditRole(role);
+    setEditIsActive(isActive);
     setIsEditDialogOpen(true);
   };
 
@@ -432,31 +455,46 @@ export function EnhancedUserManagement() {
     
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: editName.trim() || null })
-        .eq("user_id", editingUser.userId);
+      // Call edge function to update all user details
+      const { data, error } = await supabase.functions.invoke("admin-update-user", {
+        body: {
+          userId: editingUser.userId,
+          email: editEmail.trim() || undefined,
+          fullName: editName.trim() || null,
+          phone: editPhone.trim() || null,
+          state: editState || null,
+          role: editRole,
+          isActive: editIsActive,
+        },
+      });
 
       if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "User Updated",
         description: "User details have been saved",
       });
 
-      // Update local state
-      setProfiles(prev => prev.map(p => 
-        p.user_id === editingUser.userId ? { ...p, full_name: editName.trim() || null } : p
-      ));
+      // Refresh data to get updated state
+      fetchUsers();
       
       setIsEditDialogOpen(false);
       setEditingUser(null);
       setEditName("");
+      setEditEmail("");
+      setEditPhone("");
+      setEditState("");
+      setEditRole("customer");
+      setEditIsActive(true);
     } catch (error: any) {
       console.error("Error updating user:", error);
       toast({
         title: "Error",
-        description: "Failed to update user details",
+        description: error.message || "Failed to update user details",
         variant: "destructive",
       });
     } finally {
@@ -1058,14 +1096,14 @@ export function EnhancedUserManagement() {
             
             {/* Edit User Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Edit User Details</DialogTitle>
                   <DialogDescription>
-                    Update the user's name and other details
+                    Update user information, role, and access status
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="edit-name">Full Name</Label>
                     <div className="relative">
@@ -1079,15 +1117,86 @@ export function EnhancedUserManagement() {
                       />
                     </div>
                   </div>
-                  {editingUser?.email && (
-                    <div className="space-y-2">
-                      <Label>Email (Read-only)</Label>
-                      <div className="flex items-center gap-2 p-3 bg-muted rounded-md text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span>{editingUser.email}</span>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="edit-email"
+                        type="email"
+                        placeholder="user@example.com"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="edit-phone"
+                        type="tel"
+                        placeholder="Enter phone number"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-state">State</Label>
+                    <Select value={editState} onValueChange={setEditState}>
+                      <SelectTrigger>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <SelectValue placeholder="Select State" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <SelectItem value="">No State</SelectItem>
+                        {indiaStates.map((state) => (
+                          <SelectItem key={state.value} value={state.label}>
+                            {state.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Role</Label>
+                    <Select value={editRole} onValueChange={(v) => setEditRole(v as any)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="partner">Partner</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="garage_owner">Garage Owner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                    <div className="flex items-center gap-3">
+                      {editIsActive ? (
+                        <Power className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <PowerOff className="w-5 h-5 text-red-500" />
+                      )}
+                      <div>
+                        <p className="font-medium">Account Status</p>
+                        <p className="text-xs text-muted-foreground">
+                          {editIsActive ? "User can access the platform" : "User is blocked from accessing"}
+                        </p>
                       </div>
                     </div>
-                  )}
+                    <Switch
+                      checked={editIsActive}
+                      onCheckedChange={setEditIsActive}
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
@@ -1323,7 +1432,7 @@ export function EnhancedUserManagement() {
                                     variant="ghost"
                                     size="icon"
                                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    onClick={() => openEditDialog(role.user_id)}
+                                    onClick={() => openEditDialog(role.user_id, role.id, role.role)}
                                     title="Edit user details"
                                   >
                                     <Edit className="w-4 h-4" />
