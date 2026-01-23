@@ -88,6 +88,11 @@ interface UserEmail {
   email: string;
 }
 
+interface UserPhone {
+  user_id: string;
+  phone: string;
+}
+
 interface PartnerAccount {
   id: string;
   user_id: string | null;
@@ -111,6 +116,7 @@ export function EnhancedUserManagement() {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [userEmails, setUserEmails] = useState<UserEmail[]>([]);
+  const [userPhones, setUserPhones] = useState<UserPhone[]>([]);
   const [partners, setPartners] = useState<PartnerAccount[]>([]);
   const [partnerEarnings, setPartnerEarnings] = useState<PartnerEarnings[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,17 +147,38 @@ export function EnhancedUserManagement() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const [rolesResult, profilesResult, partnersResult, listingsResult] = await Promise.all([
+      const [rolesResult, profilesResult, partnersResult, listingsResult, garageOwnersResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
         supabase.from("profiles").select("user_id, full_name, created_at, is_active, state"),
         supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
-        supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status")
+        supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status"),
+        supabase.from("garage_owners").select("user_id, contact_phone")
       ]);
 
       if (rolesResult.error) throw rolesResult.error;
       if (profilesResult.error) throw profilesResult.error;
       if (partnersResult.error) throw partnersResult.error;
       if (listingsResult.error) throw listingsResult.error;
+      if (garageOwnersResult.error) throw garageOwnersResult.error;
+
+      // Build phone map from multiple sources
+      const phoneMap = new Map<string, string>();
+      
+      // From garage_owners
+      (garageOwnersResult.data || []).forEach((owner) => {
+        if (owner.user_id && owner.contact_phone) {
+          phoneMap.set(owner.user_id, owner.contact_phone);
+        }
+      });
+      
+      // From partners (user_id based)
+      (partnersResult.data || []).forEach((partner) => {
+        if (partner.user_id && partner.phone) {
+          phoneMap.set(partner.user_id, partner.phone);
+        }
+      });
+      
+      setUserPhones(Array.from(phoneMap.entries()).map(([user_id, phone]) => ({ user_id, phone })));
 
       setUserRoles(rolesResult.data || []);
       setProfiles(profilesResult.data || []);
@@ -262,6 +289,11 @@ export function EnhancedUserManagement() {
   const getUserState = (userId: string): string | null => {
     const profile = profiles.find(p => p.user_id === userId);
     return profile?.state || null;
+  };
+
+  const getUserPhone = (userId: string): string | null => {
+    const phoneEntry = userPhones.find(p => p.user_id === userId);
+    return phoneEntry?.phone || null;
   };
 
   // Generate role-based unique ID
@@ -914,6 +946,7 @@ export function EnhancedUserManagement() {
                               {getSortIcon("email")}
                             </Button>
                           </TableHead>
+                          <TableHead>Phone</TableHead>
                           <TableHead>User ID</TableHead>
                           <TableHead>
                             <Button
@@ -985,6 +1018,16 @@ export function EnhancedUserManagement() {
                                   <div className="flex items-center gap-1.5 text-sm">
                                     <Mail className="w-3 h-3 text-muted-foreground" />
                                     <span className="truncate max-w-[160px]">{email}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm italic">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {getUserPhone(role.user_id) ? (
+                                  <div className="flex items-center gap-1.5 text-sm">
+                                    <Phone className="w-3 h-3 text-muted-foreground" />
+                                    <span>{getUserPhone(role.user_id)}</span>
                                   </div>
                                 ) : (
                                   <span className="text-muted-foreground text-sm italic">—</span>
