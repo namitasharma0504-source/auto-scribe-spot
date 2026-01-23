@@ -883,6 +883,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
+          phone: string | null
           state: string | null
           total_points: number | null
           updated_at: string
@@ -894,6 +895,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          phone?: string | null
           state?: string | null
           total_points?: number | null
           updated_at?: string
@@ -905,6 +907,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          phone?: string | null
           state?: string | null
           total_points?: number | null
           updated_at?: string

@@ -81,6 +81,7 @@ interface Profile {
   created_at: string;
   is_active: boolean;
   state: string | null;
+  phone: string | null;
 }
 
 interface UserEmail {
@@ -149,7 +150,7 @@ export function EnhancedUserManagement() {
     try {
       const [rolesResult, profilesResult, partnersResult, listingsResult, garageOwnersResult] = await Promise.all([
         supabase.from("user_roles").select("*"),
-        supabase.from("profiles").select("user_id, full_name, created_at, is_active, state"),
+        supabase.from("profiles").select("user_id, full_name, created_at, is_active, state, phone"),
         supabase.from("partners").select("id, user_id, username, full_name, email, phone, status, kyc_status, created_at").order("created_at", { ascending: false }),
         supabase.from("partner_listings").select("partner_id, total_earning, payout_status, status"),
         supabase.from("garage_owners").select("user_id, contact_phone")
@@ -161,20 +162,27 @@ export function EnhancedUserManagement() {
       if (listingsResult.error) throw listingsResult.error;
       if (garageOwnersResult.error) throw garageOwnersResult.error;
 
-      // Build phone map from multiple sources
+      // Build phone map from multiple sources (profiles takes priority, then partners, then garage_owners)
       const phoneMap = new Map<string, string>();
       
-      // From garage_owners
+      // From garage_owners (lowest priority)
       (garageOwnersResult.data || []).forEach((owner) => {
         if (owner.user_id && owner.contact_phone) {
           phoneMap.set(owner.user_id, owner.contact_phone);
         }
       });
       
-      // From partners (user_id based)
+      // From partners (medium priority)
       (partnersResult.data || []).forEach((partner) => {
         if (partner.user_id && partner.phone) {
           phoneMap.set(partner.user_id, partner.phone);
+        }
+      });
+      
+      // From profiles (highest priority - this is the customer phone)
+      (profilesResult.data || []).forEach((profile) => {
+        if (profile.user_id && profile.phone) {
+          phoneMap.set(profile.user_id, profile.phone);
         }
       });
       
