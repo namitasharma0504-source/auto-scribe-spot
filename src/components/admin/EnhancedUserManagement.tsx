@@ -1147,7 +1147,7 @@ export function EnhancedUserManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-state">State</Label>
-                    <Select value={editState} onValueChange={setEditState}>
+                    <Select value={editState || "none"} onValueChange={(v) => setEditState(v === "none" ? "" : v)}>
                       <SelectTrigger>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -1155,7 +1155,7 @@ export function EnhancedUserManagement() {
                         </div>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        <SelectItem value="">No State</SelectItem>
+                        <SelectItem value="none">No State</SelectItem>
                         {indiaStates.map((state) => (
                           <SelectItem key={state.value} value={state.label}>
                             {state.label}
