@@ -47,16 +47,20 @@ export default function GarageAuth() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if user is a garage owner
+        // Check if user is a garage owner with linked garage and active subscription
         const { data: garageOwner } = await supabase
           .from("garage_owners")
-          .select("*")
+          .select("*, garage_id, subscription_active")
           .eq("user_id", session.user.id)
           .single();
         
         if (garageOwner) {
-          // Redirect to garage account page (not dashboard - dashboard requires approved claim)
-          navigate("/garage-account");
+          // If owner has a linked garage and active subscription, go directly to dashboard
+          if (garageOwner.garage_id && garageOwner.subscription_active) {
+            navigate("/garage-dashboard");
+          } else {
+            navigate("/garage-account");
+          }
         } else {
           // User is logged in but not a garage owner - show message
           setCustomerEmailError(
@@ -108,10 +112,10 @@ export default function GarageAuth() {
 
       if (error) throw error;
 
-      // Check if user is a garage owner
+      // Check if user is a garage owner with linked garage and active subscription
       const { data: garageOwner } = await supabase
         .from("garage_owners")
-        .select("*")
+        .select("*, garage_id, subscription_active")
         .eq("user_id", data.user.id)
         .single();
 
@@ -132,7 +136,13 @@ export default function GarageAuth() {
         title: "Welcome Back!",
         description: "You have successfully signed in.",
       });
-      navigate("/garage-account");
+
+      // If owner has a linked garage and active subscription, go directly to dashboard
+      if (garageOwner.garage_id && garageOwner.subscription_active) {
+        navigate("/garage-dashboard");
+      } else {
+        navigate("/garage-account");
+      }
     } catch (error: any) {
       toast({
         title: "Sign In Failed",
