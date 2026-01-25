@@ -162,6 +162,10 @@ export function PartnerManagement() {
   const [listingPhotos, setListingPhotos] = useState<GaragePhoto[]>([]);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  
+  // KYC document signed URLs
+  const [panDocumentUrl, setPanDocumentUrl] = useState<string | null>(null);
+  const [aadhaarDocumentUrl, setAadhaarDocumentUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPartners();
@@ -225,6 +229,25 @@ export function PartnerManagement() {
         total_earnings: totalEarnings,
         pending_payout: pendingPayout > 0 ? pendingPayout : 0,
       });
+      
+      // Fetch signed URLs for KYC documents
+      setPanDocumentUrl(null);
+      setAadhaarDocumentUrl(null);
+      
+      if (partner.pan_document) {
+        const { data: panData } = await supabase.storage
+          .from("partner-documents")
+          .createSignedUrl(partner.pan_document, 300); // 5 minutes
+        if (panData?.signedUrl) setPanDocumentUrl(panData.signedUrl);
+      }
+      
+      if (partner.aadhaar_document) {
+        const { data: aadhaarData } = await supabase.storage
+          .from("partner-documents")
+          .createSignedUrl(partner.aadhaar_document, 300); // 5 minutes
+        if (aadhaarData?.signedUrl) setAadhaarDocumentUrl(aadhaarData.signedUrl);
+      }
+      
       setIsDetailsOpen(true);
     } catch (error: any) {
       console.error("Error fetching partner details:", error);
@@ -835,14 +858,18 @@ export function PartnerManagement() {
                       <p className="text-sm text-muted-foreground">PAN Number</p>
                       <p className="font-medium font-mono">{selectedPartner.pan_number || "Not provided"}</p>
                       {selectedPartner.pan_document && (
-                        <a 
-                          href={selectedPartner.pan_document} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          View Document
-                        </a>
+                        panDocumentUrl ? (
+                          <a 
+                            href={panDocumentUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            View Document
+                          </a>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Loading...</span>
+                        )
                       )}
                     </div>
                     <div>
@@ -853,14 +880,18 @@ export function PartnerManagement() {
                           : "Not provided"}
                       </p>
                       {selectedPartner.aadhaar_document && (
-                        <a 
-                          href={selectedPartner.aadhaar_document} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          View Document
-                        </a>
+                        aadhaarDocumentUrl ? (
+                          <a 
+                            href={aadhaarDocumentUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            View Document
+                          </a>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Loading...</span>
+                        )
                       )}
                     </div>
                   </div>
