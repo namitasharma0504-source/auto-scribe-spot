@@ -77,6 +77,8 @@ const Index = () => {
           imageUrl: garagePhotos[0] || garage.photo_url || undefined,
           photos: garagePhotos.length > 0 ? garagePhotos : (garage.photo_url ? [garage.photo_url] : []),
           locationLink: garage.location_link || undefined,
+          latitude: garage.captured_latitude || undefined,
+          longitude: garage.captured_longitude || undefined,
           isVerified: garage.is_verified || false,
           isCertified: garage.is_certified || false,
           isRecommended: garage.is_recommended || false,

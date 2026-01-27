@@ -43,6 +43,8 @@ interface Garage {
   walk_in_welcome: boolean | null;
   location_link: string | null;
   owner_id: string | null;
+  captured_latitude: number | null;
+  captured_longitude: number | null;
 }
 
 interface GaragePhoto {
@@ -432,14 +434,16 @@ const GarageDetails = () => {
               )}
 
               {/* Google Map */}
-              {garage.location_link && (
+              {(garage.location_link || garage.captured_latitude) && (
                 <div className="mb-8">
                   <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
                   <GarageMapPreview
-                    locationLink={garage.location_link}
+                    locationLink={garage.location_link || undefined}
                     address={fullAddress}
                     garageName={garage.name}
                     variant="full"
+                    latitude={garage.captured_latitude || undefined}
+                    longitude={garage.captured_longitude || undefined}
                   />
                 </div>
               )}
