@@ -1126,6 +1126,39 @@ export type Database = {
           },
         ]
       }
+      webinar_slots: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_full: boolean
+          max_capacity: number | null
+          slot_date: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_full?: boolean
+          max_capacity?: number | null
+          slot_date: string
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_full?: boolean
+          max_capacity?: number | null
+          slot_date?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

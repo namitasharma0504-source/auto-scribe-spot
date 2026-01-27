@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_SLOTS = ["2026-01-24"];  // Only Saturday is available; Sunday (2026-01-25) is full
-
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -47,9 +45,28 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
-      if (!VALID_SLOTS.includes(slot)) {
+      // Validate slot exists and is not full (fetch from database)
+      const { data: slotData, error: slotError } = await supabase
+        .from("webinar_slots")
+        .select("slot_date, is_full")
+        .eq("slot_date", slot)
+        .maybeSingle();
+
+      if (slotError) {
+        console.error("Error checking slot:", slotError);
+        throw new Error("Failed to validate slot");
+      }
+
+      if (!slotData) {
         return new Response(
           JSON.stringify({ error: "Invalid slot selected" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      if (slotData.is_full) {
+        return new Response(
+          JSON.stringify({ error: "This slot is full. Please select another date." }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
