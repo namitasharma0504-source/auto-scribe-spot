@@ -54,6 +54,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DocumentPreviewModal } from "./DocumentPreviewModal";
 
 interface Partner {
   id: string;
@@ -166,6 +167,11 @@ export function PartnerManagement() {
   // KYC document signed URLs
   const [panDocumentUrl, setPanDocumentUrl] = useState<string | null>(null);
   const [aadhaarDocumentUrl, setAadhaarDocumentUrl] = useState<string | null>(null);
+  
+  // Document preview modal state
+  const [previewDocUrl, setPreviewDocUrl] = useState<string | null>(null);
+  const [previewDocTitle, setPreviewDocTitle] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -859,14 +865,19 @@ export function PartnerManagement() {
                       <p className="font-medium font-mono">{selectedPartner.pan_number || "Not provided"}</p>
                       {selectedPartner.pan_document && (
                         panDocumentUrl ? (
-                          <a 
-                            href={panDocumentUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 text-sm text-primary"
+                            onClick={() => {
+                              setPreviewDocUrl(panDocumentUrl);
+                              setPreviewDocTitle("PAN Card - " + selectedPartner.full_name);
+                              setIsPreviewOpen(true);
+                            }}
                           >
+                            <Eye className="w-3 h-3 mr-1" />
                             View Document
-                          </a>
+                          </Button>
                         ) : (
                           <span className="text-sm text-muted-foreground">Loading...</span>
                         )
@@ -881,14 +892,19 @@ export function PartnerManagement() {
                       </p>
                       {selectedPartner.aadhaar_document && (
                         aadhaarDocumentUrl ? (
-                          <a 
-                            href={aadhaarDocumentUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 text-sm text-primary"
+                            onClick={() => {
+                              setPreviewDocUrl(aadhaarDocumentUrl);
+                              setPreviewDocTitle("Aadhaar Card - " + selectedPartner.full_name);
+                              setIsPreviewOpen(true);
+                            }}
                           >
+                            <Eye className="w-3 h-3 mr-1" />
                             View Document
-                          </a>
+                          </Button>
                         ) : (
                           <span className="text-sm text-muted-foreground">Loading...</span>
                         )
@@ -1601,6 +1617,14 @@ export function PartnerManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        documentUrl={previewDocUrl}
+        documentTitle={previewDocTitle}
+      />
     </div>
   );
 }
