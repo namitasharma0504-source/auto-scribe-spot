@@ -6,6 +6,8 @@ interface GarageMapPreviewProps {
   address: string;
   garageName: string;
   variant?: "compact" | "full";
+  latitude?: number;
+  longitude?: number;
 }
 
 export function GarageMapPreview({
@@ -13,12 +15,19 @@ export function GarageMapPreview({
   address,
   garageName,
   variant = "full",
+  latitude,
+  longitude,
 }: GarageMapPreviewProps) {
-  const googleMapsEmbedUrl = locationLink 
-    ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
+  // Priority: Use captured GPS coordinates if available, then location_link, then address
+  const hasCoordinates = latitude !== undefined && longitude !== undefined;
+  
+  const googleMapsEmbedUrl = hasCoordinates
+    ? `https://www.google.com/maps?q=${latitude},${longitude}&output=embed`
     : `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 
-  const directionsUrl = locationLink || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+  const directionsUrl = hasCoordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+    : (locationLink || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`);
 
   if (variant === "compact") {
     return (

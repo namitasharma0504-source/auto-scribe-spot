@@ -24,6 +24,8 @@ interface GarageCardProps extends GarageBadgeData, GarageActivityData {
   imageUrl?: string;
   photos?: string[];
   locationLink?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export function GarageCard({
@@ -38,6 +40,8 @@ export function GarageCard({
   imageUrl,
   photos = [],
   locationLink,
+  latitude,
+  longitude,
   isVerified = false,
   isCertified = false,
   isRecommended = false,
@@ -113,12 +117,14 @@ export function GarageCard({
               <MapPin className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm truncate">{location}</span>
             </div>
-            {(locationLink || address) && (
+            {(locationLink || address || latitude) && (
               <GarageMapPreview 
                 locationLink={locationLink} 
                 address={address || location} 
                 garageName={name} 
-                variant="compact" 
+                variant="compact"
+                latitude={latitude}
+                longitude={longitude}
               />
             )}
           </div>
