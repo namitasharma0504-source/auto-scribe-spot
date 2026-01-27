@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Scale,
   Trophy,
+  Video,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import { PartnerManagement } from "@/components/admin/PartnerManagement";
 import { PartnerListingsManagement } from "@/components/admin/PartnerListingsManagement";
 import { PartnerDisputesManagement } from "@/components/admin/PartnerDisputesManagement";
 import { PartnerLeaderboard } from "@/components/admin/PartnerLeaderboard";
+import { WebinarSlotsManagement } from "@/components/admin/WebinarSlotsManagement";
 
 import {
   Dialog,
@@ -594,6 +596,10 @@ export default function Admin() {
               <Scale className="w-4 h-4" />
               Disputes
             </TabsTrigger>
+            <TabsTrigger value="webinar-slots" className="gap-2">
+              <Video className="w-4 h-4" />
+              Webinar
+            </TabsTrigger>
             <TabsTrigger value="customers" className="gap-2">
               <Users className="w-4 h-4" />
               Customers
@@ -881,6 +887,22 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="webinar-slots">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="w-5 h-5" />
+                  Webinar Slots Management
+                </CardTitle>
+                <CardDescription>
+                  Manage webinar dates, times, and mark slots as full.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WebinarSlotsManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="customers">
             <CustomerManagement />

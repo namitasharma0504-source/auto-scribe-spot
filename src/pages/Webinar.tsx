@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,36 +6,59 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Calendar, Clock, CalendarCheck, Sparkles, Mail, PartyPopper, AlertCircle } from "lucide-react";
+import { Calendar, Clock, CalendarCheck, Sparkles, Mail, PartyPopper, AlertCircle, RefreshCw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 
-const WEBINAR_SLOTS = [
-  {
-    id: "2026-01-24",
-    date: new Date(2026, 0, 24, 16, 0),
-    dayName: "Saturday",
-    displayDate: "24th January 2026",
-    time: "4:00 PM - 5:00 PM",
-    isFull: false,
-  },
-  {
-    id: "2026-01-25",
-    date: new Date(2026, 0, 25, 16, 0),
-    dayName: "Sunday",
-    displayDate: "25th January 2026",
-    time: "4:00 PM - 5:00 PM",
-    isFull: true,
-  },
-];
+interface WebinarSlot {
+  id: string;
+  slot_date: string;
+  start_time: string;
+  end_time: string;
+  is_full: boolean;
+  max_capacity: number | null;
+}
 
 const Webinar = () => {
   const [email, setEmail] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookedSlot, setBookedSlot] = useState<string | null>(null);
+  const [webinarSlots, setWebinarSlots] = useState<WebinarSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWebinarSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        const { data, error } = await supabase
+          .from("webinar_slots")
+          .select("*")
+          .order("slot_date", { ascending: true });
+
+        if (error) throw error;
+        setWebinarSlots(data || []);
+      } catch (error) {
+        console.error("Error fetching webinar slots:", error);
+        toast.error("Failed to load webinar slots");
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchWebinarSlots();
+  }, []);
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
 
   const triggerConfetti = () => {
     const duration = 3000;
@@ -113,7 +136,16 @@ const Webinar = () => {
   };
 
   const getSlotDetails = (slotId: string) => {
-    return WEBINAR_SLOTS.find((s) => s.id === slotId);
+    const slot = webinarSlots.find((s) => s.slot_date === slotId);
+    if (!slot) return null;
+    
+    const slotDate = new Date(slot.slot_date);
+    return {
+      id: slot.slot_date,
+      dayName: format(slotDate, "EEEE"),
+      displayDate: format(slotDate, "do MMMM yyyy"),
+      time: `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`,
+    };
   };
 
   return (
@@ -236,57 +268,78 @@ const Webinar = () => {
                 <h2 className="text-xl font-semibold text-center mb-6">
                   Choose Your Preferred Date
                 </h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {WEBINAR_SLOTS.map((slot) => (
-                    <Card
-                      key={slot.id}
-                      className={`transition-all border-2 ${
-                        slot.isFull 
-                          ? "opacity-60 cursor-not-allowed border-gray-300" 
-                          : "hover:border-primary/50 hover:shadow-lg cursor-pointer group"
-                      }`}
-                    >
-                      <CardContent className="p-6 text-center">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform ${
-                          slot.isFull 
-                            ? "bg-gray-200 dark:bg-gray-700" 
-                            : "bg-gradient-to-br from-primary/20 to-primary/10 group-hover:scale-110"
-                        }`}>
-                          <Calendar className={`w-8 h-8 ${slot.isFull ? "text-gray-400" : "text-primary"}`} />
-                        </div>
-                        <h3 className="text-xl font-semibold text-foreground mb-1">
-                          {slot.dayName}
-                        </h3>
-                        <p className="text-muted-foreground mb-3">{slot.displayDate}</p>
-                        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 rounded-full px-4 py-2 mb-5">
-                          <Clock className="w-4 h-4" />
-                          <span>{slot.time}</span>
-                        </div>
-                        {slot.isFull ? (
-                          <div className="w-full h-12 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-md text-gray-500 font-medium">
-                            Slot Full
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleBookSlot(slot.id)}
-                            disabled={isBooking}
-                            className="w-full h-12 text-base"
-                            size="lg"
-                          >
-                            {isBooking && selectedSlot === slot.id ? (
-                              <span className="flex items-center gap-2">
-                                <span className="animate-spin">⏳</span>
-                                Booking...
-                              </span>
+                {isLoadingSlots ? (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : webinarSlots.length === 0 ? (
+                  <Card className="py-12">
+                    <CardContent className="text-center">
+                      <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No webinar slots available at the moment</p>
+                      <p className="text-sm text-muted-foreground mt-1">Please check back later</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {webinarSlots.map((slot) => {
+                      const slotDate = new Date(slot.slot_date);
+                      const dayName = format(slotDate, "EEEE");
+                      const displayDate = format(slotDate, "do MMMM yyyy");
+                      const timeDisplay = `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`;
+                      
+                      return (
+                        <Card
+                          key={slot.id}
+                          className={`transition-all border-2 ${
+                            slot.is_full 
+                              ? "opacity-60 cursor-not-allowed border-muted" 
+                              : "hover:border-primary/50 hover:shadow-lg cursor-pointer group"
+                          }`}
+                        >
+                          <CardContent className="p-6 text-center">
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform ${
+                              slot.is_full 
+                                ? "bg-muted" 
+                                : "bg-gradient-to-br from-primary/20 to-primary/10 group-hover:scale-110"
+                            }`}>
+                              <Calendar className={`w-8 h-8 ${slot.is_full ? "text-muted-foreground" : "text-primary"}`} />
+                            </div>
+                            <h3 className="text-xl font-semibold text-foreground mb-1">
+                              {dayName}
+                            </h3>
+                            <p className="text-muted-foreground mb-3">{displayDate}</p>
+                            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 rounded-full px-4 py-2 mb-5">
+                              <Clock className="w-4 h-4" />
+                              <span>{timeDisplay}</span>
+                            </div>
+                            {slot.is_full ? (
+                              <div className="w-full h-12 flex items-center justify-center bg-muted rounded-md text-muted-foreground font-medium">
+                                Slot Full
+                              </div>
                             ) : (
-                              "Book This Slot"
+                              <Button
+                                onClick={() => handleBookSlot(slot.slot_date)}
+                                disabled={isBooking}
+                                className="w-full h-12 text-base"
+                                size="lg"
+                              >
+                                {isBooking && selectedSlot === slot.slot_date ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="animate-spin">⏳</span>
+                                    Booking...
+                                  </span>
+                                ) : (
+                                  "Book This Slot"
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
