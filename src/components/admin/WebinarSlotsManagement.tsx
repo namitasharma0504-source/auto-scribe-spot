@@ -8,27 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Calendar, Clock, Plus, Trash2, RefreshCw, Users } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Calendar, Clock, RefreshCw, Users, Save } from "lucide-react";
 
 interface WebinarSlot {
   id: string;
@@ -45,13 +25,8 @@ interface WebinarSlot {
 export function WebinarSlotsManagement() {
   const [slots, setSlots] = useState<WebinarSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newSlot, setNewSlot] = useState({
-    slot_date: "",
-    start_time: "16:00",
-    end_time: "17:00",
-    max_capacity: "",
-  });
+  const [editingSlots, setEditingSlots] = useState<Record<string, { date: string; start: string; end: string }>>({});
+  const [savingSlotId, setSavingSlotId] = useState<string | null>(null);
 
   const fetchSlots = async () => {
     setIsLoading(true);
@@ -59,7 +34,8 @@ export function WebinarSlotsManagement() {
       const { data: slotsData, error } = await supabase
         .from("webinar_slots")
         .select("*")
-        .order("slot_date", { ascending: true });
+        .order("slot_date", { ascending: true })
+        .limit(2);
 
       if (error) throw error;
 
@@ -76,6 +52,17 @@ export function WebinarSlotsManagement() {
       );
 
       setSlots(slotsWithCounts);
+      
+      // Initialize editing state
+      const editState: Record<string, { date: string; start: string; end: string }> = {};
+      slotsWithCounts.forEach((slot) => {
+        editState[slot.id] = {
+          date: slot.slot_date,
+          start: slot.start_time,
+          end: slot.end_time,
+        };
+      });
+      setEditingSlots(editState);
     } catch (error: any) {
       console.error("Error fetching webinar slots:", error);
       toast.error("Failed to load webinar slots");
@@ -88,30 +75,33 @@ export function WebinarSlotsManagement() {
     fetchSlots();
   }, []);
 
-  const handleAddSlot = async () => {
-    if (!newSlot.slot_date) {
+  const handleSaveSlot = async (slotId: string) => {
+    const editData = editingSlots[slotId];
+    if (!editData || !editData.date) {
       toast.error("Please select a date");
       return;
     }
 
+    setSavingSlotId(slotId);
     try {
-      const { error } = await supabase.from("webinar_slots").insert({
-        slot_date: newSlot.slot_date,
-        start_time: newSlot.start_time,
-        end_time: newSlot.end_time,
-        max_capacity: newSlot.max_capacity ? parseInt(newSlot.max_capacity) : null,
-        is_full: false,
-      });
+      const { error } = await supabase
+        .from("webinar_slots")
+        .update({
+          slot_date: editData.date,
+          start_time: editData.start,
+          end_time: editData.end,
+        })
+        .eq("id", slotId);
 
       if (error) throw error;
 
-      toast.success("Webinar slot added successfully");
-      setIsAddDialogOpen(false);
-      setNewSlot({ slot_date: "", start_time: "16:00", end_time: "17:00", max_capacity: "" });
+      toast.success("Slot updated successfully");
       fetchSlots();
     } catch (error: any) {
-      console.error("Error adding slot:", error);
-      toast.error("Failed to add webinar slot");
+      console.error("Error updating slot:", error);
+      toast.error("Failed to update slot");
+    } finally {
+      setSavingSlotId(null);
     }
   };
 
@@ -132,38 +122,14 @@ export function WebinarSlotsManagement() {
     }
   };
 
-  const handleUpdateTime = async (slotId: string, field: "start_time" | "end_time", value: string) => {
-    try {
-      const { error } = await supabase
-        .from("webinar_slots")
-        .update({ [field]: value })
-        .eq("id", slotId);
-
-      if (error) throw error;
-
-      toast.success("Time updated successfully");
-      fetchSlots();
-    } catch (error: any) {
-      console.error("Error updating time:", error);
-      toast.error("Failed to update time");
-    }
-  };
-
-  const handleDeleteSlot = async (slotId: string) => {
-    try {
-      const { error } = await supabase
-        .from("webinar_slots")
-        .delete()
-        .eq("id", slotId);
-
-      if (error) throw error;
-
-      toast.success("Webinar slot deleted");
-      fetchSlots();
-    } catch (error: any) {
-      console.error("Error deleting slot:", error);
-      toast.error("Failed to delete slot");
-    }
+  const updateEditingSlot = (slotId: string, field: "date" | "start" | "end", value: string) => {
+    setEditingSlots((prev) => ({
+      ...prev,
+      [slotId]: {
+        ...prev[slotId],
+        [field]: value,
+      },
+    }));
   };
 
   const formatTime = (time: string) => {
@@ -188,74 +154,13 @@ export function WebinarSlotsManagement() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            Manage webinar dates, times, and slot availability for partner orientation sessions.
+            Manage the 2 webinar slots displayed on the booking page. Edit date, time, and availability.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchSlots}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Slot
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Webinar Slot</DialogTitle>
-                <DialogDescription>
-                  Create a new webinar date and time for partner orientation.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Input
-                    type="date"
-                    value={newSlot.slot_date}
-                    onChange={(e) => setNewSlot({ ...newSlot, slot_date: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Start Time</Label>
-                    <Input
-                      type="time"
-                      value={newSlot.start_time}
-                      onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Time</Label>
-                    <Input
-                      type="time"
-                      value={newSlot.end_time}
-                      onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Capacity (optional)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Leave empty for unlimited"
-                    value={newSlot.max_capacity}
-                    onChange={(e) => setNewSlot({ ...newSlot, max_capacity: e.target.value })}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddSlot}>Add Slot</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Button variant="outline" size="sm" onClick={fetchSlots}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Slots List */}
@@ -265,109 +170,121 @@ export function WebinarSlotsManagement() {
             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No webinar slots configured</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Add your first slot to get started
+              Please add slots from the database
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {slots.map((slot) => (
-            <Card key={slot.id} className={slot.is_full ? "border-orange-500/30 bg-orange-500/5" : ""}>
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* Date & Day */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-primary" />
+        <div className="grid gap-6">
+          {slots.map((slot, index) => {
+            const editData = editingSlots[slot.id] || { date: slot.slot_date, start: slot.start_time, end: slot.end_time };
+            const hasChanges = editData.date !== slot.slot_date || editData.start !== slot.start_time || editData.end !== slot.end_time;
+            
+            return (
+              <Card key={slot.id} className={slot.is_full ? "border-orange-500/30 bg-orange-500/5" : ""}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg">Slot {index + 1}</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>{slot.booked_count || 0} booked</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={slot.is_full}
+                          onCheckedChange={() => handleToggleFull(slot)}
+                        />
+                        <Label className="text-sm">
+                          {slot.is_full ? (
+                            <Badge variant="secondary" className="bg-orange-500/10 text-orange-600">
+                              Slot Full
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-green-500/10 text-green-600">
+                              Available
+                            </Badge>
+                          )}
+                        </Label>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-lg">
-                        {format(new Date(slot.slot_date), "EEEE")}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {format(new Date(slot.slot_date), "d MMMM yyyy")}
-                      </p>
-                    </div>
                   </div>
 
-                  {/* Time Inputs */}
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="time"
-                      value={slot.start_time}
-                      onChange={(e) => handleUpdateTime(slot.id, "start_time", e.target.value)}
-                      className="w-28"
-                    />
-                    <span className="text-muted-foreground">to</span>
-                    <Input
-                      type="time"
-                      value={slot.end_time}
-                      onChange={(e) => handleUpdateTime(slot.id, "end_time", e.target.value)}
-                      className="w-28"
-                    />
-                  </div>
-
-                  {/* Booked Count */}
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {slot.booked_count || 0} booked
-                      {slot.max_capacity && ` / ${slot.max_capacity}`}
-                    </span>
-                  </div>
-
-                  {/* Status Toggle */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={slot.is_full}
-                        onCheckedChange={() => handleToggleFull(slot)}
-                      />
-                      <Label className="text-sm">
-                        {slot.is_full ? (
-                          <Badge variant="secondary" className="bg-orange-500/10 text-orange-600">
-                            Slot Full
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                            Available
-                          </Badge>
-                        )}
+                  <div className="grid md:grid-cols-4 gap-4 items-end">
+                    {/* Date Input */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4" />
+                        Date
                       </Label>
+                      <Input
+                        type="date"
+                        value={editData.date}
+                        onChange={(e) => updateEditingSlot(slot.id, "date", e.target.value)}
+                      />
+                      {editData.date && (
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(editData.date), "EEEE, d MMMM yyyy")}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Delete */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Webinar Slot?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the slot for {format(new Date(slot.slot_date), "d MMMM yyyy")}.
-                            Existing bookings will not be affected but new bookings won't be possible.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSlot(slot.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    {/* Start Time */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4" />
+                        Start Time
+                      </Label>
+                      <Input
+                        type="time"
+                        value={editData.start}
+                        onChange={(e) => updateEditingSlot(slot.id, "start", e.target.value)}
+                      />
+                      {editData.start && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatTime(editData.start)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* End Time */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4" />
+                        End Time
+                      </Label>
+                      <Input
+                        type="time"
+                        value={editData.end}
+                        onChange={(e) => updateEditingSlot(slot.id, "end", e.target.value)}
+                      />
+                      {editData.end && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatTime(editData.end)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Save Button */}
+                    <div>
+                      <Button
+                        onClick={() => handleSaveSlot(slot.id)}
+                        disabled={!hasChanges || savingSlotId === slot.id}
+                        className="w-full"
+                      >
+                        {savingSlotId === slot.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Save className="w-4 h-4 mr-2" />
+                        )}
+                        Save Changes
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -37,7 +37,8 @@ const Webinar = () => {
         const { data, error } = await supabase
           .from("webinar_slots")
           .select("*")
-          .order("slot_date", { ascending: true });
+          .order("slot_date", { ascending: true })
+          .limit(2);
 
         if (error) throw error;
         setWebinarSlots(data || []);
