@@ -27,6 +27,7 @@ import {
 import { format } from "date-fns";
 import { GarageAllReviews } from "./GarageAllReviews";
 import { GarageManagementSheet } from "./GarageManagementSheet";
+import { AddGarageDialog } from "./AddGarageDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -714,6 +715,7 @@ export function GarageManagement() {
                 <Download className="w-4 h-4" />
                 Template
               </Button>
+              <AddGarageDialog onGarageAdded={fetchGarages} />
               <input
                 ref={fileInputRef}
                 type="file"
@@ -723,6 +725,7 @@ export function GarageManagement() {
               />
               <Button 
                 onClick={() => fileInputRef.current?.click()} 
+                variant="outline"
                 className="gap-2"
                 disabled={isUploading}
               >
