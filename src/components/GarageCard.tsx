@@ -11,6 +11,7 @@ import { GaragePhotoGallery, PhotoIndicator } from "./GaragePhotoGallery";
 import defaultGaragePlaceholder from "@/assets/default-garage-placeholder.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface GarageCardProps extends GarageBadgeData, GarageActivityData {
   id: string;
@@ -26,6 +27,7 @@ interface GarageCardProps extends GarageBadgeData, GarageActivityData {
   locationLink?: string;
   latitude?: number;
   longitude?: number;
+  vehicleTypes?: string[];
 }
 
 export function GarageCard({
@@ -49,6 +51,7 @@ export function GarageCard({
   responseTime,
   quotesThisMonth,
   walkInWelcome,
+  vehicleTypes = ["4-wheeler"],
 }: GarageCardProps) {
   const garageSlug = slug || id;
   const [imageError, setImageError] = useState(false);
@@ -82,6 +85,18 @@ export function GarageCard({
                 <StarRating rating={1} maxRating={1} size="sm" />
                 <span className="font-semibold text-foreground">{rating.toFixed(1)}</span>
               </div>
+            </div>
+            {/* Vehicle Type Badge */}
+            <div className="absolute top-3 left-3 flex gap-1">
+              {vehicleTypes.map((type) => (
+                <Badge 
+                  key={type}
+                  variant="secondary" 
+                  className="bg-card/95 backdrop-blur-sm text-xs font-medium shadow-md"
+                >
+                  {type === "4-wheeler" ? "🚗 4W" : "🏍️ 2W"}
+                </Badge>
+              ))}
             </div>
             <PhotoIndicator count={allPhotos.length} onClick={handlePhotoClick} />
           </div>

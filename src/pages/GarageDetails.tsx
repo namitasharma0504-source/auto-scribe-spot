@@ -16,6 +16,7 @@ import { ClaimGarageDialog } from "@/components/ClaimGarageDialog";
 import { SEOHead } from "@/components/SEOHead";
 import { ShareDialog } from "@/components/ShareDialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ interface Garage {
   rating: number | null;
   review_count: number | null;
   services: string[] | null;
+  vehicle_types: string[] | null;
   is_verified: boolean | null;
   is_certified: boolean | null;
   is_recommended: boolean | null;
@@ -356,6 +358,20 @@ const GarageDetails = () => {
               size="sm"
               showTooltip={true}
             />
+          </div>
+
+          {/* Vehicle Types Badge */}
+          <div className="flex items-center gap-2 mb-6">
+            <span className="text-sm text-muted-foreground">Services:</span>
+            {(garage.vehicle_types || ["4-wheeler"]).map((type) => (
+              <Badge 
+                key={type}
+                variant="secondary" 
+                className="text-sm"
+              >
+                {type === "4-wheeler" ? "🚗 4-Wheeler Vehicles" : "🏍️ 2-Wheeler Vehicles"}
+              </Badge>
+            ))}
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">

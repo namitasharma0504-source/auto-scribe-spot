@@ -86,6 +86,7 @@ const Index = () => {
           responseTime: garage.response_time || undefined,
           quotesThisMonth: Math.floor(Math.random() * 200) + 50,
           walkInWelcome: garage.walk_in_welcome || false,
+          vehicleTypes: garage.vehicle_types || ["4-wheeler"],
           hasUploadedPhotos: garagePhotos.length > 0,
         };
       });

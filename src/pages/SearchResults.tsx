@@ -30,6 +30,7 @@ const SearchResults = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
 
   const city = searchParams.get("city") || "";
   const query = searchParams.get("q") || "";
@@ -47,7 +48,7 @@ const SearchResults = () => {
 
   // Fetch garages from database
   const { data: garages = [], isLoading } = useQuery({
-    queryKey: ['search-garages', city, query, sortBy],
+    queryKey: ['search-garages', city, query, sortBy, vehicleTypeFilter],
     queryFn: async () => {
       let queryBuilder = supabase
         .from('garages')
@@ -62,6 +63,11 @@ const SearchResults = () => {
       // Filter by search query (name)
       if (query) {
         queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+      }
+
+      // Filter by vehicle type
+      if (vehicleTypeFilter && vehicleTypeFilter !== "all") {
+        queryBuilder = queryBuilder.contains('vehicle_types', [vehicleTypeFilter]);
       }
       
       // Apply sorting
@@ -117,6 +123,7 @@ const SearchResults = () => {
           responseTime: garage.response_time || undefined,
           quotesThisMonth: Math.floor(Math.random() * 200) + 50,
           walkInWelcome: garage.walk_in_welcome || false,
+          vehicleTypes: garage.vehicle_types || ["4-wheeler"],
         };
       });
     },
@@ -223,6 +230,21 @@ const SearchResults = () => {
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border sticky top-24">
               <h3 className="font-semibold text-foreground mb-4">Filters</h3>
               
+              {/* Vehicle Type Filter */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-foreground mb-3">Vehicle Type</h4>
+                <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Vehicles</SelectItem>
+                    <SelectItem value="4-wheeler">🚗 4-Wheeler Garages</SelectItem>
+                    <SelectItem value="2-wheeler">🏍️ 2-Wheeler Garages</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Rating Filter */}
               <div className="mb-6">
                 <h4 className="text-sm font-medium text-foreground mb-3">Minimum Rating</h4>
