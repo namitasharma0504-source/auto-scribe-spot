@@ -31,6 +31,7 @@ interface FormErrors {
   country?: string;
   state?: string;
   services?: string;
+  vehicleTypes?: string;
   location?: string;
   photo?: string;
 }
@@ -200,6 +201,7 @@ const ListGarage = () => {
     customCity: "",
     locationLink: "",
     services: [] as string[],
+    vehicleTypes: ["4-wheeler"] as string[],
   });
   
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -620,6 +622,10 @@ const ListGarage = () => {
     if (formData.services.length === 0) {
       newErrors.services = "Please select at least one service you offer";
     }
+
+    if (formData.vehicleTypes.length === 0) {
+      newErrors.vehicleTypes = "Please select at least one vehicle type";
+    }
     
     // Partner-specific validations
     if (listingType === "partner") {
@@ -646,11 +652,22 @@ const ListGarage = () => {
       country: true,
       state: true,
       services: true,
+      vehicleTypes: true,
       location: true,
       photo: true,
     });
     
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleVehicleTypeToggle = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      vehicleTypes: prev.vehicleTypes.includes(type)
+        ? prev.vehicleTypes.filter(t => t !== type)
+        : [...prev.vehicleTypes, type]
+    }));
+    clearError("vehicleTypes" as keyof FormErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -752,6 +769,7 @@ const ListGarage = () => {
           location_link: formData.locationLink.trim() || null,
           photo_url: photoUrl,
           services: formData.services,
+          vehicle_types: formData.vehicleTypes,
           is_verified: false,
           is_approved: shouldAutoApprove,
           submitted_by: user.id,
@@ -1443,6 +1461,62 @@ const ListGarage = () => {
               
               <p className="text-sm text-muted-foreground">
                 {formData.services.length} service{formData.services.length !== 1 ? 's' : ''} selected
+              </p>
+            </div>
+
+            {/* Vehicle Type Selection */}
+            <div className="space-y-3" data-error={!!errors.vehicleTypes}>
+              <Label className={cn("flex items-center gap-2", errors.vehicleTypes && "text-destructive")}>
+                🚗 Vehicle Types *
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Select the type of vehicles this garage services
+              </p>
+              <div className={cn(
+                "flex flex-wrap gap-3 p-3 rounded-lg border",
+                errors.vehicleTypes ? "border-destructive bg-destructive/5" : "border-border"
+              )}>
+                <label 
+                  className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    formData.vehicleTypes.includes("4-wheeler") 
+                      ? 'bg-blue-500/10 border-blue-500' 
+                      : 'hover:bg-muted border-border'
+                  }`}
+                >
+                  <Checkbox 
+                    checked={formData.vehicleTypes.includes("4-wheeler")}
+                    onCheckedChange={() => handleVehicleTypeToggle("4-wheeler")}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🚗</span>
+                    <span className="font-medium">4-Wheeler</span>
+                  </div>
+                </label>
+                <label 
+                  className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    formData.vehicleTypes.includes("2-wheeler") 
+                      ? 'bg-orange-500/10 border-orange-500' 
+                      : 'hover:bg-muted border-border'
+                  }`}
+                >
+                  <Checkbox 
+                    checked={formData.vehicleTypes.includes("2-wheeler")}
+                    onCheckedChange={() => handleVehicleTypeToggle("2-wheeler")}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🏍️</span>
+                    <span className="font-medium">2-Wheeler</span>
+                  </div>
+                </label>
+              </div>
+              {errors.vehicleTypes && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.vehicleTypes}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Tip: Select both if the garage services cars/bikes as well as motorcycles/scooters
               </p>
             </div>
 
