@@ -493,6 +493,7 @@ export type Database = {
           state: string | null
           submitted_by: string | null
           updated_at: string
+          vehicle_types: string[] | null
           walk_in_welcome: boolean | null
         }
         Insert: {
@@ -529,6 +530,7 @@ export type Database = {
           state?: string | null
           submitted_by?: string | null
           updated_at?: string
+          vehicle_types?: string[] | null
           walk_in_welcome?: boolean | null
         }
         Update: {
@@ -565,6 +567,7 @@ export type Database = {
           state?: string | null
           submitted_by?: string | null
           updated_at?: string
+          vehicle_types?: string[] | null
           walk_in_welcome?: boolean | null
         }
         Relationships: []

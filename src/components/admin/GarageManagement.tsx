@@ -90,6 +90,7 @@ interface Garage {
   walk_in_welcome: boolean | null;
   response_time: string | null;
   services: string[] | null;
+  vehicle_types: string[] | null;
   location_link: string | null;
   photo_url: string | null;
   submitted_by: string | null;
@@ -142,6 +143,7 @@ export function GarageManagement() {
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
   const [statFilter, setStatFilter] = useState<string>("all");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
@@ -594,6 +596,10 @@ export function GarageManagement() {
         garage.listing_type === listingTypeFilter;
 
       const matchesPartner = partnerFilter === "all" || garage.partner_id === partnerFilter;
+
+      // Vehicle type filter
+      const matchesVehicleType = vehicleTypeFilter === "all" || 
+        (garage.vehicle_types || ["4-wheeler"]).includes(vehicleTypeFilter);
       
       // Stat filter
       let matchesStat = true;
@@ -605,7 +611,7 @@ export function GarageManagement() {
         matchesStat = (garage.review_count || 0) > 0;
       }
       
-      return matchesSearch && matchesListingType && matchesPartner && matchesStat;
+      return matchesSearch && matchesListingType && matchesPartner && matchesStat && matchesVehicleType;
     });
 
     // Sort the results
@@ -622,7 +628,7 @@ export function GarageManagement() {
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-  }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection, statFilter]);
+  }, [garages, searchQuery, listingTypeFilter, partnerFilter, sortField, sortDirection, statFilter, vehicleTypeFilter]);
 
   // Pagination
   const pagination = usePagination({ data: filteredGarages, itemsPerPage: 20 });
@@ -704,6 +710,17 @@ export function GarageManagement() {
                       </div>
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Vehicle Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Vehicles</SelectItem>
+                  <SelectItem value="4-wheeler">🚗 4-Wheeler</SelectItem>
+                  <SelectItem value="2-wheeler">🏍️ 2-Wheeler</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -969,6 +986,7 @@ export function GarageManagement() {
                             <ArrowUpDown className="w-3 h-3" />
                           </div>
                         </TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Subscription</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -1043,6 +1061,22 @@ export function GarageManagement() {
                             <div className="flex items-center gap-1">
                               <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                               <span>{(garage.rating || 5).toFixed(1)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {(garage.vehicle_types || ["4-wheeler"]).map((type) => (
+                                <Badge 
+                                  key={type} 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-xs",
+                                    type === "4-wheeler" ? "bg-blue-500/10 text-blue-600 border-blue-500/30" : "bg-orange-500/10 text-orange-600 border-orange-500/30"
+                                  )}
+                                >
+                                  {type === "4-wheeler" ? "🚗 4W" : "🏍️ 2W"}
+                                </Badge>
+                              ))}
                             </div>
                           </TableCell>
                           <TableCell>

@@ -58,6 +58,7 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
   const [locationLink, setLocationLink] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(["4-wheeler"]);
   const [isVerified, setIsVerified] = useState(false);
 
   const resetForm = () => {
@@ -69,6 +70,7 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
     setLocationLink("");
     setPhotoUrl("");
     setSelectedServices([]);
+    setSelectedVehicleTypes(["4-wheeler"]);
     setIsVerified(false);
   };
 
@@ -80,11 +82,28 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
     );
   };
 
+  const handleVehicleTypeToggle = (type: string) => {
+    setSelectedVehicleTypes((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type]
+    );
+  };
+
   const handleSubmit = async () => {
     if (!name.trim()) {
       toast({
         title: "Validation Error",
         description: "Garage name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedVehicleTypes.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one vehicle type",
         variant: "destructive",
       });
       return;
@@ -119,6 +138,7 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
         location_link: locationLink.trim() || null,
         photo_url: photoUrl.trim() || null,
         services: selectedServices.length > 0 ? selectedServices : null,
+        vehicle_types: selectedVehicleTypes,
         is_verified: isVerified,
         is_approved: true,
         rating: 5.0,
@@ -288,7 +308,39 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
             )}
           </div>
 
-          {/* Row 6: Services */}
+          {/* Row 6: Vehicle Types */}
+          <div className="space-y-2">
+            <Label>
+              Vehicle Types <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="vehicle-4w"
+                  checked={selectedVehicleTypes.includes("4-wheeler")}
+                  onCheckedChange={() => handleVehicleTypeToggle("4-wheeler")}
+                />
+                <Label htmlFor="vehicle-4w" className="text-sm font-normal cursor-pointer">
+                  🚗 4-Wheeler
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="vehicle-2w"
+                  checked={selectedVehicleTypes.includes("2-wheeler")}
+                  onCheckedChange={() => handleVehicleTypeToggle("2-wheeler")}
+                />
+                <Label htmlFor="vehicle-2w" className="text-sm font-normal cursor-pointer">
+                  🏍️ 2-Wheeler
+                </Label>
+              </div>
+            </div>
+            {selectedVehicleTypes.length === 0 && (
+              <p className="text-xs text-destructive">At least one vehicle type must be selected</p>
+            )}
+          </div>
+
+          {/* Row 7: Services */}
           <div className="space-y-2">
             <Label>Services Offered</Label>
             <div className="grid grid-cols-3 gap-2">
@@ -310,7 +362,7 @@ export function AddGarageDialog({ onGarageAdded }: AddGarageDialogProps) {
             </div>
           </div>
 
-          {/* Row 7: Verified Toggle */}
+          {/* Row 8: Verified Toggle */}
           <div className="flex items-center space-x-2 pt-2 border-t">
             <Checkbox
               id="isVerified"
