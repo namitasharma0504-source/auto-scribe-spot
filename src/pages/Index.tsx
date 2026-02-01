@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback, useMemo } from "react";
 import { Wrench, Award, ArrowRight, Star, Gift, Search, Loader2, CheckCircle, Zap, Car, Thermometer, Paintbrush, CircleDot, Activity, Plug, Layers, Crown, ThumbsUp, ShieldCheck, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -30,6 +30,7 @@ const serviceCategories = [
 
 const Index = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<"all" | "4-wheeler" | "2-wheeler">("all");
   const handleSlideChange = useCallback((index: number) => setCurrentSlide(index), []);
   
   const { data: featuredGarages = [], isLoading } = useQuery({
@@ -99,6 +100,14 @@ const Index = () => {
       });
     },
   });
+
+  // Filter featured garages based on vehicle type selection
+  const filteredGarages = useMemo(() => {
+    if (vehicleTypeFilter === "all") return featuredGarages;
+    return featuredGarages.filter(garage => 
+      garage.vehicleTypes.includes(vehicleTypeFilter)
+    );
+  }, [featuredGarages, vehicleTypeFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -332,7 +341,7 @@ const Index = () => {
       {/* Top Rated Garages */}
       <section className="py-8 md:py-10 bg-secondary/30">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 text-primary mb-2">
                 <Award className="w-5 h-5" />
@@ -342,26 +351,74 @@ const Index = () => {
                 Featured Garages
               </h2>
             </div>
-            <Link to="/search">
-              <Button variant="ghost" className="gap-2 group">
-                View All
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Vehicle Type Filter Toggle */}
+              <div className="flex items-center bg-card rounded-xl p-1 border border-border shadow-sm">
+                <button
+                  onClick={() => setVehicleTypeFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    vehicleTypeFilter === "all"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setVehicleTypeFilter("4-wheeler")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    vehicleTypeFilter === "4-wheeler"
+                      ? "bg-blue-500 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span>🚗</span>
+                  <span className="hidden sm:inline">4-Wheeler</span>
+                  <span className="sm:hidden">4W</span>
+                </button>
+                <button
+                  onClick={() => setVehicleTypeFilter("2-wheeler")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    vehicleTypeFilter === "2-wheeler"
+                      ? "bg-orange-500 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span>🏍️</span>
+                  <span className="hidden sm:inline">2-Wheeler</span>
+                  <span className="sm:hidden">2W</span>
+                </button>
+              </div>
+              <Link to="/search">
+                <Button variant="ghost" className="gap-2 group">
+                  View All
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </div>
           </div>
           
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : featuredGarages.length === 0 ? (
+          ) : filteredGarages.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No garages found. Add some garages to get started!</p>
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+                {vehicleTypeFilter === "2-wheeler" ? <span className="text-2xl">🏍️</span> : <span className="text-2xl">🚗</span>}
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No {vehicleTypeFilter === "2-wheeler" ? "2-Wheeler" : "4-Wheeler"} garages found
+              </h3>
+              <p className="text-muted-foreground mb-4">Try selecting a different vehicle type or browse all garages</p>
+              <Button variant="outline" onClick={() => setVehicleTypeFilter("all")}>
+                Show All Garages
+              </Button>
             </div>
           ) : (
             <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {featuredGarages.map((garage, index) => (
+                {filteredGarages.map((garage, index) => (
                   <div
                     key={garage.id}
                     className="animate-fade-in-up"
