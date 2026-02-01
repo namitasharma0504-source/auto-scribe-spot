@@ -67,16 +67,18 @@ interface PartnerApplication {
   approved_partner: boolean | null;
 }
 
-const WEBINAR_SLOTS = [
-  { id: "2026-01-17", label: "Friday, 17th January 2026, 4-5 PM" },
-  { id: "2026-01-18", label: "Saturday, 18th January 2026, 4-5 PM" },
-  { id: "2026-01-24", label: "Saturday, 24th January 2026, 4-5 PM" },
-  { id: "2026-01-25", label: "Sunday, 25th January 2026, 4-5 PM (FULL)", disabled: true },
-];
+interface WebinarSlot {
+  id: string;
+  slot_date: string;
+  start_time: string;
+  end_time: string;
+  is_full: boolean;
+}
 
 export const PartnerApplicationsManagement = () => {
   const { toast } = useToast();
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
+  const [webinarSlots, setWebinarSlots] = useState<WebinarSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedApplication, setSelectedApplication] = useState<PartnerApplication | null>(null);
@@ -85,6 +87,20 @@ export const PartnerApplicationsManagement = () => {
   const [isEditingWebinar, setIsEditingWebinar] = useState(false);
   const [editWebinarSlot, setEditWebinarSlot] = useState<string | null>(null);
   const [webinarFilter, setWebinarFilter] = useState<string>("all");
+
+  const fetchWebinarSlots = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("webinar_slots")
+        .select("*")
+        .order("slot_date", { ascending: true });
+
+      if (error) throw error;
+      setWebinarSlots(data || []);
+    } catch (error: any) {
+      console.error("Error fetching webinar slots:", error);
+    }
+  };
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -110,7 +126,27 @@ export const PartnerApplicationsManagement = () => {
 
   useEffect(() => {
     fetchApplications();
+    fetchWebinarSlots();
   }, []);
+
+  // Helper to format slot date for display
+  const formatSlotDate = (slotDate: string) => {
+    const date = new Date(slotDate);
+    return format(date, "d MMM");
+  };
+
+  // Helper to format full slot label
+  const formatSlotLabel = (slot: WebinarSlot) => {
+    const date = new Date(slot.slot_date);
+    const dayName = format(date, "EEEE");
+    const fullDate = format(date, "do MMMM yyyy");
+    return `${dayName}, ${fullDate}, ${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}${slot.is_full ? " (FULL)" : ""}`;
+  };
+
+  // Get count of applications for a specific slot
+  const getSlotCount = (slotDate: string) => {
+    return applications.filter(a => a.webinar_slot === slotDate).length;
+  };
 
   const handleStatusUpdate = async (id: string, newStatus: "approved" | "rejected") => {
     setIsProcessing(true);
@@ -219,7 +255,7 @@ export const PartnerApplicationsManagement = () => {
       toast({
         title: "Webinar Updated",
         description: newSlot 
-          ? `Webinar date updated to ${WEBINAR_SLOTS.find(s => s.id === newSlot)?.label || newSlot}`
+          ? `Webinar date updated to ${formatSlotDate(newSlot)}`
           : "Webinar booking removed",
       });
     } catch (error: any) {
@@ -270,13 +306,9 @@ export const PartnerApplicationsManagement = () => {
   const approvedPagination = usePagination({ data: approvedApplications, itemsPerPage: 10 });
   const rejectedPagination = usePagination({ data: rejectedApplications, itemsPerPage: 10 });
 
-  // Webinar booking stats
+  // Webinar booking stats - dynamic from database
   const webinarStats = {
     total: applications.filter(a => a.webinar_slot).length,
-    jan17: applications.filter(a => a.webinar_slot === "2026-01-17").length,
-    jan18: applications.filter(a => a.webinar_slot === "2026-01-18").length,
-    jan24: applications.filter(a => a.webinar_slot === "2026-01-24").length,
-    jan25: applications.filter(a => a.webinar_slot === "2026-01-25").length,
     notBooked: applications.filter(a => !a.webinar_slot).length,
   };
 
@@ -330,13 +362,7 @@ export const PartnerApplicationsManagement = () => {
               {application.webinar_slot ? (
                 <Badge className="gap-1 bg-purple-500/10 text-purple-600 border-purple-500/30">
                   <Video className="w-3 h-3" />
-                  Webinar: {
-                    application.webinar_slot === "2026-01-17" ? "17 Jan" :
-                    application.webinar_slot === "2026-01-18" ? "18 Jan" :
-                    application.webinar_slot === "2026-01-24" ? "24 Jan" :
-                    application.webinar_slot === "2026-01-25" ? "25 Jan" :
-                    application.webinar_slot
-                  }
+                  Webinar: {formatSlotDate(application.webinar_slot)}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="gap-1 text-muted-foreground">
@@ -479,38 +505,17 @@ export const PartnerApplicationsManagement = () => {
           >
             All ({webinarStats.total})
           </Button>
-          <Button
-            variant={webinarFilter === "2026-01-17" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setWebinarFilter("2026-01-17")}
-            className="h-8"
-          >
-            17 Jan ({webinarStats.jan17})
-          </Button>
-          <Button
-            variant={webinarFilter === "2026-01-18" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setWebinarFilter("2026-01-18")}
-            className="h-8"
-          >
-            18 Jan ({webinarStats.jan18})
-          </Button>
-          <Button
-            variant={webinarFilter === "2026-01-24" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setWebinarFilter("2026-01-24")}
-            className="h-8"
-          >
-            24 Jan ({webinarStats.jan24})
-          </Button>
-          <Button
-            variant={webinarFilter === "2026-01-25" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setWebinarFilter("2026-01-25")}
-            className="h-8"
-          >
-            25 Jan ({webinarStats.jan25})
-          </Button>
+          {webinarSlots.map((slot) => (
+            <Button
+              key={slot.slot_date}
+              variant={webinarFilter === slot.slot_date ? "default" : "outline"}
+              size="sm"
+              onClick={() => setWebinarFilter(slot.slot_date)}
+              className="h-8"
+            >
+              {formatSlotDate(slot.slot_date)} ({getSlotCount(slot.slot_date)})
+            </Button>
+          ))}
           <Button
             variant={webinarFilter === "not_booked" ? "default" : "outline"}
             size="sm"
@@ -739,9 +744,13 @@ export const PartnerApplicationsManagement = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No webinar</SelectItem>
-                        {WEBINAR_SLOTS.map((slot) => (
-                          <SelectItem key={slot.id} value={slot.id}>
-                            {slot.label}
+                        {webinarSlots.map((slot) => (
+                          <SelectItem 
+                            key={slot.slot_date} 
+                            value={slot.slot_date}
+                            disabled={slot.is_full}
+                          >
+                            {formatSlotLabel(slot)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -772,7 +781,9 @@ export const PartnerApplicationsManagement = () => {
                 ) : selectedApplication.webinar_slot ? (
                   <div>
                     <p className="font-medium text-sm text-purple-600">
-                      {WEBINAR_SLOTS.find(s => s.id === selectedApplication.webinar_slot)?.label || selectedApplication.webinar_slot}
+                      {webinarSlots.find(s => s.slot_date === selectedApplication.webinar_slot) 
+                        ? formatSlotLabel(webinarSlots.find(s => s.slot_date === selectedApplication.webinar_slot)!)
+                        : formatSlotDate(selectedApplication.webinar_slot)}
                     </p>
                     {selectedApplication.webinar_booked_at && (
                       <p className="text-xs text-muted-foreground mt-1">
