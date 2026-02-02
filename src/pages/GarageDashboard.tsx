@@ -5,7 +5,7 @@ import {
   Settings, Image, Wrench, ExternalLink, BarChart3,
   Award, Users, Calendar, ArrowUp, ArrowDown, BadgeCheck,
   Percent, ShieldCheck, Clock, Info, Rocket, Sparkles,
-  AlertTriangle, MapPin, QrCode
+  AlertTriangle, MapPin, QrCode, Package, FileText, UserCog
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -24,6 +24,9 @@ import { BoostPanel } from "@/components/garage/BoostPanel";
 import { StatDetailDialog } from "@/components/garage/StatDetailDialog";
 import { GarageLeadsSection } from "@/components/garage/GarageLeadsSection";
 import { QRPosterGenerator } from "@/components/QRPosterGenerator";
+import { InventoryManagement } from "@/components/garage/InventoryManagement";
+import { JobCardManagement } from "@/components/garage/JobCardManagement";
+import { StaffManagement } from "@/components/garage/StaffManagement";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -766,10 +769,22 @@ export default function GarageDashboard() {
         />
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-12 max-w-6xl">
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="jobcards" className="gap-2">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Job Cards</span>
+            </TabsTrigger>
+            <TabsTrigger value="inventory" className="gap-2">
+              <Package className="w-4 h-4" />
+              <span className="hidden sm:inline">Inventory</span>
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-2">
+              <UserCog className="w-4 h-4" />
+              <span className="hidden sm:inline">Staff</span>
             </TabsTrigger>
             <TabsTrigger value="leads" className="gap-2">
               <Users className="w-4 h-4" />
@@ -808,6 +823,48 @@ export default function GarageDashboard() {
               <span className="hidden sm:inline">Upgrade</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Job Cards Tab */}
+          <TabsContent value="jobcards">
+            {garage?.id ? (
+              <JobCardManagement garageId={garage.id} garageName={garage.name || "Garage"} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Please save your garage profile first to access job cards.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Inventory Tab */}
+          <TabsContent value="inventory">
+            {garage?.id ? (
+              <InventoryManagement garageId={garage.id} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Please save your garage profile first to manage inventory.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Staff Tab */}
+          <TabsContent value="staff">
+            {garage?.id ? (
+              <StaffManagement garageId={garage.id} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <UserCog className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Please save your garage profile first to manage staff.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
           {/* Leads Tab */}
           <TabsContent value="leads">
