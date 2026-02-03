@@ -27,6 +27,7 @@ import { QRPosterGenerator } from "@/components/QRPosterGenerator";
 import { InventoryManagement } from "@/components/garage/InventoryManagement";
 import { JobCardManagement } from "@/components/garage/JobCardManagement";
 import { StaffManagement } from "@/components/garage/StaffManagement";
+import { GMSPromoCard } from "@/components/garage/GMSPromoCard";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -769,12 +770,12 @@ export default function GarageDashboard() {
         />
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className={`grid w-full max-w-6xl ${garage?.gms_enabled ? 'grid-cols-12' : 'grid-cols-9'}`}>
+          <TabsList className={`grid w-full max-w-6xl ${garage?.gms_enabled ? 'grid-cols-12' : 'grid-cols-10'}`}>
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            {garage?.gms_enabled && (
+            {garage?.gms_enabled ? (
               <>
                 <TabsTrigger value="jobcards" className="gap-2">
                   <FileText className="w-4 h-4" />
@@ -789,6 +790,14 @@ export default function GarageDashboard() {
                   <span className="hidden sm:inline">Staff</span>
                 </TabsTrigger>
               </>
+            ) : (
+              <TabsTrigger 
+                value="gms-promo" 
+                className="gap-2 relative bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20"
+              >
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="hidden sm:inline">Go Digital</span>
+              </TabsTrigger>
             )}
             <TabsTrigger value="leads" className="gap-2">
               <Users className="w-4 h-4" />
@@ -827,6 +836,18 @@ export default function GarageDashboard() {
               <span className="hidden sm:inline">Upgrade</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* GMS Promo Tab - Only shown if GMS NOT enabled */}
+          {!garage?.gms_enabled && (
+            <TabsContent value="gms-promo">
+              <GMSPromoCard 
+                garageId={garage?.id || ""} 
+                garageName={garage?.name || ""}
+                garagePhone={garage?.phone || garageOwner?.contact_phone || ""}
+                ownerName={garageOwner?.business_name}
+              />
+            </TabsContent>
+          )}
 
           {/* Job Cards Tab - Only shown if GMS enabled */}
           {garage?.gms_enabled && (
