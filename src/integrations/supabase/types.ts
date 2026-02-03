@@ -579,6 +579,7 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          gms_enabled: boolean | null
           has_discounts: boolean | null
           id: string
           is_approved: boolean | null
@@ -616,6 +617,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          gms_enabled?: boolean | null
           has_discounts?: boolean | null
           id?: string
           is_approved?: boolean | null
@@ -653,6 +655,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          gms_enabled?: boolean | null
           has_discounts?: boolean | null
           id?: string
           is_approved?: boolean | null

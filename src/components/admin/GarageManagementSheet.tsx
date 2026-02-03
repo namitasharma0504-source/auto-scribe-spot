@@ -127,6 +127,7 @@ interface Garage {
   partner_id: string | null;
   slug: string | null;
   created_at: string;
+  gms_enabled: boolean | null;
 }
 
 interface GaragePhoto {
@@ -212,6 +213,7 @@ export function GarageManagementSheet({
       has_discounts: g.has_discounts,
       walk_in_welcome: g.walk_in_welcome,
       response_time: g.response_time,
+      gms_enabled: g.gms_enabled,
     });
     setCustomService("");
     setShowCustomInput(false);
@@ -1391,6 +1393,59 @@ export function GarageManagementSheet({
                                 }
                               }}
                               className="data-[state=checked]:bg-green-500"
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* GMS Feature Toggle */}
+                      <Card className={cn(
+                        "border-2",
+                        editForm.gms_enabled ? "border-purple-500 bg-purple-50" : "border-gray-300 bg-gray-50"
+                      )}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">Garage Management SaaS</p>
+                                <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                                  Premium
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {editForm.gms_enabled 
+                                  ? "Job Cards, Inventory & Staff tabs enabled"
+                                  : "Job Cards, Inventory & Staff tabs hidden"}
+                              </p>
+                            </div>
+                            <Switch
+                              checked={editForm.gms_enabled || false}
+                              onCheckedChange={async (checked) => {
+                                try {
+                                  const { error } = await supabase
+                                    .from("garages")
+                                    .update({ gms_enabled: checked })
+                                    .eq("id", garage.id);
+                                  
+                                  if (error) throw error;
+                                  
+                                  setEditForm(prev => ({ ...prev, gms_enabled: checked }));
+                                  toast({
+                                    title: checked ? "GMS Enabled" : "GMS Disabled",
+                                    description: checked 
+                                      ? "Job Cards, Inventory & Staff tabs are now visible to this garage"
+                                      : "GMS features have been hidden from this garage",
+                                  });
+                                  onRefresh();
+                                } catch (error: any) {
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to update GMS setting",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              className="data-[state=checked]:bg-purple-500"
                             />
                           </div>
                         </CardContent>
