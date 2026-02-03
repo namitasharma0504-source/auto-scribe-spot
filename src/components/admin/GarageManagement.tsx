@@ -101,6 +101,7 @@ interface Garage {
   submitter_email?: string | null;
   owner_id?: string | null;
   gin?: string | null;
+  gms_enabled: boolean | null;
 }
 
 type SortField = "name" | "created_at" | "city" | "rating";

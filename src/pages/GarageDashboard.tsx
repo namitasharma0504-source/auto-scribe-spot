@@ -769,23 +769,27 @@ export default function GarageDashboard() {
         />
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12 max-w-6xl">
+          <TabsList className={`grid w-full max-w-6xl ${garage?.gms_enabled ? 'grid-cols-12' : 'grid-cols-9'}`}>
             <TabsTrigger value="profile" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="jobcards" className="gap-2">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Job Cards</span>
-            </TabsTrigger>
-            <TabsTrigger value="inventory" className="gap-2">
-              <Package className="w-4 h-4" />
-              <span className="hidden sm:inline">Inventory</span>
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="gap-2">
-              <UserCog className="w-4 h-4" />
-              <span className="hidden sm:inline">Staff</span>
-            </TabsTrigger>
+            {garage?.gms_enabled && (
+              <>
+                <TabsTrigger value="jobcards" className="gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Job Cards</span>
+                </TabsTrigger>
+                <TabsTrigger value="inventory" className="gap-2">
+                  <Package className="w-4 h-4" />
+                  <span className="hidden sm:inline">Inventory</span>
+                </TabsTrigger>
+                <TabsTrigger value="staff" className="gap-2">
+                  <UserCog className="w-4 h-4" />
+                  <span className="hidden sm:inline">Staff</span>
+                </TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="leads" className="gap-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Leads</span>
@@ -824,47 +828,53 @@ export default function GarageDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Job Cards Tab */}
-          <TabsContent value="jobcards">
-            {garage?.id ? (
-              <JobCardManagement garageId={garage.id} garageName={garage.name || "Garage"} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Please save your garage profile first to access job cards.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+          {/* Job Cards Tab - Only shown if GMS enabled */}
+          {garage?.gms_enabled && (
+            <TabsContent value="jobcards">
+              {garage?.id ? (
+                <JobCardManagement garageId={garage.id} garageName={garage.name || "Garage"} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Please save your garage profile first to access job cards.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
-          {/* Inventory Tab */}
-          <TabsContent value="inventory">
-            {garage?.id ? (
-              <InventoryManagement garageId={garage.id} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Please save your garage profile first to manage inventory.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+          {/* Inventory Tab - Only shown if GMS enabled */}
+          {garage?.gms_enabled && (
+            <TabsContent value="inventory">
+              {garage?.id ? (
+                <InventoryManagement garageId={garage.id} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Please save your garage profile first to manage inventory.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
-          {/* Staff Tab */}
-          <TabsContent value="staff">
-            {garage?.id ? (
-              <StaffManagement garageId={garage.id} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <UserCog className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Please save your garage profile first to manage staff.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+          {/* Staff Tab - Only shown if GMS enabled */}
+          {garage?.gms_enabled && (
+            <TabsContent value="staff">
+              {garage?.id ? (
+                <StaffManagement garageId={garage.id} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <UserCog className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Please save your garage profile first to manage staff.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           {/* Leads Tab */}
           <TabsContent value="leads">
