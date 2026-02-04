@@ -897,14 +897,14 @@ export function JobCardManagement({ garageId, garageName }: JobCardManagementPro
                 <div className="space-y-2">
                   <Label htmlFor="assigned_mechanic">Assign Mechanic</Label>
                   <Select
-                    value={formData.assigned_mechanic_id}
-                    onValueChange={(value) => setFormData({ ...formData, assigned_mechanic_id: value })}
+                    value={formData.assigned_mechanic_id || "unassigned"}
+                    onValueChange={(value) => setFormData({ ...formData, assigned_mechanic_id: value === "unassigned" ? "" : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select mechanic" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {staff.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
