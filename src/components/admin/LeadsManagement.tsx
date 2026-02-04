@@ -203,6 +203,45 @@ export function LeadsManagement() {
     }
   };
 
+  const activateGMS = async (lead: Lead) => {
+    if (!lead.garage?.id) return;
+    
+    try {
+      // Activate GMS for the garage
+      const { error: gmsError } = await supabase
+        .from("garages")
+        .update({ gms_enabled: true })
+        .eq("id", lead.garage.id);
+
+      if (gmsError) throw gmsError;
+
+      // Update lead status to converted
+      const { error: leadError } = await supabase
+        .from("garage_leads")
+        .update({ status: "converted" })
+        .eq("id", lead.id);
+
+      if (leadError) throw leadError;
+
+      toast({
+        title: "GMS Activated",
+        description: `GMS features enabled for ${lead.garage.name}. Lead marked as converted.`,
+      });
+
+      fetchLeads();
+    } catch (error: any) {
+      console.error("Error activating GMS:", error);
+      toast({
+        title: "Error",
+        description: "Failed to activate GMS",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isGMSDemoRequest = (lead: Lead) => 
+    lead.service_required?.toLowerCase().includes("gms demo");
+
   const LeadCard = ({ lead }: { lead: Lead }) => (
     <Card className={lead.status === "new" ? "border-blue-500/30" : ""}>
       <CardContent className="pt-6">
@@ -215,6 +254,11 @@ export function LeadsManagement() {
                 {!lead.garage?.owner_id && (
                   <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-600 border-orange-500/30">
                     Unclaimed Garage
+                  </Badge>
+                )}
+                {isGMSDemoRequest(lead) && (
+                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                    GMS Demo
                   </Badge>
                 )}
               </div>
@@ -319,6 +363,18 @@ export function LeadsManagement() {
           </div>
 
           <div className="flex gap-2 lg:flex-col lg:min-w-[140px]">
+            {/* GMS Activation Button - Only for GMS Demo requests that aren't converted */}
+            {isGMSDemoRequest(lead) && lead.status !== "converted" && lead.garage?.id && (
+              <Button
+                size="sm"
+                variant="default"
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => activateGMS(lead)}
+              >
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Activate GMS
+              </Button>
+            )}
             <Select
               value={lead.status}
               onValueChange={(value) => updateLeadStatus(lead.id, value)}
