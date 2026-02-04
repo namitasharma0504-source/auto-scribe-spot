@@ -213,8 +213,8 @@ const WriteReview = () => {
           description: "Sign in to submit your review. Your data will be saved.",
         });
         
-        // Redirect to auth with return URL
-        navigate(`/auth?returnUrl=${encodeURIComponent(`/write-review/${slug}`)}`);
+        // Redirect to auth with return URL - use correct route path
+        navigate(`/auth?returnUrl=${encodeURIComponent(`/garage/${slug}/review`)}`);
         return;
       }
 
