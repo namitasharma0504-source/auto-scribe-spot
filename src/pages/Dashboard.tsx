@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   Star, Gift, CheckCircle, Clock, MapPin, Calendar,
-  TrendingUp, Award, LogOut, ChevronRight, Home, ArrowRight
+  TrendingUp, Award, LogOut, ChevronRight, Home, ArrowRight, PenSquare, Plus
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -366,6 +366,33 @@ function DashboardContent() {
           </DialogContent>
         </Dialog>
 
+        {/* Write Review CTA Card */}
+        <Card className="mb-8 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-primary/20">
+          <CardContent className="py-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <PenSquare className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-foreground">Write a Review</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Rate a garage you've visited and earn 50 points!
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Link to="/submit-review">
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    New Review
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Progress to Next Tier */}
         <Card className="mb-8">
           <CardHeader className="pb-2">
@@ -404,7 +431,26 @@ function DashboardContent() {
           </TabsList>
 
           <TabsContent value="reviews" className="space-y-4">
-            {reviews.length === 0 ? (
+            {/* Always show write review option when there are existing reviews */}
+            {reviews.length > 0 && (
+              <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+                <CardContent className="py-6 text-center">
+                  <PenSquare className="w-8 h-8 mx-auto mb-2 text-primary" />
+                  <h3 className="font-medium mb-1">Have another garage to review?</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    You can review as many different garages as you like. Each review earns you 50 points!
+                  </p>
+                  <Link to="/submit-review">
+                    <Button variant="outline" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Write Another Review
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+            
+            {reviews.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Star className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -415,7 +461,9 @@ function DashboardContent() {
                   </Link>
                 </CardContent>
               </Card>
-            ) : (
+            )}
+            
+            {reviews.length > 0 && (
               reviews.map((review) => (
                 <Card key={review.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
