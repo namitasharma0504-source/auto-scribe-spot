@@ -204,9 +204,7 @@ export default function Auth() {
         title: "Account Created!",
         description: "Welcome to GarageReviews! You are now signed in.",
       });
-      
-      // Redirect to return URL if present, otherwise dashboard
-      navigate(returnUrl || "/dashboard");
+      // Navigation will be handled by the useEffect when user state changes
     } catch (err) {
       console.error("Signup error:", err);
     } finally {
