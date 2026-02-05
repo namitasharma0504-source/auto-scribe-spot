@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Camera, MapPin, Building2, Gift, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Upload, X, Camera, MapPin, Building2, Gift, CheckCircle2, AlertCircle, Ban } from "lucide-react";
 import { Header } from "@/components/Header";
 import { StarRating } from "@/components/StarRating";
 import { ServiceTag } from "@/components/ServiceTag";
@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { GarageSearchInput } from "@/components/GarageSearchInput";
 import { indiaStates, indiaDistricts } from "@/data/indiaLocations";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface FormErrors {
   garageName?: string;
@@ -109,11 +110,42 @@ const SubmitReview = () => {
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [reviewedGarageIds, setReviewedGarageIds] = useState<string[]>([]);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const { user } = useAuth();
 
   const isIndia = country === "india";
   const availableStates = isIndia ? indiaStates : [];
   const availableDistricts = isIndia && state ? (indiaDistricts[state] || []) : [];
   const availableCities = !isIndia && country ? (otherCountryCities[country] || []) : [];
+
+  // Fetch user's previously reviewed garages
+  useEffect(() => {
+    const fetchReviewedGarages = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("user_reviews")
+        .select("garage_id, garage_name")
+        .eq("user_id", user.id)
+        .not("garage_id", "is", null);
+      
+      if (data) {
+        setReviewedGarageIds(data.map(r => r.garage_id).filter(Boolean) as string[]);
+      }
+    };
+    
+    fetchReviewedGarages();
+  }, [user]);
+
+  // Check if selected garage was already reviewed
+  useEffect(() => {
+    if (selectedGarageId && reviewedGarageIds.includes(selectedGarageId)) {
+      setAlreadyReviewed(true);
+    } else {
+      setAlreadyReviewed(false);
+    }
+  }, [selectedGarageId, reviewedGarageIds]);
 
   const clearError = (field: keyof FormErrors) => {
     if (errors[field]) {
@@ -397,6 +429,11 @@ const SubmitReview = () => {
                     <AlertCircle className="w-3 h-3" />
                     {errors.garageName}
                   </p>
+                ) : alreadyReviewed ? (
+                  <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                    <Ban className="w-3 h-3" />
+                    You have already reviewed this garage. Please select a different garage.
+                  </p>
                 ) : selectedGarageId ? (
                   <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
@@ -410,7 +447,7 @@ const SubmitReview = () => {
               </div>
 
               {/* Show selected garage info when existing garage is selected */}
-              {selectedGarageId && (
+              {selectedGarageId && !alreadyReviewed && (
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-start gap-3">
                     <Building2 className="w-5 h-5 text-primary mt-0.5" />
@@ -429,6 +466,34 @@ const SubmitReview = () => {
                       {address && (
                         <p className="text-xs text-muted-foreground mt-1">{address}</p>
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show warning when garage was already reviewed */}
+              {alreadyReviewed && (
+                <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Ban className="w-5 h-5 text-destructive mt-0.5" />
+                    <div>
+                      <p className="font-medium text-destructive">Already Reviewed</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        You have already submitted a review for <strong>{garageName}</strong>. 
+                        Each customer can only review a garage once. Please search for a different garage.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-3"
+                        onClick={() => {
+                          setGarageName("");
+                          setSelectedGarageId(null);
+                          setAlreadyReviewed(false);
+                        }}
+                      >
+                        Search for Another Garage
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -794,8 +859,12 @@ const SubmitReview = () => {
               onClick={handleSubmit}
               size="lg"
               className="w-full h-14 text-lg rounded-xl shadow-glow"
+              disabled={isSubmitting || alreadyReviewed}
             >
-              Submit Review & Earn {receiptUploaded ? '50' : '25'} Points
+              {alreadyReviewed 
+                ? "Cannot Submit - Garage Already Reviewed"
+                : `Submit Review & Earn ${receiptUploaded ? '50' : '25'} Points`
+              }
             </Button>
             <p className="text-center text-sm text-muted-foreground mt-4">
               By submitting, you agree to our{" "}
