@@ -98,6 +98,7 @@ const SubmitReview = () => {
   const [address, setAddress] = useState("");
   const [visitDate, setVisitDate] = useState("");
   const [serviceType, setServiceType] = useState("");
+  const [selectedGarageId, setSelectedGarageId] = useState<string | null>(null);
   
   // Review details
   const [overallRating, setOverallRating] = useState(0);
@@ -131,15 +132,16 @@ const SubmitReview = () => {
       newErrors.garageName = "Please enter the garage name";
     }
 
-    if (!country) {
-      newErrors.country = "Please select a country";
+    // Only validate location fields if it's a new garage (not an existing one)
+    if (!selectedGarageId) {
+      if (!country) {
+        newErrors.country = "Please select a country";
+      }
+  
+      if (isIndia && !state) {
+        newErrors.state = "Please select a state";
+      }
     }
-
-    if (isIndia && !state) {
-      newErrors.state = "Please select a state";
-    }
-
-    // City is now optional - no validation required
 
     if (overallRating === 0) {
       newErrors.overallRating = "Please select an overall rating";
@@ -242,6 +244,7 @@ const SubmitReview = () => {
         .insert({
           user_id: user.id,
           garage_name: garageName.trim(),
+          garage_id: selectedGarageId || null,
           garage_location: locationString,
           rating: overallRating,
           review_text: reviewText.trim(),
@@ -332,11 +335,17 @@ const SubmitReview = () => {
                   onChange={(val) => {
                     setGarageName(val);
                     clearError('garageName');
+                    // Clear selected garage if user is typing new name
+                    if (selectedGarageId) {
+                      setSelectedGarageId(null);
+                    }
                   }}
                   onGarageSelect={(garage) => {
                     clearError('garageName');
                     clearError('country');
                     clearError('state');
+                    // Store the selected garage ID
+                    setSelectedGarageId(garage.id);
                     // Auto-fill location when a garage is selected
                     if (garage.country) {
                       const countryMatch = countries.find(
@@ -388,13 +397,46 @@ const SubmitReview = () => {
                     <AlertCircle className="w-3 h-3" />
                     {errors.garageName}
                   </p>
+                ) : selectedGarageId ? (
+                  <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Existing garage selected - you can write your review below
+                  </p>
                 ) : (
                   <p className="text-xs text-muted-foreground mt-1.5">
                     Start typing to search existing garages or enter a new name
                   </p>
                 )}
               </div>
-              
+
+              {/* Show selected garage info when existing garage is selected */}
+              {selectedGarageId && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Building2 className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">{garageName}</p>
+                      {(city || state || country) && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" />
+                          {[
+                            isIndia && city ? (indiaDistricts[state]?.find(d => d.value === city)?.label || customCity || city) : city,
+                            isIndia && state ? (indiaStates.find(s => s.value === state)?.label || state) : null,
+                            country ? (countries.find(c => c.value === country)?.label || country) : null
+                          ].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                      {address && (
+                        <p className="text-xs text-muted-foreground mt-1">{address}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Only show location fields for NEW garages (not existing ones) */}
+              {!selectedGarageId && (
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div id="field-country">
                   <label className="text-sm font-medium text-foreground mb-2 block">
@@ -464,8 +506,10 @@ const SubmitReview = () => {
                   </div>
                 )}
               </div>
+              </>
+              )}
 
-              {isIndia && state && (
+              {!selectedGarageId && isIndia && state && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div id="field-city">
                     <label className="text-sm font-medium text-foreground mb-2 block">
@@ -501,7 +545,7 @@ const SubmitReview = () => {
                 </div>
               )}
 
-              {!isIndia && country && (
+              {!selectedGarageId && !isIndia && country && (
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">
                     City/Town (if not listed above)
@@ -514,6 +558,7 @@ const SubmitReview = () => {
                 </div>
               )}
 
+              {!selectedGarageId && (
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
                   Street Address (Optional)
@@ -524,6 +569,7 @@ const SubmitReview = () => {
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
