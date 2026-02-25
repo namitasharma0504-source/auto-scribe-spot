@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle, Loader2, Search } from "lucide-react";
+import { SlidersHorizontal, Grid3X3, List, MapPin, PlusCircle, Loader2, Search, AlertCircle, RefreshCw } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GarageCard } from "@/components/GarageCard";
@@ -33,6 +33,7 @@ const SearchResults = () => {
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
 
   const city = searchParams.get("city") || "";
+  const country = searchParams.get("country") || "";
   const query = searchParams.get("q") || "";
 
   const handleSearch = (e: React.FormEvent) => {
@@ -46,67 +47,83 @@ const SearchResults = () => {
     setSearchParams(params);
   };
 
-  // Fetch garages from database
-  const { data: garages = [], isLoading } = useQuery({
-    queryKey: ['search-garages', city, query, sortBy, vehicleTypeFilter],
+  const {
+    data: garages = [],
+    isLoading,
+    isError,
+    error: garagesError,
+    refetch: refetchGarages,
+  } = useQuery({
+    queryKey: ["search-garages", city, country, query, sortBy, vehicleTypeFilter],
+    retry: 0,
+    networkMode: "always",
     queryFn: async () => {
       let queryBuilder = supabase
-        .from('garages')
-        .select('*')
-        .eq('is_approved', true);
-      
+        .from("garages")
+        .select("*")
+        .eq("is_approved", true);
+
       // Filter by city if provided
       if (city) {
-        queryBuilder = queryBuilder.ilike('city', `%${city}%`);
+        queryBuilder = queryBuilder.ilike("city", `%${city}%`);
       }
-      
+
+      // Filter by country if provided
+      if (country) {
+        queryBuilder = queryBuilder.ilike("country", `%${country}%`);
+      }
+
       // Filter by search query (name)
       if (query) {
-        queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+        queryBuilder = queryBuilder.ilike("name", `%${query}%`);
       }
 
       // Filter by vehicle type
       if (vehicleTypeFilter && vehicleTypeFilter !== "all") {
-        queryBuilder = queryBuilder.contains('vehicle_types', [vehicleTypeFilter]);
+        queryBuilder = queryBuilder.contains("vehicle_types", [vehicleTypeFilter]);
       }
-      
+
       // Apply sorting
-      if (sortBy === 'rating') {
-        queryBuilder = queryBuilder.order('rating', { ascending: false });
-      } else if (sortBy === 'reviews') {
-        queryBuilder = queryBuilder.order('review_count', { ascending: false });
-      } else if (sortBy === 'name') {
-        queryBuilder = queryBuilder.order('name', { ascending: true });
+      if (sortBy === "rating") {
+        queryBuilder = queryBuilder.order("rating", { ascending: false });
+      } else if (sortBy === "reviews") {
+        queryBuilder = queryBuilder.order("review_count", { ascending: false });
+      } else if (sortBy === "name") {
+        queryBuilder = queryBuilder.order("name", { ascending: true });
       }
-      
+
       const { data: garagesData, error } = await queryBuilder;
-      
+
       if (error) throw error;
       if (!garagesData || garagesData.length === 0) return [];
-      
+
       // Fetch photos for all garages
-      const garageIds = garagesData.map(g => g.id);
-      const { data: photos } = await supabase
-        .from('garage_photos')
-        .select('garage_id, photo_url, display_order')
-        .in('garage_id', garageIds)
-        .order('display_order', { ascending: true });
-      
+      const garageIds = garagesData.map((g) => g.id);
+      const { data: photos, error: photosError } = await supabase
+        .from("garage_photos")
+        .select("garage_id, photo_url, display_order")
+        .in("garage_id", garageIds)
+        .order("display_order", { ascending: true });
+
+      if (photosError) {
+        console.warn("Garage photos failed to load, showing garages without gallery photos.", photosError);
+      }
+
       // Create a map of garage_id to array of photo URLs
       const photoMap = new Map<string, string[]>();
-      photos?.forEach(photo => {
+      (photos || []).forEach((photo) => {
         const existing = photoMap.get(photo.garage_id) || [];
         existing.push(photo.photo_url);
         photoMap.set(photo.garage_id, existing);
       });
-      
-      return garagesData.map(garage => {
+
+      return garagesData.map((garage) => {
         const garagePhotos = photoMap.get(garage.id) || [];
         return {
           id: garage.id,
           slug: garage.slug || garage.id,
           name: garage.name,
-          location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
+          location: garage.city ? `${garage.city}, ${garage.country || "India"}` : garage.country || "India",
           address: garage.address || undefined,
           rating: garage.rating || 5,
           reviewCount: garage.review_count || 0,
@@ -135,7 +152,8 @@ const SearchResults = () => {
     );
   };
 
-  const displayLocation = city || "All Locations";
+  const displayLocation = city || country || "All Locations";
+  const garagesErrorMessage = garagesError instanceof Error ? garagesError.message : "Unable to load garages right now.";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -171,7 +189,7 @@ const SearchResults = () => {
             {query ? `"${query}" in ${displayLocation}` : `Garages in ${displayLocation}`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isLoading ? "Searching..." : `${garages.length} garages found`}
+            {isLoading ? "Searching..." : isError ? "Unable to load garages" : `${garages.length} garages found`}
           </p>
         </div>
 
@@ -301,6 +319,32 @@ const SearchResults = () => {
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
+            ) : isError ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-secondary rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Unable to load garages</h3>
+                <p className="text-muted-foreground mb-2 max-w-md mx-auto">{garagesErrorMessage}</p>
+                <p className="text-sm text-muted-foreground mb-8">Please retry once your connection is stable.</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button variant="outline" onClick={() => refetchGarages()}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchInput("");
+                      setVehicleTypeFilter("all");
+                      setSelectedTags([]);
+                      setSearchParams(new URLSearchParams());
+                    }}
+                  >
+                    Show All Garages
+                  </Button>
+                </div>
+              </div>
             ) : garages.length > 0 ? (
               <div className={cn(
                 "grid gap-6",
@@ -330,12 +374,25 @@ const SearchResults = () => {
                 <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                   We couldn't find any garages matching your search. Would you like to add this garage to our platform?
                 </p>
-                <Link to={`/list-garage${query ? `?name=${encodeURIComponent(query)}` : ''}`}>
-                  <Button size="lg" className="gap-2">
-                    <PlusCircle className="w-5 h-5" />
-                    Add This Garage
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchInput("");
+                      setVehicleTypeFilter("all");
+                      setSelectedTags([]);
+                      setSearchParams(new URLSearchParams());
+                    }}
+                  >
+                    Show All Garages
                   </Button>
-                </Link>
+                  <Link to={`/list-garage${query ? `?name=${encodeURIComponent(query)}` : ''}`}>
+                    <Button size="lg" className="gap-2">
+                      <PlusCircle className="w-5 h-5" />
+                      Add This Garage
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
 
