@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { lazy, Suspense, useState, useCallback, useMemo } from "react";
-import { Wrench, Award, ArrowRight, Star, Gift, Search, Loader2, CheckCircle, Zap, Car, Thermometer, Paintbrush, CircleDot, Activity, Plug, Layers, Crown, ThumbsUp, ShieldCheck, Clock } from "lucide-react";
+import { Wrench, Award, ArrowRight, Star, Gift, Search, Loader2, CheckCircle, Zap, Car, Thermometer, Paintbrush, CircleDot, Activity, Plug, Layers, Crown, ThumbsUp, ShieldCheck, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
@@ -33,44 +33,57 @@ const Index = () => {
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<"all" | "4-wheeler" | "2-wheeler">("all");
   const handleSlideChange = useCallback((index: number) => setCurrentSlide(index), []);
   
-  const { data: featuredGarages = [], isLoading } = useQuery({
-    queryKey: ['featured-garages'],
+  const {
+    data: featuredGarages = [],
+    isLoading,
+    isError,
+    error: featuredGaragesError,
+    refetch: refetchFeaturedGarages,
+  } = useQuery({
+    queryKey: ["featured-garages"],
+    retry: 0,
+    networkMode: "always",
     queryFn: async () => {
       // Fetch garages with their photos from garage_photos table (India only)
       const { data: garages, error: garagesError } = await supabase
-        .from('garages')
-        .select('*')
-        .eq('country', 'India')
-        .eq('is_approved', true)
-        .order('rating', { ascending: false })
+        .from("garages")
+        .select("*")
+        .eq("country", "India")
+        .eq("is_approved", true)
+        .order("rating", { ascending: false })
         .limit(12);
-      
+
       if (garagesError) throw garagesError;
-      
+      if (!garages || garages.length === 0) return [];
+
       // Fetch photos for all garages
-      const garageIds = garages.map(g => g.id);
-      const { data: photos } = await supabase
-        .from('garage_photos')
-        .select('garage_id, photo_url, display_order')
-        .in('garage_id', garageIds)
-        .order('display_order', { ascending: true });
-      
+      const garageIds = garages.map((g) => g.id);
+      const { data: photos, error: photosError } = await supabase
+        .from("garage_photos")
+        .select("garage_id, photo_url, display_order")
+        .in("garage_id", garageIds)
+        .order("display_order", { ascending: true });
+
+      if (photosError) {
+        console.warn("Garage photos failed to load, showing garages without gallery photos.", photosError);
+      }
+
       // Create a map of garage_id to array of photo URLs
       const photoMap = new Map<string, string[]>();
-      photos?.forEach(photo => {
+      (photos || []).forEach((photo) => {
         const existing = photoMap.get(photo.garage_id) || [];
         existing.push(photo.photo_url);
         photoMap.set(photo.garage_id, existing);
       });
-      
+
       // Map garages with their photos
-      const mappedGarages = garages.map(garage => {
+      const mappedGarages = garages.map((garage) => {
         const garagePhotos = photoMap.get(garage.id) || [];
         return {
           id: garage.id,
           slug: garage.slug || garage.id,
           name: garage.name,
-          location: garage.city ? `${garage.city}, ${garage.country || 'India'}` : garage.country || 'India',
+          location: garage.city ? `${garage.city}, ${garage.country || "India"}` : garage.country || "India",
           address: garage.address || undefined,
           rating: garage.rating || 5,
           reviewCount: garage.review_count || 0,
@@ -91,7 +104,7 @@ const Index = () => {
           hasUploadedPhotos: garagePhotos.length > 0,
         };
       });
-      
+
       // Sort: garages with uploaded photos first, then by rating
       return mappedGarages.sort((a, b) => {
         if (a.hasUploadedPhotos && !b.hasUploadedPhotos) return -1;
@@ -104,10 +117,13 @@ const Index = () => {
   // Filter featured garages based on vehicle type selection
   const filteredGarages = useMemo(() => {
     if (vehicleTypeFilter === "all") return featuredGarages;
-    return featuredGarages.filter(garage => 
+    return featuredGarages.filter((garage) => 
       garage.vehicleTypes.includes(vehicleTypeFilter)
     );
   }, [featuredGarages, vehicleTypeFilter]);
+
+  const featuredGaragesErrorMessage =
+    featuredGaragesError instanceof Error ? featuredGaragesError.message : "Unable to load garages right now.";
 
   return (
     <div className="min-h-screen bg-background">
@@ -402,18 +418,48 @@ const Index = () => {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
+          ) : isError ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Unable to load garages</h3>
+              <p className="text-muted-foreground mb-1">{featuredGaragesErrorMessage}</p>
+              <p className="text-sm text-muted-foreground mb-4">Please retry once your connection is stable.</p>
+              <div className="flex items-center justify-center gap-2">
+                <Button variant="outline" onClick={() => refetchFeaturedGarages()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry
+                </Button>
+                <Link to="/search">
+                  <Button>Open Search</Button>
+                </Link>
+              </div>
+            </div>
           ) : filteredGarages.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
                 {vehicleTypeFilter === "2-wheeler" ? <span className="text-2xl">🏍️</span> : <span className="text-2xl">🚗</span>}
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                No {vehicleTypeFilter === "2-wheeler" ? "2-Wheeler" : "4-Wheeler"} garages found
+                {vehicleTypeFilter === "all"
+                  ? "No garages available right now"
+                  : `No ${vehicleTypeFilter === "2-wheeler" ? "2-Wheeler" : "4-Wheeler"} garages found`}
               </h3>
-              <p className="text-muted-foreground mb-4">Try selecting a different vehicle type or browse all garages</p>
-              <Button variant="outline" onClick={() => setVehicleTypeFilter("all")}>
-                Show All Garages
-              </Button>
+              <p className="text-muted-foreground mb-4">
+                {vehicleTypeFilter === "all"
+                  ? "Try opening search or retrying after a moment."
+                  : "Try selecting a different vehicle type or browse all garages"}
+              </p>
+              {vehicleTypeFilter !== "all" ? (
+                <Button variant="outline" onClick={() => setVehicleTypeFilter("all")}>
+                  Show All Garages
+                </Button>
+              ) : (
+                <Link to="/search">
+                  <Button variant="outline">Open Search</Button>
+                </Link>
+              )}
             </div>
           ) : (
             <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
